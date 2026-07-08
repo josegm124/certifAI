@@ -11,26 +11,33 @@ class AssessmentService {
   }
 
   async createAssessment(organizationId, aiSystemId, tier) {
-    let system = await this.aiSystemRepository.findById(aiSystemId);
-    if (!system) {
-      system = new AiSystem({
-        id: aiSystemId,
+    try {
+      // Get or create AI System
+      let system = await this.aiSystemRepository.findById(aiSystemId);
+      if (!system) {
+        system = new AiSystem({
+          id: aiSystemId,
+          organizationId,
+          name: aiSystemId  // Use aiSystemId as name to ensure uniqueness
+        });
+        // create() now handles duplicates gracefully
+        system = await this.aiSystemRepository.create(system);
+      }
+
+      const assessment = new Assessment({
+        id: uuidv4(),
         organizationId,
-        name: aiSystemId  // Use aiSystemId as name to ensure uniqueness
+        aiSystemId,
+        tier
       });
-      await this.aiSystemRepository.create(system);
+
+      await this.assessmentRepository.create(assessment);
+      logger.info({ assessmentId: assessment.id, tier, systemId: aiSystemId }, 'Assessment created');
+      return assessment;
+    } catch (err) {
+      logger.error({ err, organizationId, aiSystemId, tier }, 'Failed to create assessment');
+      throw err;
     }
-
-    const assessment = new Assessment({
-      id: uuidv4(),
-      organizationId,
-      aiSystemId,
-      tier
-    });
-
-    await this.assessmentRepository.create(assessment);
-    logger.info({ assessmentId: assessment.id, tier }, 'Assessment created');
-    return assessment;
   }
 
   async getAssessment(assessmentId) {

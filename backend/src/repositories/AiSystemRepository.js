@@ -7,6 +7,21 @@ class AiSystemRepository extends BaseRepository {
   }
 
   async create(system) {
+    // Check if system already exists (prevents duplicate key errors)
+    const existing = await this.findById(system.id);
+    if (existing) {
+      return existing;
+    }
+
+    // Also check by org + name to avoid UNIQUE constraint
+    const byName = await this.get(
+      'SELECT * FROM ai_systems WHERE organization_id = ? AND name = ?',
+      [system.organizationId, system.name]
+    );
+    if (byName) {
+      return this._mapToEntity(byName);
+    }
+
     const sql = `
       INSERT INTO ai_systems (id, organization_id, name, description, created_at)
       VALUES (?, ?, ?, ?, ?)
