@@ -204,6 +204,48 @@ export default function App() {
     }
   }
 
+  async function upgradeAssessment() {
+    if (!assessmentId || !orgId) return;
+    try {
+      // 1. Create new assessment (tier=professional)
+      const assessRes = await fetch(`${API_BASE}/assessments`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ organizationId: orgId, aiSystemId: `system-${Date.now()}`, tier: "professional" })
+      });
+      const newAssess = await assessRes.json();
+
+      // 2. Copy all answers from old to new assessment
+      for (const [qid, answerData] of Object.entries(answers)) {
+        if (answerData.score !== undefined && answerData.score !== null) {
+          await fetch(`${API_BASE}/assessments/${newAssess.id}/answers`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              questionId: String(qid),
+              score: answerData.score,
+              evidence: answerData.evidence || "",
+              attestation: answerData.attestation || ""
+            })
+          });
+        }
+      }
+
+      // 3. Switch to new assessment
+      setAssessmentId(newAssess.id);
+      setTier(2);
+      setStage("assess");
+      setIdx(0);
+      setBadge(null);
+      setScoring(null);
+
+      console.log("Upgraded: assessment_1 (free) → assessment_2 (professional)");
+    } catch (err) {
+      console.error("Error upgrading assessment:", err);
+      alert("Failed to upgrade. Check backend is running.");
+    }
+  }
+
   async function issueBadge() {
     if (!assessmentId || !scoring || tier !== 2 || comp.pct !== 100) return null;
     try {
@@ -246,7 +288,7 @@ export default function App() {
         <Assessment tier={tier} answers={answers} idx={idx} setIdx={setIdx} setAnswer={setAnswer} comp={comp} onFinish={async () => { await computeScores(); setStage("results"); }} />
       )}
       {stage === "results" && (
-        <Results org={org} tier={tier} answers={answers} scoring={scoring} badge={badge} onBack={() => setStage("assess")} onExport={exportJSON} onUpgrade={() => { setTier(2); setStage("assess"); setIdx(0); }} onIssueBadge={issueBadge} />
+        <Results org={org} tier={tier} answers={answers} scoring={scoring} badge={badge} onBack={() => setStage("assess")} onExport={exportJSON} onUpgrade={upgradeAssessment} onIssueBadge={issueBadge} />
       )}
     </div>
   );
