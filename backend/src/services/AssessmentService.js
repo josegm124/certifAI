@@ -16,7 +16,7 @@ class AssessmentService {
       system = new AiSystem({
         id: aiSystemId,
         organizationId,
-        name: `System ${aiSystemId.slice(0, 8)}`
+        name: aiSystemId  // Use aiSystemId as name to ensure uniqueness
       });
       await this.aiSystemRepository.create(system);
     }
