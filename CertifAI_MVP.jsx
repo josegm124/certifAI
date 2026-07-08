@@ -458,22 +458,7 @@ function Assessment({ tier, answers, idx, setIdx, setAnswer, comp, onFinish }) {
             <div className="ev">
               <div className="ev-head">
                 <span className="ev-title">Evidence (Tier 2)</span>
-                <span className="ev-sub">Back this score with documented evidence</span>
-              </div>
-
-              <div className="ev-artifacts">
-                <div className="ev-label">Typical artifacts:</div>
-                <ul className="ev-list">
-                  {q.evidence.map((e, i) => <li key={i}>{e}</li>)}
-                </ul>
-              </div>
-
-              <div className="ev-upload">
-                <label className="file-label">
-                  <input type="file" onChange={(e) => { const f = e.target.files?.[0]; if (f) setAnswer(q.id, { evidenceFile: f.name, evidenceSize: f.size }); }} accept=".pdf,.doc,.docx,.xls,.xlsx,.jpg,.png" />
-                  <span className="file-btn">+ Upload evidence file</span>
-                </label>
-                {a.evidenceFile && <div className="ev-file-name">{a.evidenceFile} ({Math.round(a.evidenceSize / 1024)}KB)</div>}
+                <span className="ev-sub">Typical artifacts: {q.evidence.join(" · ")}</span>
               </div>
 
               <label className="ev-attest">
@@ -481,7 +466,7 @@ function Assessment({ tier, answers, idx, setIdx, setAnswer, comp, onFinish }) {
                 <span>We hold documented evidence supporting this score.</span>
               </label>
 
-              <textarea className="ev-note" placeholder="Optional: Describe the evidence or location (e.g., 'Board approval document, 2026-Q2, shared drive: /governance/AI')" value={a.note || ""} onChange={(e) => setAnswer(q.id, { note: e.target.value })} />
+              <textarea className="ev-note" placeholder="Optional: Name the document, owner, or location of evidence." value={a.note || ""} onChange={(e) => setAnswer(q.id, { note: e.target.value })} />
             </div>
           )}
 
@@ -568,7 +553,7 @@ function Results({ org, tier, answers, scoring, badge, onBack, onExport, onUpgra
       )}
 
       <div className="res-hero">
-        <ScoreDial pct={displayScoring.overallScore} tier={{ id: displayScoring.badgeTier }} />
+        <ScoreDial pct={Math.round((displayScoring.overallScore / 5) * 100)} tier={{ id: displayScoring.badgeTier }} />
         <div className="res-hero-body">
           <BadgePanel tier={{ id: displayScoring.badgeTier, name: displayScoring.badgeTier.charAt(0).toUpperCase() + displayScoring.badgeTier.slice(1) }} earned={badgeEarned} tierMode={tier} cappedFrom={cappedFrom} gate={gate} badge={badge} />
         </div>
