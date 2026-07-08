@@ -218,23 +218,33 @@ export default function App() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ organizationId: orgId, aiSystemId: aiSystemId, tier: "professional" })
       });
+      if (!assessRes.ok) throw new Error(`Backend error: ${assessRes.status} ${assessRes.statusText}`);
       const newAssess = await assessRes.json();
+      if (!newAssess?.id) throw new Error("Invalid assessment response: missing id");
 
       // 2. Copy all answers from old to new assessment
+      const failedAnswers = [];
       for (const [qid, answerData] of Object.entries(answers)) {
         if (answerData.score !== undefined && answerData.score !== null) {
-          await fetch(`${API_BASE}/assessments/${newAssess.id}/answers`, {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({
-              questionId: String(qid),
-              score: answerData.score,
-              evidence: answerData.evidence || "",
-              attestation: answerData.attestation || ""
-            })
-          });
+          try {
+            const ansRes = await fetch(`${API_BASE}/assessments/${newAssess.id}/answers`, {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({
+                questionId: String(qid),
+                score: answerData.score,
+                evidence: answerData.evidence || "",
+                attestation: answerData.attestation || ""
+              })
+            });
+            if (!ansRes.ok) failedAnswers.push(qid);
+          } catch (ansErr) {
+            console.warn(`Failed to copy answer for question ${qid}:`, ansErr);
+            failedAnswers.push(qid);
+          }
         }
       }
+      if (failedAnswers.length > 0) throw new Error(`Failed to copy ${failedAnswers.length} answers. Upgrade aborted.`);
 
       // 3. Switch to new assessment
       setAssessmentId(newAssess.id);
@@ -247,7 +257,7 @@ export default function App() {
       console.log("Upgraded: assessment_1 (free) → assessment_2 (professional)");
     } catch (err) {
       console.error("Error upgrading assessment:", err);
-      alert("Failed to upgrade. Check backend is running.");
+      alert(`Upgrade failed: ${err.message}`);
     }
   }
 
@@ -615,7 +625,7 @@ function Results({ org, tier, answers, scoring, badge, onBack, onExport, onUpgra
         </div>
       </div>
 
-      {tier === 1 && (
+      {tier === 1 && !badgeEarned && (
         <div className="upsell">
           <div className="upsell-body">
             <div className="upsell-tag">Tier 2 · Evidence & Badge</div>

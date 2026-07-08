@@ -32,12 +32,14 @@ Terminal 1 – Frontend:
 cd C:\Users\jose.guerrero_isol\Desktop\certifAI_MVP
 npm install
 npm run dev
+
 → Abre en http://localhost:5173
 
 Terminal 2 – Backend:
 cd C:\Users\jose.guerrero_isol\Desktop\certifAI_MVP\backend
 npm install
 npm start
+
 → Corre en http://localhost:3001
 
 User Flow (Lo que ves)
