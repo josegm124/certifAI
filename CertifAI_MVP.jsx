@@ -127,6 +127,12 @@ const tierColor = (id) => (id === "assured" ? C.pine : id === "aligned" ? C.ocea
 
 /* ---------- ROOT ---------- */
 const API_BASE = "http://localhost:3001/api";
+// Public, server-rendered verification page used for shareable badge links.
+// This page carries the OpenGraph tags that LinkedIn/Slack/X read for the
+// preview (the SPA can't — social scrapers don't run JS). LinkedIn cannot reach
+// localhost, so set this to your deployed backend origin
+// (e.g. "https://api.certifai.com/verify") for real sharing to work.
+const VERIFY_BASE_URL = "http://localhost:3001/verify";
 
 export default function App() {
   const [stage, setStage] = useState("intro"); // intro | assess | results
@@ -565,7 +571,7 @@ function Results({ org, tier, answers, scoring, badge, onBack, onExport, onUpgra
       <div className="res-hero">
         <ScoreDial pct={Math.round((displayScoring.overallScore / 5) * 100)} tier={{ id: displayScoring.badgeTier }} />
         <div className="res-hero-body">
-          <BadgePanel tier={{ id: displayScoring.badgeTier, name: displayScoring.badgeTier.charAt(0).toUpperCase() + displayScoring.badgeTier.slice(1) }} earned={badgeEarned} tierMode={tier} cappedFrom={cappedFrom} gate={gate} badge={badge} />
+          <BadgePanel org={org} tier={{ id: displayScoring.badgeTier, name: displayScoring.badgeTier.charAt(0).toUpperCase() + displayScoring.badgeTier.slice(1) }} earned={badgeEarned} tierMode={tier} cappedFrom={cappedFrom} gate={gate} badge={badge} />
         </div>
       </div>
 
@@ -666,10 +672,41 @@ function ScoreDial({ pct, tier }) {
   );
 }
 
-function BadgePanel({ tier, earned, tierMode, cappedFrom, badge }) {
+function BadgePanel({ org, tier, earned, tierMode, cappedFrom, badge }) {
   const col = tierColor(tier.id);
-  const verifyUrl = badge ? `${API_BASE}/badges/${badge.verificationToken}/verify` : null;
-  const shareLink = badge ? `http://localhost:5173?verify=${badge.verificationToken}` : null;
+  // Public, server-rendered verification page (carries OpenGraph tags for social
+  // previews). Must be publicly reachable in production — see VERIFY_BASE_URL.
+  const verifyUrl = badge ? `${VERIFY_BASE_URL}/${badge.verificationToken}` : null;
+
+  const shareToLinkedInPost = () => {
+    if (!verifyUrl) return;
+    const url = `https://www.linkedin.com/sharing/share-offsite/?url=${encodeURIComponent(verifyUrl)}`;
+    window.open(url, "_blank", "noopener,noreferrer,width=600,height=600");
+  };
+
+  const addToLinkedInProfile = () => {
+    if (!badge) return;
+    const issued = new Date(badge.issuedAt);
+    const expires = new Date(badge.expiresAt);
+    const params = new URLSearchParams({
+      startTask: "CERTIFICATION_NAME",
+      name: `CertifAI AI Governance Readiness — ${tier.name} Badge`,
+      organizationName: "CertifAI",
+      issueYear: String(issued.getFullYear()),
+      issueMonth: String(issued.getMonth() + 1),
+      expirationYear: String(expires.getFullYear()),
+      expirationMonth: String(expires.getMonth() + 1),
+      certUrl: verifyUrl,
+      certId: badge.verificationToken,
+    });
+    window.open(`https://www.linkedin.com/profile/add?${params.toString()}`, "_blank", "noopener,noreferrer");
+  };
+
+  const copyVerifyLink = async () => {
+    if (!verifyUrl) return;
+    try { await navigator.clipboard.writeText(verifyUrl); alert("Verification link copied to clipboard."); }
+    catch { window.prompt("Copy this verification link:", verifyUrl); }
+  };
 
   return (
     <div className="badge-panel">
@@ -693,10 +730,28 @@ function BadgePanel({ tier, earned, tierMode, cappedFrom, badge }) {
           <div className="badge-verify" style={{ fontSize: "0.75rem", color: C.mute }}>
             Expires: {new Date(badge.expiresAt).toLocaleDateString()}
           </div>
-          <div style={{ marginTop: "0.5rem", fontSize: "0.75rem" }}>
-            <a href={shareLink} target="_blank" rel="noopener noreferrer" style={{ color: C.ocean, textDecoration: "underline" }}>
-              → Share verification link
-            </a>
+          <div style={{ marginTop: "0.75rem", display: "flex", flexWrap: "wrap", gap: "0.5rem" }}>
+            <button
+              type="button"
+              onClick={addToLinkedInProfile}
+              style={{ display: "inline-flex", alignItems: "center", gap: "0.4rem", padding: "0.4rem 0.7rem", background: "#0A66C2", color: "#fff", border: "none", borderRadius: "4px", fontSize: "0.78rem", fontWeight: 600, cursor: "pointer" }}
+            >
+              <LinkedInGlyph /> Add to LinkedIn profile
+            </button>
+            <button
+              type="button"
+              onClick={shareToLinkedInPost}
+              style={{ display: "inline-flex", alignItems: "center", gap: "0.4rem", padding: "0.4rem 0.7rem", background: "#fff", color: "#0A66C2", border: "1px solid #0A66C2", borderRadius: "4px", fontSize: "0.78rem", fontWeight: 600, cursor: "pointer" }}
+            >
+              <LinkedInGlyph color="#0A66C2" /> Share as post
+            </button>
+            <button
+              type="button"
+              onClick={copyVerifyLink}
+              style={{ padding: "0.4rem 0.7rem", background: "transparent", color: C.mute, border: `1px solid ${C.mute}`, borderRadius: "4px", fontSize: "0.78rem", fontWeight: 600, cursor: "pointer" }}
+            >
+              Copy link
+            </button>
           </div>
         </div>
       )}
@@ -707,6 +762,11 @@ function BadgePanel({ tier, earned, tierMode, cappedFrom, badge }) {
 /* ---------- ICONS ---------- */
 const Check = () => (<svg width="15" height="15" viewBox="0 0 16 16" fill="none" aria-hidden><path d="M3 8.5l3.2 3.2L13 5" stroke={C.pine} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" /></svg>);
 const Dot = () => (<svg width="11" height="11" viewBox="0 0 12 12" aria-hidden><circle cx="6" cy="6" r="6" fill="#fff" /></svg>);
+const LinkedInGlyph = ({ color = "#fff" }) => (
+  <svg width="14" height="14" viewBox="0 0 24 24" fill={color} aria-hidden>
+    <path d="M20.45 20.45h-3.56v-5.57c0-1.33-.02-3.04-1.85-3.04-1.85 0-2.14 1.45-2.14 2.94v5.67H9.35V9h3.42v1.56h.05c.48-.9 1.64-1.85 3.37-1.85 3.6 0 4.27 2.37 4.27 5.46v6.28zM5.34 7.43a2.07 2.07 0 1 1 0-4.14 2.07 2.07 0 0 1 0 4.14zM7.12 20.45H3.55V9h3.57v11.45zM22.22 0H1.77C.79 0 0 .77 0 1.73v20.54C0 23.23.79 24 1.77 24h20.45c.98 0 1.78-.77 1.78-1.73V1.73C24 .77 23.2 0 22.22 0z"/>
+  </svg>
+);
 const ShieldGlyph = () => (<svg width="22" height="22" viewBox="0 0 24 24" fill="none" aria-hidden><path d="M12 2l8 3.2v5.3c0 5-3.3 9-8 10-4.7-1-8-5-8-10V5.2L12 2z" fill="#fff" opacity=".22" /><path d="M8 12l2.6 2.6L16 9" stroke="#fff" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" /></svg>);
 const ShieldAlert = () => (<svg width="22" height="22" viewBox="0 0 24 24" fill="none" aria-hidden><path d="M12 2l8 3.2v5.3c0 5-3.3 9-8 10-4.7-1-8-5-8-10V5.2L12 2z" fill={C.red} opacity=".15" stroke={C.red} strokeWidth="1.4" /><path d="M12 8v4.5M12 15.5v.5" stroke={C.red} strokeWidth="2" strokeLinecap="round" /></svg>);
 

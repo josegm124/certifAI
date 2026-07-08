@@ -22,6 +22,7 @@ const SubscriptionService = require('./services/SubscriptionService');
 
 // Routes
 const { createRoutes } = require('./routes/api');
+const { createVerifyRoutes } = require('./routes/verify');
 
 const PORT = process.env.PORT || 3001;
 const app = express();
@@ -90,6 +91,10 @@ const startServer = async () => {
     });
 
     app.use('/api', routes);
+
+    // Public server-rendered verification pages (with OpenGraph tags for
+    // social previews). Mounted at root so URLs are /verify/:token.
+    app.use('/', createVerifyRoutes({ badgeService, organizationService }));
 
     // Error handler (must be last)
     app.use(errorHandler);

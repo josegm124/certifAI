@@ -27,20 +27,38 @@ Backend: Express.js + SQLite + Pino logger
 Database: SQLite (file-based, 0 setup) con schema + indexes
 
 ---
-# INICIO
-Terminal 1 – Frontend:
-cd C:\Users\jose.guerrero_isol\Desktop\certifAI_MVP
-npm install
-npm run dev
+# INICIO (Getting Started)
 
-→ Abre en http://localhost:5173
+## Prerequisitos
+- **Node.js 18+** y **npm** (verifica con `node -v` y `npm -v`)
+- No requiere instalar ninguna base de datos: SQLite es file-based y se crea sola.
 
-Terminal 2 – Backend:
-cd C:\Users\jose.guerrero_isol\Desktop\certifAI_MVP\backend
+## 1. Clonar el repo
+```bash
+git clone <repo-url>
+cd certifAI_MVP
+```
+
+## 2. Backend (Terminal 1)
+```bash
+cd backend
+cp .env.example .env      # Windows PowerShell: copy .env.example .env
 npm install
 npm start
-
+```
 → Corre en http://localhost:3001
+El backend crea la base de datos SQLite y el schema automáticamente al arrancar.
+En modo dev (`.env` por defecto) resetea la DB en cada arranque — como Spring create-drop.
+
+## 3. Frontend (Terminal 2)
+```bash
+cd certifAI_MVP        # raíz del proyecto (no la carpeta backend)
+npm install
+npm run dev
+```
+→ Abre en http://localhost:5173
+
+> **Nota:** arranca primero el backend. El frontend en :5173 llama a la API en :3001.
 
 User Flow (Lo que ves)
 
