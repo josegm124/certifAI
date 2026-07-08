@@ -126,20 +126,103 @@ const C = {
 const tierColor = (id) => (id === "assured" ? C.pine : id === "aligned" ? C.ocean : C.mute);
 
 /* ---------- ROOT ---------- */
+const API_BASE = "http://localhost:3001/api";
+
 export default function App() {
   const [stage, setStage] = useState("intro"); // intro | assess | results
   const [tier, setTier] = useState(1); // 1 = free (score+note), 2 = evidence attest
   const [org, setOrg] = useState("");
   const [answers, setAnswers] = useState({});
   const [idx, setIdx] = useState(0);
+  const [orgId, setOrgId] = useState("");
+  const [assessmentId, setAssessmentId] = useState("");
+  const [badge, setBadge] = useState(null);
+  const [scoring, setScoring] = useState(null);
 
   const comp = useMemo(() => completion(answers), [answers]);
 
-  function startAssessment(selectedTier) {
-    setTier(selectedTier); setStage("assess"); setIdx(0);
+  async function startAssessment(selectedTier) {
+    try {
+      // 1. Create org in backend
+      const orgRes = await fetch(`${API_BASE}/organizations`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ name: org, email: `${org.replace(/\s+/g, "").toLowerCase()}@certifai.local` })
+      });
+      const orgData = await orgRes.json();
+      setOrgId(orgData.id);
+
+      // 2. Create assessment in backend
+      const assessRes = await fetch(`${API_BASE}/assessments`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ organizationId: orgData.id, aiSystemId: `system-${Date.now()}`, tier: selectedTier === 1 ? "free" : "professional" })
+      });
+      const assessData = await assessRes.json();
+      setAssessmentId(assessData.id);
+
+      setTier(selectedTier);
+      setStage("assess");
+      setIdx(0);
+    } catch (err) {
+      console.error("Error starting assessment:", err);
+      alert("Failed to start assessment. Check backend is running on port 3001.");
+    }
   }
-  function setAnswer(qid, patch) {
+
+  async function setAnswer(qid, patch) {
     setAnswers((p) => ({ ...p, [qid]: { ...p[qid], ...patch } }));
+
+    // Save to backend
+    if (assessmentId) {
+      try {
+        await fetch(`${API_BASE}/assessments/${assessmentId}/answers`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ questionId: String(qid), score: patch.score, evidence: patch.evidence || "", attestation: patch.attestation || "" })
+        });
+      } catch (err) {
+        console.error("Error saving answer:", err);
+      }
+    }
+  }
+
+  async function computeScores() {
+    if (!assessmentId) return;
+    try {
+      const questionMapping = Object.fromEntries(QUESTIONS.map(q => [q.id, { domain: q.domain, description: q.title }]));
+      const res = await fetch(`${API_BASE}/assessments/${assessmentId}/compute-score`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ questionMapping })
+      });
+      const data = await res.json();
+      setScoring(data);
+      return data;
+    } catch (err) {
+      console.error("Error computing scores:", err);
+    }
+  }
+
+  async function issueBadge() {
+    if (!assessmentId || !scoring || tier !== 2 || comp.pct !== 100) return null;
+    try {
+      const res = await fetch(`${API_BASE}/assessments/${assessmentId}/badges`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          organizationId: orgId,
+          tier: scoring.badgeTier,
+          overallScore: scoring.overallScore,
+          frameworks: ["aiact", "gdpr", "oecd", "iso", "nist"]
+        })
+      });
+      const badgeData = await res.json();
+      setBadge(badgeData);
+      return badgeData;
+    } catch (err) {
+      console.error("Error issuing badge:", err);
+    }
   }
   function exportJSON() {
     const blob = new Blob([JSON.stringify({ org, tier, answers, ts: Date.now() }, null, 2)], { type: "application/json" });
@@ -160,10 +243,10 @@ export default function App() {
       <Header stage={stage} comp={comp} onHome={() => setStage("intro")} />
       {stage === "intro" && <Intro org={org} setOrg={setOrg} onStart={startAssessment} onImport={importJSON} />}
       {stage === "assess" && (
-        <Assessment tier={tier} answers={answers} idx={idx} setIdx={setIdx} setAnswer={setAnswer} comp={comp} onFinish={() => setStage("results")} />
+        <Assessment tier={tier} answers={answers} idx={idx} setIdx={setIdx} setAnswer={setAnswer} comp={comp} onFinish={async () => { await computeScores(); setStage("results"); }} />
       )}
       {stage === "results" && (
-        <Results org={org} tier={tier} answers={answers} onBack={() => setStage("assess")} onExport={exportJSON} onUpgrade={() => { setTier(2); setStage("assess"); setIdx(0); }} />
+        <Results org={org} tier={tier} answers={answers} scoring={scoring} badge={badge} onBack={() => setStage("assess")} onExport={exportJSON} onUpgrade={() => { setTier(2); setStage("assess"); setIdx(0); }} onIssueBadge={issueBadge} />
       )}
     </div>
   );
@@ -378,8 +461,8 @@ function DomainNav({ answers, currentId, onJump }) {
 }
 
 /* ---------- RESULTS ---------- */
-function Results({ org, tier, answers, onBack, onExport, onUpgrade }) {
-  const { overall, tier: badge, gate, cappedFrom } = useMemo(() => resolveTier(answers), [answers]);
+function Results({ org, tier, answers, scoring, badge, onBack, onExport, onUpgrade, onIssueBadge }) {
+  const { overall, tier: badge: badgeTier, gate, cappedFrom } = useMemo(() => resolveTier(answers), [answers]);
   const ds = useMemo(() => domainScores(answers), [answers]);
   const gaps = useMemo(() => gapAnalysis(answers), [answers]);
   const comp = completion(answers);
@@ -390,7 +473,15 @@ function Results({ org, tier, answers, onBack, onExport, onUpgrade }) {
     return { k, name, pct: ans.length ? Math.round((sum / (ans.length * 5)) * 100) : 0 };
   }), [answers]);
 
+  // Use backend scoring if available
+  const displayScoring = scoring || { overallScore: overall, badgeTier: badgeTier.id, domainScores: ds };
   const badgeEarned = tier === 2 && comp.pct === 100;
+
+  useEffect(() => {
+    if (badgeEarned && !badge) {
+      onIssueBadge();
+    }
+  }, [badgeEarned, badge]);
 
   return (
     <main className="wrap">
@@ -413,9 +504,9 @@ function Results({ org, tier, answers, onBack, onExport, onUpgrade }) {
       )}
 
       <div className="res-hero">
-        <ScoreDial pct={overall} tier={badge} />
+        <ScoreDial pct={displayScoring.overallScore} tier={{ id: displayScoring.badgeTier }} />
         <div className="res-hero-body">
-          <BadgePanel tier={badge} earned={badgeEarned} tierMode={tier} cappedFrom={cappedFrom} gate={gate} />
+          <BadgePanel tier={{ id: displayScoring.badgeTier, name: displayScoring.badgeTier.charAt(0).toUpperCase() + displayScoring.badgeTier.slice(1) }} earned={badgeEarned} tierMode={tier} cappedFrom={cappedFrom} gate={gate} badge={badge} />
         </div>
       </div>
 
@@ -507,8 +598,11 @@ function ScoreDial({ pct, tier }) {
   );
 }
 
-function BadgePanel({ tier, earned, tierMode, cappedFrom }) {
+function BadgePanel({ tier, earned, tierMode, cappedFrom, badge }) {
   const col = tierColor(tier.id);
+  const verifyUrl = badge ? `${API_BASE}/badges/${badge.verificationToken}/verify` : null;
+  const shareLink = badge ? `http://localhost:5173?verify=${badge.verificationToken}` : null;
+
   return (
     <div className="badge-panel">
       <div className="badge-vis" style={{ borderColor: col }}>
@@ -518,12 +612,26 @@ function BadgePanel({ tier, earned, tierMode, cappedFrom }) {
         <div className="badge-meta">
           <div className="badge-tier" style={{ color: col }}>{tier.name}</div>
           <div className="badge-state">
-            {earned ? "Badge earned" : tierMode === 1 ? "Tier 1 — no badge issued" : cappedFrom ? "Capped — critical control gap" : "Complete all controls to earn"}
+            {badge ? `✓ Badge issued on ${new Date(badge.issuedAt).toLocaleDateString()}` : earned ? "Processing badge..." : tierMode === 1 ? "Tier 1 — no badge issued" : cappedFrom ? "Capped — critical control gap" : "Complete all controls to earn"}
           </div>
         </div>
       </div>
-      <p className="badge-blurb">{tier.blurb}</p>
-      {earned && <div className="badge-verify">certif.ai/verify/{(tier.name).toLowerCase()}-{Math.random().toString(36).slice(2, 8)}</div>}
+      <p className="badge-blurb">{BADGE_TIERS.find(t => t.id === tier.id)?.blurb || "Badge credential"}</p>
+      {badge && (
+        <div style={{ marginTop: "1rem", padding: "0.75rem", background: C.mist, borderRadius: "4px" }}>
+          <div className="badge-verify" style={{ fontSize: "0.85rem", color: C.mute, marginBottom: "0.5rem" }}>
+            Token: {badge.verificationToken.slice(0, 12)}...
+          </div>
+          <div className="badge-verify" style={{ fontSize: "0.75rem", color: C.mute }}>
+            Expires: {new Date(badge.expiresAt).toLocaleDateString()}
+          </div>
+          <div style={{ marginTop: "0.5rem", fontSize: "0.75rem" }}>
+            <a href={shareLink} target="_blank" rel="noopener noreferrer" style={{ color: C.ocean, textDecoration: "underline" }}>
+              → Share verification link
+            </a>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
