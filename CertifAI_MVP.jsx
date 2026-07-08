@@ -78,8 +78,8 @@ const CRITICAL_IDS = QUESTIONS.filter((q) => q.critical).map((q) => q.id);
 function domainScores(answers) {
   return DOMAINS.map((d) => {
     const qs = QUESTIONS.filter((q) => q.domain === d.id);
-    const answered = qs.filter((q) => answers[q.id]?.score != null);
-    const sum = answered.reduce((a, q) => a + answers[q.id].score, 0);
+    const answered = qs.filter((q) => answers[String(q.id)]?.score != null);
+    const sum = answered.reduce((a, q) => a + answers[String(q.id)].score, 0);
     const pct = answered.length ? (sum / (answered.length * 5)) * 100 : 0;
     return { ...d, answeredCount: answered.length, totalCount: qs.length, rawAvg: answered.length ? sum / answered.length : 0, pct: Math.round(pct) };
   });
@@ -104,14 +104,14 @@ function resolveTier(answers) {
 }
 function gapAnalysis(answers) {
   const dmap = Object.fromEntries(DOMAINS.map((d) => [d.id, d]));
-  return QUESTIONS.filter((q) => answers[q.id]?.score != null).map((q) => {
-    const score = answers[q.id].score; const w = dmap[q.domain].weight;
+  return QUESTIONS.filter((q) => answers[String(q.id)]?.score != null).map((q) => {
+    const score = answers[String(q.id)].score; const w = dmap[q.domain].weight;
     const base = (5 - score) * w; const priority = q.critical ? base * 2.2 : base;
     return { id: q.id, title: q.title, domainName: dmap[q.domain].name, score, critical: !!q.critical, priority, gapSize: 5 - score, evidence: q.evidence, frameworks: q.frameworks };
   }).filter((g) => g.gapSize > 0).sort((a, b) => b.priority - a.priority);
 }
 function completion(answers) {
-  const answered = QUESTIONS.filter((q) => answers[q.id]?.score != null).length;
+  const answered = QUESTIONS.filter((q) => answers[String(q.id)]?.score != null).length;
   return { answered, total: QUESTIONS.length, pct: Math.round((answered / QUESTIONS.length) * 100) };
 }
 
@@ -409,7 +409,7 @@ function DomainStrip() {
 /* ---------- ASSESSMENT ---------- */
 function Assessment({ tier, answers, idx, setIdx, setAnswer, comp, onFinish }) {
   const q = QUESTIONS[idx];
-  const a = answers[q.id] || {};
+  const a = answers[String(q.id)] || {};
   const dom = DOMAINS.find((d) => d.id === q.domain);
   const isLast = idx === QUESTIONS.length - 1;
   const isFirst = idx === 0;
@@ -442,7 +442,7 @@ function Assessment({ tier, answers, idx, setIdx, setAnswer, comp, onFinish }) {
             {MATURITY_LEVELS.map((m) => {
               const on = a.score === m.score;
               return (
-                <button key={m.score} className={`opt ${on ? "opt-on" : ""}`} onClick={() => setAnswer(q.id, { score: m.score })}>
+                <button key={m.score} className={`opt ${on ? "opt-on" : ""}`} onClick={() => setAnswer(String(q.id), { score: m.score })}>
                   <span className="opt-score">{m.score}</span>
                   <span className="opt-body">
                     <span className="opt-label">{m.label}</span>
@@ -462,11 +462,11 @@ function Assessment({ tier, answers, idx, setIdx, setAnswer, comp, onFinish }) {
               </div>
 
               <label className="ev-attest">
-                <input type="checkbox" checked={!!a.attested} onChange={(e) => setAnswer(q.id, { attested: e.target.checked })} />
+                <input type="checkbox" checked={!!a.attested} onChange={(e) => setAnswer(String(q.id), { attested: e.target.checked })} />
                 <span>We hold documented evidence supporting this score.</span>
               </label>
 
-              <textarea className="ev-note" placeholder="Optional: Name the document, owner, or location of evidence." value={a.note || ""} onChange={(e) => setAnswer(q.id, { note: e.target.value })} />
+              <textarea className="ev-note" placeholder="Optional: Name the document, owner, or location of evidence." value={a.note || ""} onChange={(e) => setAnswer(String(q.id), { note: e.target.value })} />
             </div>
           )}
 
@@ -490,14 +490,14 @@ function DomainNav({ answers, currentId, onJump }) {
     <nav className="dnav">
       {DOMAINS.map((d) => {
         const qs = QUESTIONS.filter((q) => q.domain === d.id);
-        const done = qs.filter((q) => answers[q.id]?.score != null).length;
+        const done = qs.filter((q) => answers[String(q.id)]?.score != null).length;
         const hasCurrent = qs.some((q) => q.id === currentId);
         return (
           <div key={d.id} className={`dnav-grp ${hasCurrent ? "dnav-grp-on" : ""}`}>
             <div className="dnav-name">{d.name}</div>
             <div className="dnav-dots">
               {qs.map((q) => {
-                const ans = answers[q.id]?.score != null;
+                const ans = answers[String(q.id)]?.score != null;
                 const cur = q.id === currentId;
                 return <button key={q.id} className={`dot-btn ${ans ? "dot-ans" : ""} ${cur ? "dot-cur" : ""} ${q.critical ? "dot-crit" : ""}`} title={`Q${q.id} · ${q.title}`} onClick={() => onJump(q.id)} />;
               })}
@@ -517,8 +517,8 @@ function Results({ org, tier, answers, scoring, badge, onBack, onExport, onUpgra
   const comp = completion(answers);
   const fw = useMemo(() => Object.entries(FRAMEWORKS).map(([k, name]) => {
     const qs = QUESTIONS.filter((q) => q.frameworks.includes(k));
-    const ans = qs.filter((q) => answers[q.id]?.score != null);
-    const sum = ans.reduce((a, q) => a + answers[q.id].score, 0);
+    const ans = qs.filter((q) => answers[String(q.id)]?.score != null);
+    const sum = ans.reduce((a, q) => a + answers[String(q.id)].score, 0);
     return { k, name, pct: ans.length ? Math.round((sum / (ans.length * 5)) * 100) : 0 };
   }), [answers]);
 
