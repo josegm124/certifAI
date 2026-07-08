@@ -633,16 +633,25 @@ function Results({ org, tier, answers, scoring, badge, onBack, onExport, onUpgra
 
 function ScoreDial({ pct, tier }) {
   const col = tierColor(tier.id);
+  const score = (pct / 100) * 5;  // Convert back to 0-5 for stars
+  const fullStars = Math.floor(score);
+  const hasHalfStar = score % 1 >= 0.5;
   const r = 64, circ = 2 * Math.PI * r, off = circ * (1 - pct / 100);
+
   return (
     <div className="dial">
       <svg width="170" height="170" viewBox="0 0 170 170">
         <circle cx="85" cy="85" r={r} fill="none" stroke={C.line} strokeWidth="11" />
         <circle cx="85" cy="85" r={r} fill="none" stroke={col} strokeWidth="11" strokeLinecap="round" strokeDasharray={circ} strokeDashoffset={off} transform="rotate(-90 85 85)" style={{ transition: "stroke-dashoffset .9s cubic-bezier(.22,1,.36,1)" }} />
-        <text x="85" y="80" textAnchor="middle" className="dial-num">{pct}</text>
-        <text x="85" y="103" textAnchor="middle" className="dial-pct">/ 100</text>
+        <text x="85" y="80" textAnchor="middle" className="dial-num">{score.toFixed(1)}</text>
+        <text x="85" y="103" textAnchor="middle" className="dial-pct">/ 5</text>
       </svg>
       <div className="dial-label">Overall readiness</div>
+      <div className="dial-stars">
+        {[0, 1, 2, 3, 4].map((i) => (
+          <span key={i} className="star" style={{ opacity: i < fullStars ? 1 : i === fullStars && hasHalfStar ? 0.6 : 0.25 }}>★</span>
+        ))}
+      </div>
     </div>
   );
 }
@@ -821,6 +830,8 @@ body{margin:0}
 .dial-num{font-family:'Lora',serif;font-size:46px;font-weight:700;fill:${C.ink}}
 .dial-pct{font-size:13px;fill:${C.mute}}
 .dial-label{font-size:12px;color:${C.mute};font-weight:600;letter-spacing:.04em}
+.dial-stars{display:flex;justify-content:center;gap:4px;margin-top:9px;font-size:22px}
+.star{color:${C.gold};transition:opacity .3s ease;text-shadow:0 1px 3px rgba(0,0,0,.15)}
 .badge-panel{min-width:0}
 .badge-vis{display:flex;align-items:center;gap:14px;border:1.5px solid;border-radius:12px;padding:14px 16px;margin-bottom:13px;background:${C.paper}}
 .badge-shield{width:46px;height:46px;border-radius:11px;display:flex;align-items:center;justify-content:center;flex-shrink:0}
