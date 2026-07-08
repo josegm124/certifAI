@@ -462,7 +462,7 @@ function DomainNav({ answers, currentId, onJump }) {
 
 /* ---------- RESULTS ---------- */
 function Results({ org, tier, answers, scoring, badge, onBack, onExport, onUpgrade, onIssueBadge }) {
-  const { overall, tier: badge: badgeTier, gate, cappedFrom } = useMemo(() => resolveTier(answers), [answers]);
+  const { overall, tier: badgeTier, gate, cappedFrom } = useMemo(() => resolveTier(answers), [answers]);
   const ds = useMemo(() => domainScores(answers), [answers]);
   const gaps = useMemo(() => gapAnalysis(answers), [answers]);
   const comp = completion(answers);
@@ -474,7 +474,7 @@ function Results({ org, tier, answers, scoring, badge, onBack, onExport, onUpgra
   }), [answers]);
 
   // Use backend scoring if available
-  const displayScoring = scoring || { overallScore: overall, badgeTier: badgeTier.id, domainScores: ds };
+  const displayScoring = scoring || { overallScore: overall, badgeTier: badgeTier, domainScores: ds };
   const badgeEarned = tier === 2 && comp.pct === 100;
 
   useEffect(() => {
