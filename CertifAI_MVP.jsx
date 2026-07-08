@@ -135,6 +135,7 @@ export default function App() {
   const [answers, setAnswers] = useState({});
   const [idx, setIdx] = useState(0);
   const [orgId, setOrgId] = useState("");
+  const [aiSystemId, setAiSystemId] = useState("");
   const [assessmentId, setAssessmentId] = useState("");
   const [badge, setBadge] = useState(null);
   const [scoring, setScoring] = useState(null);
@@ -152,11 +153,15 @@ export default function App() {
       const orgData = await orgRes.json();
       setOrgId(orgData.id);
 
-      // 2. Create assessment in backend
+      // 2. Create AI System (same for both tier 1 and tier 2)
+      const systemId = `system-${Date.now()}`;
+      setAiSystemId(systemId);
+
+      // 3. Create assessment in backend
       const assessRes = await fetch(`${API_BASE}/assessments`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ organizationId: orgData.id, aiSystemId: `system-${Date.now()}`, tier: selectedTier === 1 ? "free" : "professional" })
+        body: JSON.stringify({ organizationId: orgData.id, aiSystemId: systemId, tier: selectedTier === 1 ? "free" : "professional" })
       });
       const assessData = await assessRes.json();
       setAssessmentId(assessData.id);
@@ -205,13 +210,13 @@ export default function App() {
   }
 
   async function upgradeAssessment() {
-    if (!assessmentId || !orgId) return;
+    if (!assessmentId || !orgId || !aiSystemId) return;
     try {
-      // 1. Create new assessment (tier=professional)
+      // 1. Create new assessment (tier=professional) with SAME aiSystemId
       const assessRes = await fetch(`${API_BASE}/assessments`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ organizationId: orgId, aiSystemId: `system-${Date.now()}`, tier: "professional" })
+        body: JSON.stringify({ organizationId: orgId, aiSystemId: aiSystemId, tier: "professional" })
       });
       const newAssess = await assessRes.json();
 
