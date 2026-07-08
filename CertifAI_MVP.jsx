@@ -457,14 +457,31 @@ function Assessment({ tier, answers, idx, setIdx, setAnswer, comp, onFinish }) {
           {tier === 2 && (
             <div className="ev">
               <div className="ev-head">
-                <span className="ev-title">Evidence</span>
-                <span className="ev-sub">Typical artefacts: {q.evidence.join(", ")}</span>
+                <span className="ev-title">Evidence (Tier 2)</span>
+                <span className="ev-sub">Back this score with documented evidence</span>
               </div>
+
+              <div className="ev-artifacts">
+                <div className="ev-label">Typical artifacts:</div>
+                <ul className="ev-list">
+                  {q.evidence.map((e, i) => <li key={i}>{e}</li>)}
+                </ul>
+              </div>
+
+              <div className="ev-upload">
+                <label className="file-label">
+                  <input type="file" onChange={(e) => { const f = e.target.files?.[0]; if (f) setAnswer(q.id, { evidenceFile: f.name, evidenceSize: f.size }); }} accept=".pdf,.doc,.docx,.xls,.xlsx,.jpg,.png" />
+                  <span className="file-btn">+ Upload evidence file</span>
+                </label>
+                {a.evidenceFile && <div className="ev-file-name">{a.evidenceFile} ({Math.round(a.evidenceSize / 1024)}KB)</div>}
+              </div>
+
               <label className="ev-attest">
                 <input type="checkbox" checked={!!a.attested} onChange={(e) => setAnswer(q.id, { attested: e.target.checked })} />
                 <span>We hold documented evidence supporting this score.</span>
               </label>
-              <textarea className="ev-note" placeholder="Optional: name the document, owner, or location of the evidence." value={a.note || ""} onChange={(e) => setAnswer(q.id, { note: e.target.value })} />
+
+              <textarea className="ev-note" placeholder="Optional: Describe the evidence or location (e.g., 'Board approval document, 2026-Q2, shared drive: /governance/AI')" value={a.note || ""} onChange={(e) => setAnswer(q.id, { note: e.target.value })} />
             </div>
           )}
 
@@ -789,6 +806,18 @@ body{margin:0}
 .ev-attest input{width:17px;height:17px;accent-color:${C.ocean};cursor:pointer}
 .ev-note{width:100%;min-height:62px;padding:11px 13px;font-size:14px;border:1.5px solid ${C.line};border-radius:9px;background:${C.panel};color:${C.ink};outline:none;resize:vertical;font-family:inherit}
 .ev-note:focus{border-color:${C.ocean};box-shadow:0 0 0 3px ${C.oceanSoft}}
+.ev-artifacts{margin-bottom:16px;padding-bottom:14px;border-bottom:1px solid rgba(16,86,110,.2)}
+.ev-label{font-size:12px;font-weight:700;color:${C.ocean};text-transform:uppercase;letter-spacing:.08em;margin-bottom:7px;display:block}
+.ev-list{list-style:none;padding:0;margin:0;display:flex;flex-direction:column;gap:5px}
+.ev-list li{font-size:13px;color:${C.ink};padding-left:18px;position:relative}
+.ev-list li:before{content:'•';position:absolute;left:6px;color:${C.ocean};font-weight:700}
+.ev-upload{margin-bottom:16px}
+.file-label{display:inline-flex;align-items:center;gap:8px;font-size:13.5px;cursor:pointer;color:${C.ocean};font-weight:600;margin-bottom:8px}
+.file-label input{display:none}
+.file-label input + .file-btn{display:inline-flex;align-items:center;gap:5px;padding:8px 12px;border:1.5px dashed ${C.ocean};border-radius:8px;background:rgba(16,86,110,.04);transition:all .15s}
+.file-label input + .file-btn:hover{background:rgba(16,86,110,.1);border-color:${C.pineDk}}
+.file-label:hover .file-btn{background:rgba(16,86,110,.1)}
+.ev-file-name{font-size:12px;color:${C.inkSoft};padding:6px 0}
 
 /* nav */
 .nav{display:flex;justify-content:space-between;align-items:center;gap:12px;margin-top:8px}
