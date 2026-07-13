@@ -679,6 +679,20 @@ function Results({ org, tier, answers, scoring, badge, onBack, onExport, onUpgra
           <button className="btn btn-ghost" onClick={onBack}>← Edit answers</button>
           <button className="btn btn-ghost" onClick={onExport}>Download progress</button>
           <button className="btn btn-ghost" onClick={() => window.print()}>Print / PDF</button>
+          {tier === 2 && (
+            <div className="cert-status">
+              {comp.pct === 100 ? (
+                <button className="btn btn-cert" onClick={onIssueBadge}>
+                  <span style={{ fontSize: "14px" }}>📜</span> Claim certificate
+                </button>
+              ) : (
+                <div className="cert-progress">
+                  <div className="cert-bar"><div className="cert-fill" style={{ width: `${comp.pct}%`, background: comp.pct >= 70 ? C.pine : comp.pct >= 40 ? C.ocean : C.gold }} /></div>
+                  <span className="cert-pct">Complete {comp.pct}%</span>
+                </div>
+              )}
+            </div>
+          )}
         </div>
       </div>
 
@@ -1017,7 +1031,14 @@ body{margin:0}
 
 /* results */
 .res-top{display:flex;justify-content:space-between;align-items:flex-end;gap:16px;margin-bottom:22px;flex-wrap:wrap}
-.res-actions{display:flex;gap:9px;flex-wrap:wrap}
+.res-actions{display:flex;gap:9px;flex-wrap:wrap;align-items:center}
+.cert-status{display:flex;align-items:center}
+.btn-cert{background:${C.pine};color:#fff;border-color:${C.pine};font-size:13px;gap:6px;display:inline-flex;align-items:center;padding:9px 13px}
+.btn-cert:hover:not(:disabled){background:#0a5240}
+.cert-progress{display:flex;align-items:center;gap:10px;font-size:12px}
+.cert-bar{width:60px;height:6px;background:${C.mist};border-radius:3px;overflow:hidden}
+.cert-fill{height:100%;transition:width .3s ease}
+.cert-pct{color:${C.mute};font-weight:600;white-space:nowrap}
 .banner{border-radius:11px;padding:14px 17px;font-size:13.5px;line-height:1.5;margin-bottom:20px;display:flex;gap:12px;align-items:flex-start}
 .banner-warn{background:#FBF5E6;border:1px solid #E8D9A8;color:#6B5618}
 .banner-cap{background:${C.redSoft};border:1px solid #E5C3BD;color:#7A2B22}
