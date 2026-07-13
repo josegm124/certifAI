@@ -1,20 +1,20 @@
 const logger = require('../config/logger');
 
-// Mapeo de dominios y preguntas (del frontend)
+// Domain ids/weights/critical ids must mirror DOMAINS/QUESTIONS in CertifAI_MVP.jsx exactly —
+// they are the source of truth for the 32-question model. Keep both in sync when questions change.
 const DOMAINS = {
-  'governance': { name: 'AI Governance & Oversight', weight: 0.15 },
-  'risks': { name: 'Risk Management & Mitigation', weight: 0.15 },
-  'transparency': { name: 'Transparency & Explainability', weight: 0.12 },
-  'fairness': { name: 'Fairness & Bias Management', weight: 0.13 },
-  'security': { name: 'Security & Data Protection', weight: 0.15 },
-  'compliance': { name: 'Legal & Regulatory Compliance', weight: 0.16 },
-  'monitoring': { name: 'Monitoring & Adaptation', weight: 0.10 },
-  'culture': { name: 'Organization & Culture', weight: 0.04 }
+  'strategy': { name: 'Strategy & Leadership', weight: 0.10 },
+  'governance': { name: 'Governance & Oversight', weight: 0.14 },
+  'risk': { name: 'Risk & Compliance', weight: 0.20 },
+  'data': { name: 'Data & Model Governance', weight: 0.18 },
+  'human': { name: 'Human Oversight & Accountability', weight: 0.13 },
+  'trust': { name: 'Trust, Transparency & Fairness', weight: 0.13 },
+  'workforce': { name: 'Workforce & Capability', weight: 0.08 },
+  'improve': { name: 'Continuous Improvement', weight: 0.04 }
 };
 
-const CRITICAL_QUESTION_IDS = [
-  'q1', 'q5', 'q12', 'q18', 'q24', 'q31'  // Placeholder - map to actual critical controls
-];
+// Critical controls: Q13 (EU AI Act Readiness), Q14 (High-Risk AI Identification), Q22 (Human Accountability)
+const CRITICAL_QUESTION_IDS = ['13', '14', '22'];
 
 class ScoringService {
   constructor(answerRepository) {
@@ -76,14 +76,17 @@ class ScoringService {
     return Math.round(overallScore * 100) / 100;
   }
 
-  // Resuelve badge tier con lógica de gating
+  // Resuelve badge tier con lógica de gating.
+  // Thresholds mirror frontend BADGE_TIERS (0-40 aware, 41-70 aligned, 71-100 assured),
+  // applied to overallScore converted from its 0-5 scale to a 0-100 percentage.
   resolveBadgeTier(overallScore, isCriticalGating) {
+    const percentage = (overallScore / 5) * 100;
     let tier = 'aware'; // Default
     let cappedFrom = null;
 
-    if (overallScore >= 4) {
+    if (percentage >= 71) {
       tier = 'assured';
-    } else if (overallScore >= 3) {
+    } else if (percentage >= 41) {
       tier = 'aligned';
     }
 
