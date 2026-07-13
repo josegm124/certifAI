@@ -847,8 +847,9 @@ function BadgePanel({ org, tier, earned, tierMode, cappedFrom, badge }) {
 
   const copyVerifyLink = async () => {
     if (!verifyUrl) return;
-    try { await navigator.clipboard.writeText(verifyUrl); alert("Verification link copied to clipboard."); }
+    try { await navigator.clipboard.writeText(verifyUrl); }
     catch { window.prompt("Copy this verification link:", verifyUrl); }
+    window.open(verifyUrl, "_blank", "noopener,noreferrer");
   };
 
   return (
