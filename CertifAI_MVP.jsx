@@ -441,6 +441,14 @@ function Mark() {
 
 /* ---------- INTRO ---------- */
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+// Lead-qualification roles we care about (last option is the catch-all).
+const ROLES = [
+  "Compliance / Risk",
+  "Data Protection / Privacy (DPO)",
+  "Security (CISO)",
+  "Executive / Leadership",
+  "Other",
+];
 function Intro({ org, setOrg, email, setEmail, role, setRole, onStart, onImport }) {
   const [picked, setPicked] = useState(null);
   const emailValid = EMAIL_RE.test(email.trim());
@@ -454,16 +462,19 @@ function Intro({ org, setOrg, email, setEmail, role, setRole, onStart, onImport 
           <p className="lead">A structured readiness assessment for organisations deploying AI under the EU AI Act. Answer 32 questions across 8 governance domains, see your maturity by domain and framework, and get a prioritised remediation path — in about 20 minutes.</p>
           <div className="field">
             <label className="lbl" htmlFor="org">Organisation name</label>
-            <input id="org" className="inp" value={org} onChange={(e) => setOrg(e.target.value)} placeholder="e.g. Northstar Recruitment AI" />
+            <input id="org" className="inp" value={org} onChange={(e) => setOrg(e.target.value)} placeholder="Northstar Recruitment AI" />
           </div>
           <div className="field">
             <label className="lbl" htmlFor="email">Work email</label>
-            <input id="email" type="email" className={`inp ${email && !emailValid ? "inp-err" : ""}`} value={email} onChange={(e) => setEmail(e.target.value)} placeholder="e.g. jane.doe@northstar.com" />
+            <input id="email" type="email" className={`inp ${email && !emailValid ? "inp-err" : ""}`} value={email} onChange={(e) => setEmail(e.target.value)} placeholder="jane.doe@northstar.com" />
             {email && !emailValid && <div className="field-err">Enter a valid work email address.</div>}
           </div>
           <div className="field">
             <label className="lbl" htmlFor="role">Your role</label>
-            <input id="role" className="inp" value={role} onChange={(e) => setRole(e.target.value)} placeholder="e.g. Head of Compliance, CISO, DPO" />
+            <select id="role" className={`inp ${role ? "" : "inp-placeholder"}`} value={role} onChange={(e) => setRole(e.target.value)}>
+              <option value="" disabled>Select your role</option>
+              {ROLES.map((r) => <option key={r} value={r}>{r}</option>)}
+            </select>
           </div>
           <div className="import-row">
             <label className="link-btn">
@@ -905,6 +916,7 @@ body{margin:0}
 .lbl{display:block;font-size:12.5px;font-weight:600;color:${C.inkSoft};margin-bottom:7px;letter-spacing:.01em}
 .inp{width:100%;padding:13px 15px;font-size:15px;border:1.5px solid ${C.line};border-radius:10px;background:${C.panel};color:${C.ink};outline:none;transition:border-color .15s,box-shadow .15s;font-family:inherit}
 .inp:focus{border-color:${C.pine};box-shadow:0 0 0 3px ${C.pineSoft}}
+.inp-placeholder{color:${C.mute}}
 .inp-err{border-color:${C.red}}
 .inp-err:focus{border-color:${C.red};box-shadow:0 0 0 3px ${C.redSoft}}
 .field-err{font-size:12px;color:${C.red};margin-top:6px}
