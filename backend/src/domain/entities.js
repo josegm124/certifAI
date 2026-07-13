@@ -20,6 +20,7 @@ class Organization {
     id = uuidv4(),
     name,
     email,
+    role = null,
     tier = TIERS.FREE,
     subscriptionId = null,
     subscriptionExpiresAt = null,
@@ -29,6 +30,7 @@ class Organization {
     this.id = id;
     this.name = name;
     this.email = email;
+    this.role = role;
     this.tier = tier;
     this.subscriptionId = subscriptionId;
     this.subscriptionExpiresAt = subscriptionExpiresAt;

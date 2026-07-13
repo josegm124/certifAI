@@ -3,6 +3,7 @@ CREATE TABLE IF NOT EXISTS organizations (
   id TEXT PRIMARY KEY,
   name TEXT NOT NULL,
   email TEXT UNIQUE NOT NULL,
+  role TEXT,
   tier TEXT CHECK(tier IN ('free', 'starter', 'professional', 'enterprise')) DEFAULT 'free',
   subscription_id TEXT,
   subscription_expires_at DATETIME,

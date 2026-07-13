@@ -7,7 +7,7 @@ class OrganizationService {
     this.organizationRepository = organizationRepository;
   }
 
-  async createOrganization(name, email) {
+  async createOrganization(name, email, role = null) {
     let org = await this.organizationRepository.findByEmail(email);
 
     if (org) {
@@ -19,6 +19,7 @@ class OrganizationService {
       id: uuidv4(),
       name,
       email,
+      role,
       tier: TIERS.FREE
     });
 

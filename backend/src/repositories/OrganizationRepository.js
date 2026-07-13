@@ -8,13 +8,14 @@ class OrganizationRepository extends BaseRepository {
 
   async create(org) {
     const sql = `
-      INSERT INTO organizations (id, name, email, tier, subscription_id, subscription_expires_at, created_at, updated_at)
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+      INSERT INTO organizations (id, name, email, role, tier, subscription_id, subscription_expires_at, created_at, updated_at)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
     `;
     await this.run(sql, [
       org.id,
       org.name,
       org.email,
+      org.role,
       org.tier,
       org.subscriptionId,
       org.subscriptionExpiresAt,
@@ -27,11 +28,12 @@ class OrganizationRepository extends BaseRepository {
   async update(org) {
     const sql = `
       UPDATE organizations
-      SET name = ?, tier = ?, subscription_id = ?, subscription_expires_at = ?, updated_at = ?
+      SET name = ?, role = ?, tier = ?, subscription_id = ?, subscription_expires_at = ?, updated_at = ?
       WHERE id = ?
     `;
     await this.run(sql, [
       org.name,
+      org.role,
       org.tier,
       org.subscriptionId,
       org.subscriptionExpiresAt,
@@ -64,6 +66,7 @@ class OrganizationRepository extends BaseRepository {
       id: row.id,
       name: row.name,
       email: row.email,
+      role: row.role,
       tier: row.tier,
       subscriptionId: row.subscription_id,
       subscriptionExpiresAt: row.subscription_expires_at,

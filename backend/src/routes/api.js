@@ -3,6 +3,7 @@ const router = express.Router();
 const logger = require('../config/logger');
 const { AuditLog } = require('../domain/entities');
 const { v4: uuidv4 } = require('uuid');
+const { isValidEmail } = require('../utils/validators');
 
 // Factories para inyectar dependencias
 const createRoutes = (services) => {
@@ -18,13 +19,17 @@ const createRoutes = (services) => {
   // ORGANIZATIONS
   router.post('/organizations', async (req, res, next) => {
     try {
-      const { name, email } = req.body;
+      const { name, email, role } = req.body;
 
       if (!name || !email) {
         return res.status(400).json({ error: 'Missing name or email' });
       }
 
-      const org = await organizationService.createOrganization(name, email);
+      if (!isValidEmail(email)) {
+        return res.status(400).json({ error: 'Invalid email format' });
+      }
+
+      const org = await organizationService.createOrganization(name, email, role || null);
 
       await auditLogRepository.create(new AuditLog({
         id: uuidv4(),
