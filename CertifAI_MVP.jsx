@@ -294,16 +294,87 @@ export default function App() {
     }
   }
   function exportJSON() {
-    const blob = new Blob([JSON.stringify({ org, tier, answers, ts: Date.now() }, null, 2)], { type: "application/json" });
+    const payload = { org, email, role, tier, answers, ts: Date.now() };
+    const blob = new Blob([JSON.stringify(payload, null, 2)], { type: "application/json" });
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a"); a.href = url; a.download = `certifai-${(org || "assessment").replace(/\s+/g, "-").toLowerCase()}.json`; a.click();
     URL.revokeObjectURL(url);
   }
+
+  // Rehydrate a previously exported assessment AND recreate it in the backend
+  // (org → assessment → replay answers → recompute) so the resumed session is
+  // fully functional: the user can edit answers, finish, upgrade and earn a
+  // badge. If the backend is unreachable, we still show client-side results.
+  async function resumeAssessment(d) {
+    const restoredAnswers = d.answers || {};
+    const restoredTier = d.tier || 1;
+    setOrg(d.org || "");
+    setEmail(d.email || "");
+    setRole(d.role || "");
+    setTier(restoredTier);
+    setAnswers(restoredAnswers);
+    setBadge(null);
+    setScoring(null);
+
+    try {
+      const orgRes = await fetch(`${API_BASE}/organizations`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ name: d.org, email: (d.email || "").trim(), role: (d.role || "").trim() })
+      });
+      if (!orgRes.ok) {
+        const errData = await orgRes.json().catch(() => ({}));
+        throw new Error(errData.error || `Backend error ${orgRes.status}`);
+      }
+      const orgData = await orgRes.json();
+      setOrgId(orgData.id);
+
+      const systemId = `system-${Date.now()}`;
+      setAiSystemId(systemId);
+
+      const assessRes = await fetch(`${API_BASE}/assessments`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ organizationId: orgData.id, aiSystemId: systemId, tier: restoredTier === 1 ? "free" : "professional" })
+      });
+      if (!assessRes.ok) throw new Error(`Backend error ${assessRes.status}`);
+      const assessData = await assessRes.json();
+      setAssessmentId(assessData.id);
+
+      for (const [qid, a] of Object.entries(restoredAnswers)) {
+        if (a?.score == null) continue;
+        await fetch(`${API_BASE}/assessments/${assessData.id}/answers`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ questionId: String(qid), score: a.score, evidence: a.note || "", attestation: a.attested ? "confirmed" : "" })
+        });
+      }
+
+      const questionMapping = Object.fromEntries(QUESTIONS.map(q => [q.id, { domain: q.domain, description: q.title }]));
+      const scoreRes = await fetch(`${API_BASE}/assessments/${assessData.id}/compute-score`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ questionMapping })
+      });
+      if (scoreRes.ok) setScoring(await scoreRes.json());
+    } catch (err) {
+      console.error("Error resuming assessment:", err);
+      alert(`Resumed locally, but backend sync failed: ${err.message}. You can view results, but editing and badges need the backend.`);
+    } finally {
+      setStage("results");
+    }
+  }
+
   function importJSON(e) {
     const file = e.target.files?.[0]; if (!file) return;
     const reader = new FileReader();
-    reader.onload = () => { try { const d = JSON.parse(reader.result); setOrg(d.org || ""); setTier(d.tier || 1); setAnswers(d.answers || {}); setStage("results"); } catch { alert("Could not read this file."); } };
+    reader.onload = () => {
+      let d;
+      try { d = JSON.parse(reader.result); } catch { alert("Could not read this file."); return; }
+      resumeAssessment(d);
+    };
     reader.readAsText(file);
+    e.target.value = ""; // allow re-importing the same file
   }
 
   return (
