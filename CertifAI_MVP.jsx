@@ -696,6 +696,17 @@ function Results({ org, tier, answers, scoring, badge, onBack, onExport, onUpgra
         </div>
       </div>
 
+      {tier === 1 && !badgeEarned && (
+        <div className="upsell">
+          <div className="upsell-body">
+            <div className="upsell-tag">Tier 2 · Evidence & Badge</div>
+            <h3 className="upsell-h">Turn this snapshot into a credential.</h3>
+            <p className="upsell-p">Attach evidence to each control to build an audit-ready record and earn a displayable Aligned or Assured badge your clients and partners can verify.</p>
+          </div>
+          <button className="btn btn-accent" onClick={onUpgrade}>Add evidence →</button>
+        </div>
+      )}
+
       {comp.pct < 100 && (
         <div className="banner banner-warn">
           <strong>{comp.answered} of {comp.total} controls answered.</strong> Unanswered controls are excluded from the score. Complete all 32 for a defensible result.
@@ -764,17 +775,6 @@ function Results({ org, tier, answers, scoring, badge, onBack, onExport, onUpgra
           </ol>
         </div>
       </div>
-
-      {tier === 1 && !badgeEarned && (
-        <div className="upsell">
-          <div className="upsell-body">
-            <div className="upsell-tag">Tier 2 · Evidence & Badge</div>
-            <h3 className="upsell-h">Turn this snapshot into a credential.</h3>
-            <p className="upsell-p">Attach evidence to each control to build an audit-ready record and earn a displayable Aligned or Assured badge your clients and partners can verify.</p>
-          </div>
-          <button className="btn btn-accent" onClick={onUpgrade}>Add evidence →</button>
-        </div>
-      )}
 
       <p className="disclaimer">Self-assessed, evidence-backed readiness signal. Not a certification, legal advice, or a conformity assessment under the EU AI Act.</p>
     </main>
