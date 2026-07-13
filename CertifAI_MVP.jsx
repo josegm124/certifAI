@@ -134,6 +134,23 @@ const API_BASE = "http://localhost:3001/api";
 // (e.g. "https://api.certifai.com/verify") for real sharing to work.
 const VERIFY_BASE_URL = "http://localhost:3001/verify";
 
+/* ---------- EXPORT OBFUSCATION ----------
+   NOTE: this is OBFUSCATION (base64), NOT encryption. It only prevents casual
+   reading of the exported file; it does not protect against a motivated reader.
+   Kept isolated in b64/unb64 so it can be swapped for real AES-GCM (Web Crypto)
+   later without touching the export/import flow. Sensitive fields = org name,
+   work email, role and per-control evidence notes. */
+const OBF_FMT = "certifai-obf-1";
+const b64 = (s = "") => { try { return btoa(unescape(encodeURIComponent(String(s)))); } catch { return ""; } };
+const unb64 = (s = "") => { try { return decodeURIComponent(escape(atob(String(s)))); } catch { return ""; } };
+// Obfuscate only the sensitive note inside each answer; score/attested stay plain.
+const obfAnswers = (answers, fn) =>
+  Object.fromEntries(Object.entries(answers || {}).map(([qid, a]) => [qid, a?.note ? { ...a, note: fn(a.note) } : a]));
+const deobfuscate = (d) => {
+  if (!d || d._fmt !== OBF_FMT) return d; // legacy plaintext export — pass through
+  return { ...d, org: unb64(d.org || ""), email: unb64(d.email || ""), role: unb64(d.role || ""), answers: obfAnswers(d.answers, unb64) };
+};
+
 export default function App() {
   const [stage, setStage] = useState("intro"); // intro | assess | results
   const [tier, setTier] = useState(1); // 1 = free (score+note), 2 = evidence attest
@@ -294,7 +311,7 @@ export default function App() {
     }
   }
   function exportJSON() {
-    const payload = { org, email, role, tier, answers, ts: Date.now() };
+    const payload = { _fmt: OBF_FMT, org: b64(org), email: b64(email), role: b64(role), tier, answers: obfAnswers(answers, b64), ts: Date.now() };
     const blob = new Blob([JSON.stringify(payload, null, 2)], { type: "application/json" });
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a"); a.href = url; a.download = `certifai-${(org || "assessment").replace(/\s+/g, "-").toLowerCase()}.json`; a.click();
@@ -370,7 +387,7 @@ export default function App() {
     const reader = new FileReader();
     reader.onload = () => {
       let d;
-      try { d = JSON.parse(reader.result); } catch { alert("Could not read this file."); return; }
+      try { d = deobfuscate(JSON.parse(reader.result)); } catch { alert("Could not read this file."); return; }
       resumeAssessment(d);
     };
     reader.readAsText(file);
