@@ -13,22 +13,22 @@ class AiSystemRepository extends BaseRepository {
       return existing;
     }
 
-    // Also check by org + name to avoid UNIQUE constraint
+    // Also check by company + name to avoid UNIQUE constraint
     const byName = await this.get(
-      'SELECT * FROM ai_systems WHERE organization_id = ? AND name = ?',
-      [system.organizationId, system.name]
+      'SELECT * FROM ai_systems WHERE company_id = ? AND name = ?',
+      [system.companyId, system.name]
     );
     if (byName) {
       return this._mapToEntity(byName);
     }
 
     const sql = `
-      INSERT INTO ai_systems (id, organization_id, name, description, created_at)
+      INSERT INTO ai_systems (id, company_id, name, description, created_at)
       VALUES (?, ?, ?, ?, ?)
     `;
     await this.run(sql, [
       system.id,
-      system.organizationId,
+      system.companyId,
       system.name,
       system.description,
       system.createdAt
@@ -36,10 +36,10 @@ class AiSystemRepository extends BaseRepository {
     return system;
   }
 
-  async findByOrg(orgId) {
+  async findByCompany(companyId) {
     const rows = await this.all(
-      'SELECT * FROM ai_systems WHERE organization_id = ? ORDER BY created_at DESC',
-      [orgId]
+      'SELECT * FROM ai_systems WHERE company_id = ? ORDER BY created_at DESC',
+      [companyId]
     );
     return rows.map(row => this._mapToEntity(row));
   }
@@ -52,7 +52,7 @@ class AiSystemRepository extends BaseRepository {
   _mapToEntity(row) {
     return new AiSystem({
       id: row.id,
-      organizationId: row.organization_id,
+      companyId: row.company_id,
       name: row.name,
       description: row.description,
       createdAt: new Date(row.created_at)

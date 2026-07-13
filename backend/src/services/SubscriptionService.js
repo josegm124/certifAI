@@ -10,14 +10,14 @@ const TIER_PRICING = {
 };
 
 class SubscriptionService {
-  constructor(subscriptionRepository, organizationRepository) {
+  constructor(subscriptionRepository, companyRepository) {
     this.subscriptionRepository = subscriptionRepository;
-    this.organizationRepository = organizationRepository;
+    this.companyRepository = companyRepository;
   }
 
-  async createSubscription(organizationId, tier) {
+  async createSubscription(companyId, tier) {
     if (tier === TIERS.FREE) {
-      logger.info({ organizationId }, 'Free tier - no subscription created');
+      logger.info({ companyId }, 'Free tier - no subscription created');
       return null;
     }
 
@@ -26,7 +26,7 @@ class SubscriptionService {
 
     const subscription = new Subscription({
       id: uuidv4(),
-      organizationId,
+      companyId,
       tier,
       priceEur: TIER_PRICING[tier],
       expiresAt
@@ -34,26 +34,25 @@ class SubscriptionService {
 
     await this.subscriptionRepository.create(subscription);
 
-    // Update org
-    const org = await this.organizationRepository.findById(organizationId);
-    org.subscriptionId = subscription.id;
-    org.subscriptionExpiresAt = expiresAt;
-    await this.organizationRepository.update(org);
+    const company = await this.companyRepository.findById(companyId);
+    company.subscriptionId = subscription.id;
+    company.subscriptionExpiresAt = expiresAt;
+    await this.companyRepository.update(company);
 
     logger.info({ subscriptionId: subscription.id, tier }, 'Subscription created');
     return subscription;
   }
 
-  async getSubscription(organizationId) {
-    return this.subscriptionRepository.findByOrg(organizationId);
+  async getSubscription(companyId) {
+    return this.subscriptionRepository.findByCompany(companyId);
   }
 
-  async upgradeTier(organizationId, newTier) {
-    let subscription = await this.subscriptionRepository.findByOrg(organizationId);
-    const org = await this.organizationRepository.findById(organizationId);
+  async upgradeTier(companyId, newTier) {
+    let subscription = await this.subscriptionRepository.findByCompany(companyId);
+    const company = await this.companyRepository.findById(companyId);
 
     if (!subscription) {
-      subscription = await this.createSubscription(organizationId, newTier);
+      subscription = await this.createSubscription(companyId, newTier);
     } else {
       subscription.tier = newTier;
       subscription.priceEur = TIER_PRICING[newTier];
@@ -61,18 +60,18 @@ class SubscriptionService {
       await this.subscriptionRepository.update(subscription);
     }
 
-    org.tier = newTier;
-    await this.organizationRepository.update(org);
+    company.tier = newTier;
+    await this.companyRepository.update(company);
 
-    logger.info({ organizationId, newTier }, 'Tier upgraded');
+    logger.info({ companyId, newTier }, 'Tier upgraded');
     return subscription;
   }
 
-  async renewSubscription(organizationId, tier = null) {
-    let subscription = await this.subscriptionRepository.findByOrg(organizationId);
+  async renewSubscription(companyId, tier = null) {
+    let subscription = await this.subscriptionRepository.findByCompany(companyId);
 
     if (!subscription) {
-      subscription = await this.createSubscription(organizationId, tier || TIERS.PROFESSIONAL);
+      subscription = await this.createSubscription(companyId, tier || TIERS.PROFESSIONAL);
     } else {
       subscription.expiresAt = new Date();
       subscription.expiresAt.setFullYear(subscription.expiresAt.getFullYear() + 1);
@@ -82,11 +81,11 @@ class SubscriptionService {
       await this.subscriptionRepository.update(subscription);
     }
 
-    const org = await this.organizationRepository.findById(organizationId);
-    org.subscriptionExpiresAt = subscription.expiresAt;
-    await this.organizationRepository.update(org);
+    const company = await this.companyRepository.findById(companyId);
+    company.subscriptionExpiresAt = subscription.expiresAt;
+    await this.companyRepository.update(company);
 
-    logger.info({ organizationId }, 'Subscription renewed');
+    logger.info({ companyId }, 'Subscription renewed');
     return subscription;
   }
 

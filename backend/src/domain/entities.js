@@ -15,12 +15,12 @@ const BADGE_TIERS = {
   ASSURED: 'assured'
 };
 
-class Organization {
+// Company: the business entity being assessed. Deduplicated by name so the
+// same company isn't recreated every time a different person assesses it.
+class Company {
   constructor({
     id = uuidv4(),
     name,
-    email,
-    role = null,
     tier = TIERS.FREE,
     subscriptionId = null,
     subscriptionExpiresAt = null,
@@ -29,8 +29,6 @@ class Organization {
   } = {}) {
     this.id = id;
     this.name = name;
-    this.email = email;
-    this.role = role;
     this.tier = tier;
     this.subscriptionId = subscriptionId;
     this.subscriptionExpiresAt = subscriptionExpiresAt;
@@ -44,26 +42,48 @@ class Organization {
   }
 }
 
+// User: the person who fills out an assessment. No login/password — this is
+// a lead record (name/email/role), not an authenticated account.
+class User {
+  constructor({
+    id = uuidv4(),
+    companyId,
+    email,
+    role = null,
+    createdAt = new Date(),
+    updatedAt = new Date()
+  } = {}) {
+    this.id = id;
+    this.companyId = companyId;
+    this.email = email;
+    this.role = role;
+    this.createdAt = createdAt;
+    this.updatedAt = updatedAt;
+  }
+}
+
 class AiSystem {
   constructor({
     id = uuidv4(),
-    organizationId,
+    companyId,
     name,
     description = '',
     createdAt = new Date()
   } = {}) {
     this.id = id;
-    this.organizationId = organizationId;
+    this.companyId = companyId;
     this.name = name;
     this.description = description;
     this.createdAt = createdAt;
   }
 }
 
+// Assessment: user_id records who started it and when (createdAt) — the
+// history the app needs to answer "who started this, when, did they finish".
 class Assessment {
   constructor({
     id = uuidv4(),
-    organizationId,
+    userId,
     aiSystemId,
     tier = TIERS.FREE,
     completionPercentage = 0,
@@ -75,7 +95,7 @@ class Assessment {
     updatedAt = new Date()
   } = {}) {
     this.id = id;
-    this.organizationId = organizationId;
+    this.userId = userId;
     this.aiSystemId = aiSystemId;
     this.tier = tier;
     this.completionPercentage = completionPercentage;
@@ -118,11 +138,12 @@ class AssessmentAnswer {
   }
 }
 
+// Badge: the certified entity is the company (not the individual assessor).
 class Badge {
   constructor({
     id = uuidv4(),
     assessmentId,
-    organizationId,
+    companyId,
     tier = BADGE_TIERS.AWARE,
     score = 0,
     issuedAt = new Date(),
@@ -132,7 +153,7 @@ class Badge {
   } = {}) {
     this.id = id;
     this.assessmentId = assessmentId;
-    this.organizationId = organizationId;
+    this.companyId = companyId;
     this.tier = tier;
     this.score = score;
     this.issuedAt = issuedAt;
@@ -157,7 +178,7 @@ class Dossier {
   constructor({
     id = uuidv4(),
     assessmentId,
-    organizationId,
+    companyId,
     frameworks = [],
     pdfUrl = null,
     jsonUrl = null,
@@ -165,7 +186,7 @@ class Dossier {
   } = {}) {
     this.id = id;
     this.assessmentId = assessmentId;
-    this.organizationId = organizationId;
+    this.companyId = companyId;
     this.frameworks = frameworks;
     this.pdfUrl = pdfUrl;
     this.jsonUrl = jsonUrl;
@@ -176,7 +197,7 @@ class Dossier {
 class Subscription {
   constructor({
     id = uuidv4(),
-    organizationId,
+    companyId,
     tier = TIERS.FREE,
     priceEur = 0,
     startsAt = new Date(),
@@ -185,7 +206,7 @@ class Subscription {
     status = 'active'
   } = {}) {
     this.id = id;
-    this.organizationId = organizationId;
+    this.companyId = companyId;
     this.tier = tier;
     this.priceEur = priceEur;
     this.startsAt = startsAt;
@@ -202,7 +223,8 @@ class Subscription {
 class AuditLog {
   constructor({
     id = uuidv4(),
-    organizationId = null,
+    companyId = null,
+    userId = null,
     assessmentId = null,
     action,
     details = null,
@@ -210,7 +232,8 @@ class AuditLog {
     createdAt = new Date()
   } = {}) {
     this.id = id;
-    this.organizationId = organizationId;
+    this.companyId = companyId;
+    this.userId = userId;
     this.assessmentId = assessmentId;
     this.action = action;
     this.details = details;
@@ -222,7 +245,8 @@ class AuditLog {
 module.exports = {
   TIERS,
   BADGE_TIERS,
-  Organization,
+  Company,
+  User,
   AiSystem,
   Assessment,
   AssessmentAnswer,

@@ -8,7 +8,8 @@ const { isValidEmail } = require('../utils/validators');
 // Factories para inyectar dependencias
 const createRoutes = (services) => {
   const {
-    organizationService,
+    companyService,
+    userService,
     assessmentService,
     scoringService,
     badgeService,
@@ -16,8 +17,10 @@ const createRoutes = (services) => {
     auditLogRepository
   } = services;
 
-  // ORGANIZATIONS
-  router.post('/organizations', async (req, res, next) => {
+  // COMPANIES / USERS
+  // Single entry point for the HOME form: finds-or-creates the company (by
+  // name) and the user/lead (by email) under it, in one call.
+  router.post('/companies', async (req, res, next) => {
     try {
       const { name, email, role } = req.body;
 
@@ -29,26 +32,46 @@ const createRoutes = (services) => {
         return res.status(400).json({ error: 'Invalid email format' });
       }
 
-      const org = await organizationService.createOrganization(name, email, role || null);
+      const user = await userService.registerLead(name, email, role || null);
+      const company = await companyService.getCompany(user.companyId);
 
       await auditLogRepository.create(new AuditLog({
         id: uuidv4(),
-        organizationId: org.id,
-        action: 'ORG_CREATED',
+        companyId: company.id,
+        userId: user.id,
+        action: 'USER_REGISTERED',
         ipAddress: req.ip
       }));
 
-      res.status(201).json(org);
+      res.status(201).json({
+        userId: user.id,
+        companyId: company.id,
+        name: company.name,
+        email: user.email,
+        role: user.role,
+        tier: company.tier,
+        createdAt: user.createdAt
+      });
     } catch (err) {
       next(err);
     }
   });
 
-  router.get('/organizations/:id', async (req, res, next) => {
+  router.get('/companies/:id', async (req, res, next) => {
     try {
-      const org = await organizationService.getOrganization(req.params.id);
-      if (!org) return res.status(404).json({ error: 'Organization not found' });
-      res.json(org);
+      const company = await companyService.getCompany(req.params.id);
+      if (!company) return res.status(404).json({ error: 'Company not found' });
+      res.json(company);
+    } catch (err) {
+      next(err);
+    }
+  });
+
+  router.get('/users/:id', async (req, res, next) => {
+    try {
+      const user = await userService.getUser(req.params.id);
+      if (!user) return res.status(404).json({ error: 'User not found' });
+      res.json(user);
     } catch (err) {
       next(err);
     }
@@ -57,13 +80,17 @@ const createRoutes = (services) => {
   // ASSESSMENTS
   router.post('/assessments', async (req, res, next) => {
     try {
-      const { organizationId, aiSystemId, tier } = req.body;
+      const { userId, aiSystemId, tier } = req.body;
 
-      const assessment = await assessmentService.createAssessment(organizationId, aiSystemId, tier);
+      const user = await userService.getUser(userId);
+      if (!user) return res.status(404).json({ error: 'User not found' });
+
+      const assessment = await assessmentService.createAssessment(userId, user.companyId, aiSystemId, tier);
 
       await auditLogRepository.create(new AuditLog({
         id: uuidv4(),
-        organizationId,
+        companyId: user.companyId,
+        userId,
         assessmentId: assessment.id,
         action: 'ASSESSMENT_CREATED',
         ipAddress: req.ip
@@ -85,9 +112,9 @@ const createRoutes = (services) => {
     }
   });
 
-  router.get('/organizations/:orgId/assessments', async (req, res, next) => {
+  router.get('/users/:userId/assessments', async (req, res, next) => {
     try {
-      const assessments = await assessmentService.getAssessmentsForOrg(req.params.orgId);
+      const assessments = await assessmentService.getAssessmentsForUser(req.params.userId);
       res.json(assessments);
     } catch (err) {
       next(err);
@@ -153,14 +180,14 @@ const createRoutes = (services) => {
     }
   });
 
-  // BADGES
+  // BADGES (the certified entity is the company)
   router.post('/assessments/:assessmentId/badges', async (req, res, next) => {
     try {
-      const { organizationId, tier, overallScore, frameworks } = req.body;
+      const { companyId, tier, overallScore, frameworks } = req.body;
 
       const badge = await badgeService.issueBadge(
         req.params.assessmentId,
-        organizationId,
+        companyId,
         tier,
         overallScore,
         frameworks || []
@@ -189,9 +216,9 @@ const createRoutes = (services) => {
     }
   });
 
-  router.get('/organizations/:orgId/badges', async (req, res, next) => {
+  router.get('/companies/:companyId/badges', async (req, res, next) => {
     try {
-      const badges = await badgeService.badgeRepository.findByOrg(req.params.orgId);
+      const badges = await badgeService.badgeRepository.findByCompany(req.params.companyId);
       const activeBadges = badges.filter(b => !b.isExpired());
       res.json(activeBadges);
     } catch (err) {
@@ -200,9 +227,9 @@ const createRoutes = (services) => {
   });
 
   // SUBSCRIPTIONS
-  router.get('/organizations/:orgId/subscription', async (req, res, next) => {
+  router.get('/companies/:companyId/subscription', async (req, res, next) => {
     try {
-      const subscription = await subscriptionService.getSubscription(req.params.orgId);
+      const subscription = await subscriptionService.getSubscription(req.params.companyId);
       const features = subscription
         ? subscriptionService.getTierFeatures(subscription.tier)
         : subscriptionService.getTierFeatures('free');
@@ -216,7 +243,7 @@ const createRoutes = (services) => {
     }
   });
 
-  router.post('/organizations/:orgId/upgrade-tier', async (req, res, next) => {
+  router.post('/companies/:companyId/upgrade-tier', async (req, res, next) => {
     try {
       const { newTier } = req.body;
 
@@ -224,11 +251,11 @@ const createRoutes = (services) => {
         return res.status(400).json({ error: 'newTier required' });
       }
 
-      const subscription = await subscriptionService.upgradeTier(req.params.orgId, newTier);
+      const subscription = await subscriptionService.upgradeTier(req.params.companyId, newTier);
 
       await auditLogRepository.create(new AuditLog({
         id: uuidv4(),
-        organizationId: req.params.orgId,
+        companyId: req.params.companyId,
         action: 'TIER_UPGRADED',
         details: { from: subscription.tier, to: newTier },
         ipAddress: req.ip
@@ -250,13 +277,15 @@ const createRoutes = (services) => {
     }
   });
 
-  router.post('/organizations/:orgId/import-assessment', async (req, res, next) => {
+  router.post('/users/:userId/import-assessment', async (req, res, next) => {
     try {
-      const assessment = await assessmentService.importAssessment(req.params.orgId, req.body);
+      const assessment = await assessmentService.importAssessment(req.params.userId, req.body);
+      const user = await userService.getUser(req.params.userId);
 
       await auditLogRepository.create(new AuditLog({
         id: uuidv4(),
-        organizationId: req.params.orgId,
+        companyId: user?.companyId || null,
+        userId: req.params.userId,
         assessmentId: assessment.id,
         action: 'ASSESSMENT_IMPORTED',
         ipAddress: req.ip

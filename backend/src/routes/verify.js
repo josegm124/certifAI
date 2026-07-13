@@ -12,7 +12,7 @@ const express = require('express');
  *   GET /verify/:token            → HTML verification page (+ OpenGraph tags)
  *   GET /verify/:token/badge.svg  → dynamically generated badge image (OG image)
  */
-const createVerifyRoutes = ({ badgeService, organizationService }) => {
+const createVerifyRoutes = ({ badgeService, companyService }) => {
   const router = express.Router();
 
   const escapeHtml = (str = '') =>
@@ -37,9 +37,9 @@ const createVerifyRoutes = ({ badgeService, organizationService }) => {
     if (!badge) return null;
     let orgName = 'This organisation';
     try {
-      const org = await organizationService.getOrganization(badge.organizationId);
-      if (org && org.name) orgName = org.name;
-    } catch (_) { /* org lookup is best-effort for the preview */ }
+      const company = await companyService.getCompany(badge.companyId);
+      if (company && company.name) orgName = company.name;
+    } catch (_) { /* company lookup is best-effort for the preview */ }
     const meta = badgeService.getBadgeMetadata(badge.tier);
     return { badge, orgName, meta };
   };

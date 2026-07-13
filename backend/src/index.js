@@ -6,7 +6,8 @@ const { initializeDatabase, runSchema, getDb } = require('./config/database');
 const { requestLogger, errorHandler } = require('./middleware/logging');
 
 // Repositories
-const OrganizationRepository = require('./repositories/OrganizationRepository');
+const CompanyRepository = require('./repositories/CompanyRepository');
+const UserRepository = require('./repositories/UserRepository');
 const AssessmentRepository = require('./repositories/AssessmentRepository');
 const AssessmentAnswerRepository = require('./repositories/AssessmentAnswerRepository');
 const AiSystemRepository = require('./repositories/AiSystemRepository');
@@ -14,7 +15,8 @@ const BadgeRepository = require('./repositories/BadgeRepository');
 const AuditLogRepository = require('./repositories/AuditLogRepository');
 
 // Services
-const OrganizationService = require('./services/OrganizationService');
+const CompanyService = require('./services/CompanyService');
+const UserService = require('./services/UserService');
 const AssessmentService = require('./services/AssessmentService');
 const ScoringService = require('./services/ScoringService');
 const BadgeService = require('./services/BadgeService');
@@ -54,7 +56,8 @@ const startServer = async () => {
 
     // Instantiate repositories
     const db = getDb();
-    const organizationRepository = new OrganizationRepository(db);
+    const companyRepository = new CompanyRepository(db);
+    const userRepository = new UserRepository(db);
     const assessmentRepository = new AssessmentRepository(db);
     const answerRepository = new AssessmentAnswerRepository(db);
     const aiSystemRepository = new AiSystemRepository(db);
@@ -62,7 +65,8 @@ const startServer = async () => {
     const auditLogRepository = new AuditLogRepository(db);
 
     // Instantiate services
-    const organizationService = new OrganizationService(organizationRepository);
+    const companyService = new CompanyService(companyRepository);
+    const userService = new UserService(userRepository, companyService);
     const assessmentService = new AssessmentService(
       assessmentRepository,
       answerRepository,
@@ -74,15 +78,16 @@ const startServer = async () => {
     const subscriptionService = new SubscriptionService(
       {
         create: () => {},
-        findByOrg: async () => null,
+        findByCompany: async () => null,
         update: () => {}
       },
-      organizationRepository
+      companyRepository
     );
 
     // Create routes with dependency injection
     const routes = createRoutes({
-      organizationService,
+      companyService,
+      userService,
       assessmentService,
       scoringService,
       badgeService,
@@ -94,7 +99,7 @@ const startServer = async () => {
 
     // Public server-rendered verification pages (with OpenGraph tags for
     // social previews). Mounted at root so URLs are /verify/:token.
-    app.use('/', createVerifyRoutes({ badgeService, organizationService }));
+    app.use('/', createVerifyRoutes({ badgeService, companyService }));
 
     // Error handler (must be last)
     app.use(errorHandler);

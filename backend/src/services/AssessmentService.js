@@ -10,14 +10,14 @@ class AssessmentService {
     this.auditLogRepository = auditLogRepository;
   }
 
-  async createAssessment(organizationId, aiSystemId, tier) {
+  async createAssessment(userId, companyId, aiSystemId, tier) {
     try {
-      // Get or create AI System
+      // Get or create AI System (company-owned asset)
       let system = await this.aiSystemRepository.findById(aiSystemId);
       if (!system) {
         system = new AiSystem({
           id: aiSystemId,
-          organizationId,
+          companyId,
           name: aiSystemId  // Use aiSystemId as name to ensure uniqueness
         });
         // create() now handles duplicates gracefully
@@ -26,16 +26,16 @@ class AssessmentService {
 
       const assessment = new Assessment({
         id: uuidv4(),
-        organizationId,
+        userId,
         aiSystemId,
         tier
       });
 
       await this.assessmentRepository.create(assessment);
-      logger.info({ assessmentId: assessment.id, tier, systemId: aiSystemId }, 'Assessment created');
+      logger.info({ assessmentId: assessment.id, tier, userId, systemId: aiSystemId }, 'Assessment created');
       return assessment;
     } catch (err) {
-      logger.error({ err, organizationId, aiSystemId, tier }, 'Failed to create assessment');
+      logger.error({ err, userId, companyId, aiSystemId, tier }, 'Failed to create assessment');
       throw err;
     }
   }
@@ -44,8 +44,8 @@ class AssessmentService {
     return this.assessmentRepository.findById(assessmentId);
   }
 
-  async getAssessmentsForOrg(organizationId) {
-    return this.assessmentRepository.findByOrg(organizationId);
+  async getAssessmentsForUser(userId) {
+    return this.assessmentRepository.findByUser(userId);
   }
 
   async recordAnswer(assessmentId, questionId, score, evidence = '', attestation = '') {
@@ -101,7 +101,7 @@ class AssessmentService {
     return {
       assessment: {
         id: assessment.id,
-        organizationId: assessment.organizationId,
+        userId: assessment.userId,
         aiSystemId: assessment.aiSystemId,
         completion: assessment.completionPercentage,
         overallScore: assessment.overallScore,
@@ -120,10 +120,10 @@ class AssessmentService {
     };
   }
 
-  async importAssessment(organizationId, data) {
+  async importAssessment(userId, data) {
     const assessment = new Assessment({
       id: data.assessment.id || uuidv4(),
-      organizationId,
+      userId,
       aiSystemId: data.assessment.aiSystemId,
       completionPercentage: data.assessment.completion || 0,
       overallScore: data.assessment.overallScore || 0,

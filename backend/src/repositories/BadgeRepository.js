@@ -9,13 +9,13 @@ class BadgeRepository extends BaseRepository {
   async create(badge) {
     const sql = `
       INSERT INTO badges
-      (id, assessment_id, organization_id, tier, score, issued_at, expires_at, verification_token, frameworks_included)
+      (id, assessment_id, company_id, tier, score, issued_at, expires_at, verification_token, frameworks_included)
       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
     `;
     await this.run(sql, [
       badge.id,
       badge.assessmentId,
-      badge.organizationId,
+      badge.companyId,
       badge.tier,
       badge.score,
       badge.issuedAt,
@@ -34,10 +34,10 @@ class BadgeRepository extends BaseRepository {
     return row ? this._mapToEntity(row) : null;
   }
 
-  async findByOrg(orgId) {
+  async findByCompany(companyId) {
     const rows = await this.all(
-      'SELECT * FROM badges WHERE organization_id = ? ORDER BY issued_at DESC',
-      [orgId]
+      'SELECT * FROM badges WHERE company_id = ? ORDER BY issued_at DESC',
+      [companyId]
     );
     return rows.map(row => this._mapToEntity(row));
   }
@@ -65,7 +65,7 @@ class BadgeRepository extends BaseRepository {
     return new Badge({
       id: row.id,
       assessmentId: row.assessment_id,
-      organizationId: row.organization_id,
+      companyId: row.company_id,
       tier: row.tier,
       score: row.score,
       issuedAt: new Date(row.issued_at),

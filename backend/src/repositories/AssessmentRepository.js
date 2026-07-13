@@ -9,12 +9,12 @@ class AssessmentRepository extends BaseRepository {
   async create(assessment) {
     const sql = `
       INSERT INTO assessments
-      (id, organization_id, ai_system_id, tier, completion_percentage, overall_score, badge_tier, critical_gating_active, completed_at, created_at, updated_at)
+      (id, user_id, ai_system_id, tier, completion_percentage, overall_score, badge_tier, critical_gating_active, completed_at, created_at, updated_at)
       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     `;
     await this.run(sql, [
       assessment.id,
-      assessment.organizationId,
+      assessment.userId,
       assessment.aiSystemId,
       assessment.tier,
       assessment.completionPercentage,
@@ -46,18 +46,18 @@ class AssessmentRepository extends BaseRepository {
     return assessment;
   }
 
-  async findByOrgAndSystem(orgId, systemId) {
+  async findByUserAndSystem(userId, systemId) {
     const row = await this.get(
-      'SELECT * FROM assessments WHERE organization_id = ? AND ai_system_id = ? ORDER BY created_at DESC LIMIT 1',
-      [orgId, systemId]
+      'SELECT * FROM assessments WHERE user_id = ? AND ai_system_id = ? ORDER BY created_at DESC LIMIT 1',
+      [userId, systemId]
     );
     return row ? this._mapToEntity(row) : null;
   }
 
-  async findByOrg(orgId) {
+  async findByUser(userId) {
     const rows = await this.all(
-      'SELECT * FROM assessments WHERE organization_id = ? ORDER BY created_at DESC',
-      [orgId]
+      'SELECT * FROM assessments WHERE user_id = ? ORDER BY created_at DESC',
+      [userId]
     );
     return rows.map(row => this._mapToEntity(row));
   }
@@ -70,7 +70,7 @@ class AssessmentRepository extends BaseRepository {
   _mapToEntity(row) {
     return new Assessment({
       id: row.id,
-      organizationId: row.organization_id,
+      userId: row.user_id,
       aiSystemId: row.ai_system_id,
       tier: row.tier,
       completionPercentage: row.completion_percentage,

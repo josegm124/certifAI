@@ -8,12 +8,13 @@ class AuditLogRepository extends BaseRepository {
 
   async create(auditLog) {
     const sql = `
-      INSERT INTO audit_logs (id, organization_id, assessment_id, action, details, ip_address, created_at)
-      VALUES (?, ?, ?, ?, ?, ?, ?)
+      INSERT INTO audit_logs (id, company_id, user_id, assessment_id, action, details, ip_address, created_at)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?)
     `;
     await this.run(sql, [
       auditLog.id,
-      auditLog.organizationId,
+      auditLog.companyId,
+      auditLog.userId,
       auditLog.assessmentId,
       auditLog.action,
       auditLog.details ? JSON.stringify(auditLog.details) : null,
@@ -23,10 +24,18 @@ class AuditLogRepository extends BaseRepository {
     return auditLog;
   }
 
-  async findByOrg(orgId, limit = 100) {
+  async findByCompany(companyId, limit = 100) {
     const rows = await this.all(
-      'SELECT * FROM audit_logs WHERE organization_id = ? ORDER BY created_at DESC LIMIT ?',
-      [orgId, limit]
+      'SELECT * FROM audit_logs WHERE company_id = ? ORDER BY created_at DESC LIMIT ?',
+      [companyId, limit]
+    );
+    return rows.map(row => this._mapToEntity(row));
+  }
+
+  async findByUser(userId, limit = 100) {
+    const rows = await this.all(
+      'SELECT * FROM audit_logs WHERE user_id = ? ORDER BY created_at DESC LIMIT ?',
+      [userId, limit]
     );
     return rows.map(row => this._mapToEntity(row));
   }
@@ -42,7 +51,8 @@ class AuditLogRepository extends BaseRepository {
   _mapToEntity(row) {
     return new AuditLog({
       id: row.id,
-      organizationId: row.organization_id,
+      companyId: row.company_id,
+      userId: row.user_id,
       assessmentId: row.assessment_id,
       action: row.action,
       details: row.details ? JSON.parse(row.details) : null,

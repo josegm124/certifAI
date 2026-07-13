@@ -171,7 +171,8 @@ export default function App() {
   const [role, setRole] = useState("");   // job title / role (lead qualification)
   const [answers, setAnswers] = useState({});
   const [idx, setIdx] = useState(0);
-  const [orgId, setOrgId] = useState("");
+  const [userId, setUserId] = useState("");     // the person who started this assessment
+  const [companyId, setCompanyId] = useState(""); // the company being assessed (badges/ai_systems belong here)
   const [aiSystemId, setAiSystemId] = useState("");
   const [assessmentId, setAssessmentId] = useState("");
   const [badge, setBadge] = useState(null);
@@ -181,18 +182,19 @@ export default function App() {
 
   async function startAssessment(selectedTier) {
     try {
-      // 1. Create org in backend
-      const orgRes = await fetch(`${API_BASE}/organizations`, {
+      // 1. Register the lead (finds-or-creates the company by name, the user by email)
+      const userRes = await fetch(`${API_BASE}/companies`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ name: org, email: email.trim(), role: role.trim() })
       });
-      if (!orgRes.ok) {
-        const errData = await orgRes.json().catch(() => ({}));
-        throw new Error(errData.error || `Backend error ${orgRes.status}`);
+      if (!userRes.ok) {
+        const errData = await userRes.json().catch(() => ({}));
+        throw new Error(errData.error || `Backend error ${userRes.status}`);
       }
-      const orgData = await orgRes.json();
-      setOrgId(orgData.id);
+      const userData = await userRes.json();
+      setUserId(userData.userId);
+      setCompanyId(userData.companyId);
 
       // 2. Create AI System (same for both tier 1 and tier 2)
       const systemId = `system-${Date.now()}`;
@@ -202,7 +204,7 @@ export default function App() {
       const assessRes = await fetch(`${API_BASE}/assessments`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ organizationId: orgData.id, aiSystemId: systemId, tier: selectedTier === 1 ? "free" : "professional" })
+        body: JSON.stringify({ userId: userData.userId, aiSystemId: systemId, tier: selectedTier === 1 ? "free" : "professional" })
       });
       const assessData = await assessRes.json();
       setAssessmentId(assessData.id);
@@ -259,13 +261,13 @@ export default function App() {
   }
 
   async function upgradeAssessment() {
-    if (!assessmentId || !orgId || !aiSystemId) return;
+    if (!assessmentId || !userId || !aiSystemId) return;
     try {
       // 1. Create new assessment (tier=professional) with SAME aiSystemId
       const assessRes = await fetch(`${API_BASE}/assessments`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ organizationId: orgId, aiSystemId: aiSystemId, tier: "professional" })
+        body: JSON.stringify({ userId: userId, aiSystemId: aiSystemId, tier: "professional" })
       });
       if (!assessRes.ok) throw new Error(`Backend error: ${assessRes.status} ${assessRes.statusText}`);
       const newAssess = await assessRes.json();
@@ -317,7 +319,7 @@ export default function App() {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          organizationId: orgId,
+          companyId: companyId,
           tier: scoring.badgeTier,
           overallScore: scoring.overallScore,
           frameworks: ["aiact", "gdpr", "oecd", "iso", "nist"]
@@ -354,17 +356,18 @@ export default function App() {
     setScoring(null);
 
     try {
-      const orgRes = await fetch(`${API_BASE}/organizations`, {
+      const userRes = await fetch(`${API_BASE}/companies`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ name: d.org, email: (d.email || "").trim(), role: (d.role || "").trim() })
       });
-      if (!orgRes.ok) {
-        const errData = await orgRes.json().catch(() => ({}));
-        throw new Error(errData.error || `Backend error ${orgRes.status}`);
+      if (!userRes.ok) {
+        const errData = await userRes.json().catch(() => ({}));
+        throw new Error(errData.error || `Backend error ${userRes.status}`);
       }
-      const orgData = await orgRes.json();
-      setOrgId(orgData.id);
+      const userData = await userRes.json();
+      setUserId(userData.userId);
+      setCompanyId(userData.companyId);
 
       const systemId = `system-${Date.now()}`;
       setAiSystemId(systemId);
@@ -372,7 +375,7 @@ export default function App() {
       const assessRes = await fetch(`${API_BASE}/assessments`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ organizationId: orgData.id, aiSystemId: systemId, tier: restoredTier === 1 ? "free" : "professional" })
+        body: JSON.stringify({ userId: userData.userId, aiSystemId: systemId, tier: restoredTier === 1 ? "free" : "professional" })
       });
       if (!assessRes.ok) throw new Error(`Backend error ${assessRes.status}`);
       const assessData = await assessRes.json();

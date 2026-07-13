@@ -9,14 +9,14 @@ class BadgeService {
   }
 
   // Crear badge después de assessment completo
-  async issueBadge(assessmentId, organizationId, tier, overallScore, frameworks = []) {
+  async issueBadge(assessmentId, companyId, tier, overallScore, frameworks = []) {
     const expiresAt = new Date();
     expiresAt.setFullYear(expiresAt.getFullYear() + 1); // 12 meses
 
     const badge = new Badge({
       id: uuidv4(),
       assessmentId,
-      organizationId,
+      companyId,
       tier,
       score: overallScore,
       issuedAt: new Date(),
@@ -27,7 +27,7 @@ class BadgeService {
 
     await this.badgeRepository.create(badge);
     logger.info(
-      { badgeId: badge.id, tier, organizationId },
+      { badgeId: badge.id, tier, companyId },
       'Badge issued'
     );
 
@@ -73,14 +73,14 @@ class BadgeService {
   }
 
   // Reissue (renewal) de un badge
-  async renewBadge(assessmentId, organizationId, tier, overallScore, frameworks) {
+  async renewBadge(assessmentId, companyId, tier, overallScore, frameworks) {
     // Invalidar badge anterior
     const oldBadge = await this.badgeRepository.findByAssessment(assessmentId);
 
     // Crear nuevo badge
     const newBadge = await this.issueBadge(
       assessmentId,
-      organizationId,
+      companyId,
       tier,
       overallScore,
       frameworks
