@@ -114,6 +114,11 @@ function completion(answers) {
   const answered = QUESTIONS.filter((q) => answers[String(q.id)]?.score != null).length;
   return { answered, total: QUESTIONS.length, pct: Math.round((answered / QUESTIONS.length) * 100) };
 }
+// Resume point: first unanswered question, or the last question if everything is answered.
+function resumeIdx(answers) {
+  const i = QUESTIONS.findIndex((q) => answers[String(q.id)]?.score == null);
+  return i === -1 ? QUESTIONS.length - 1 : i;
+}
 
 /* ---------- THEME ---------- */
 const C = {
@@ -281,7 +286,7 @@ export default function App() {
       setAssessmentId(newAssess.id);
       setTier(2);
       setStage("assess");
-      setIdx(0);
+      setIdx(resumeIdx(answers));
       setBadge(null);
       setScoring(null);
 
@@ -405,7 +410,7 @@ export default function App() {
         <Assessment tier={tier} answers={answers} idx={idx} setIdx={setIdx} setAnswer={setAnswer} comp={comp} onFinish={async () => { await computeScores(); setStage("results"); }} onExport={exportJSON} />
       )}
       {stage === "results" && (
-        <Results org={org} tier={tier} answers={answers} scoring={scoring} badge={badge} onBack={() => { setStage("assess"); setIdx(0); }} onExport={exportJSON} onUpgrade={upgradeAssessment} onIssueBadge={issueBadge} />
+        <Results org={org} tier={tier} answers={answers} scoring={scoring} badge={badge} onBack={() => { setStage("assess"); setIdx(resumeIdx(answers)); }} onExport={exportJSON} onUpgrade={upgradeAssessment} onIssueBadge={issueBadge} />
       )}
     </div>
   );
