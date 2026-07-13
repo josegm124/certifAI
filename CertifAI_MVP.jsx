@@ -205,15 +205,17 @@ export default function App() {
   }
 
   async function setAnswer(qid, patch) {
-    setAnswers((p) => ({ ...p, [qid]: { ...p[qid], ...patch } }));
+    const current = answers[String(qid)] || {};
+    const updated = { ...current, ...patch };
+    setAnswers((p) => ({ ...p, [String(qid)]: updated }));
 
-    // Save to backend
-    if (assessmentId) {
+    // Save to backend only if there's a score (required by backend)
+    if (assessmentId && updated.score != null) {
       try {
         await fetch(`${API_BASE}/assessments/${assessmentId}/answers`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ questionId: String(qid), score: patch.score, evidence: patch.evidence || "", attestation: patch.attestation || "" })
+          body: JSON.stringify({ questionId: String(qid), score: updated.score, evidence: updated.note || "", attestation: updated.attested ? "confirmed" : "" })
         });
       } catch (err) {
         console.error("Error saving answer:", err);
