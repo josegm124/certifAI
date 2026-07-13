@@ -138,6 +138,8 @@ export default function App() {
   const [stage, setStage] = useState("intro"); // intro | assess | results
   const [tier, setTier] = useState(1); // 1 = free (score+note), 2 = evidence attest
   const [org, setOrg] = useState("");
+  const [email, setEmail] = useState(""); // real corporate email (lead contact)
+  const [role, setRole] = useState("");   // job title / role (lead qualification)
   const [answers, setAnswers] = useState({});
   const [idx, setIdx] = useState(0);
   const [orgId, setOrgId] = useState("");
@@ -154,8 +156,12 @@ export default function App() {
       const orgRes = await fetch(`${API_BASE}/organizations`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ name: org, email: `${org.replace(/\s+/g, "").toLowerCase()}@certifai.local` })
+        body: JSON.stringify({ name: org, email: email.trim(), role: role.trim() })
       });
+      if (!orgRes.ok) {
+        const errData = await orgRes.json().catch(() => ({}));
+        throw new Error(errData.error || `Backend error ${orgRes.status}`);
+      }
       const orgData = await orgRes.json();
       setOrgId(orgData.id);
 
@@ -177,7 +183,7 @@ export default function App() {
       setIdx(0);
     } catch (err) {
       console.error("Error starting assessment:", err);
-      alert("Failed to start assessment. Check backend is running on port 3001.");
+      alert(`Failed to start assessment: ${err.message}. Check backend is running on port 3001.`);
     }
   }
 
@@ -304,7 +310,7 @@ export default function App() {
     <div style={{ minHeight: "100vh", background: C.paper, color: C.ink, fontFamily: "'Inter', system-ui, sans-serif" }}>
       <style>{CSS}</style>
       <Header stage={stage} comp={comp} onHome={() => setStage("intro")} />
-      {stage === "intro" && <Intro org={org} setOrg={setOrg} onStart={startAssessment} onImport={importJSON} />}
+      {stage === "intro" && <Intro org={org} setOrg={setOrg} email={email} setEmail={setEmail} role={role} setRole={setRole} onStart={startAssessment} onImport={importJSON} />}
       {stage === "assess" && (
         <Assessment tier={tier} answers={answers} idx={idx} setIdx={setIdx} setAnswer={setAnswer} comp={comp} onFinish={async () => { await computeScores(); setStage("results"); }} />
       )}
@@ -346,8 +352,11 @@ function Mark() {
 }
 
 /* ---------- INTRO ---------- */
-function Intro({ org, setOrg, onStart, onImport }) {
+const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+function Intro({ org, setOrg, email, setEmail, role, setRole, onStart, onImport }) {
   const [picked, setPicked] = useState(null);
+  const emailValid = EMAIL_RE.test(email.trim());
+  const canStart = org.trim() && emailValid && role.trim();
   return (
     <main className="wrap">
       <div className="intro-grid">
@@ -358,6 +367,15 @@ function Intro({ org, setOrg, onStart, onImport }) {
           <div className="field">
             <label className="lbl" htmlFor="org">Organisation name</label>
             <input id="org" className="inp" value={org} onChange={(e) => setOrg(e.target.value)} placeholder="e.g. Northstar Recruitment AI" />
+          </div>
+          <div className="field">
+            <label className="lbl" htmlFor="email">Work email</label>
+            <input id="email" type="email" className={`inp ${email && !emailValid ? "inp-err" : ""}`} value={email} onChange={(e) => setEmail(e.target.value)} placeholder="e.g. jane.doe@northstar.com" />
+            {email && !emailValid && <div className="field-err">Enter a valid work email address.</div>}
+          </div>
+          <div className="field">
+            <label className="lbl" htmlFor="role">Your role</label>
+            <input id="role" className="inp" value={role} onChange={(e) => setRole(e.target.value)} placeholder="e.g. Head of Compliance, CISO, DPO" />
           </div>
           <div className="import-row">
             <label className="link-btn">
@@ -373,14 +391,14 @@ function Intro({ org, setOrg, onStart, onImport }) {
             tag="Tier 1 · Free" name="Readiness Snapshot"
             points={["Self-scored across all 32 controls", "Maturity by domain + framework", "Prioritised gap profile", "No badge issued"]}
             cta="Start free assessment"
-            onStart={() => onStart(1)} disabled={!org.trim()}
+            onStart={() => onStart(1)} disabled={!canStart}
           />
           <TierCard
             active={picked === 2} onClick={() => setPicked(2)} accent
             tag="Tier 2 · Evidence" name="Evidence & Badge"
             points={["Everything in Tier 1", "Attest + note evidence per control", "Earn Aligned or Assured badge", "Audit-ready evidence record"]}
             cta="Start with evidence"
-            onStart={() => onStart(2)} disabled={!org.trim()}
+            onStart={() => onStart(2)} disabled={!canStart}
           />
         </section>
       </div>
@@ -404,7 +422,7 @@ function TierCard({ active, onClick, tag, name, points, cta, onStart, disabled, 
       <button className={`btn ${accent ? "btn-accent" : "btn-primary"}`} disabled={disabled} onClick={(e) => { e.stopPropagation(); onStart(); }}>
         {cta}
       </button>
-      {disabled && <div className="tier-hint">Enter an organisation name to begin</div>}
+      {disabled && <div className="tier-hint">Complete organisation, work email and role to begin</div>}
     </div>
   );
 }
@@ -799,6 +817,9 @@ body{margin:0}
 .lbl{display:block;font-size:12.5px;font-weight:600;color:${C.inkSoft};margin-bottom:7px;letter-spacing:.01em}
 .inp{width:100%;padding:13px 15px;font-size:15px;border:1.5px solid ${C.line};border-radius:10px;background:${C.panel};color:${C.ink};outline:none;transition:border-color .15s,box-shadow .15s;font-family:inherit}
 .inp:focus{border-color:${C.pine};box-shadow:0 0 0 3px ${C.pineSoft}}
+.inp-err{border-color:${C.red}}
+.inp-err:focus{border-color:${C.red};box-shadow:0 0 0 3px ${C.redSoft}}
+.field-err{font-size:12px;color:${C.red};margin-top:6px}
 .import-row{margin-top:6px}
 .link-btn{font-size:13.5px;color:${C.ocean};cursor:pointer;font-weight:600;text-decoration:underline;text-underline-offset:3px}
 .tiers{display:flex;flex-direction:column;gap:16px}
