@@ -400,7 +400,7 @@ export default function App() {
       <Header stage={stage} comp={comp} onHome={() => setStage("intro")} />
       {stage === "intro" && <Intro org={org} setOrg={setOrg} email={email} setEmail={setEmail} role={role} setRole={setRole} onStart={startAssessment} onImport={importJSON} />}
       {stage === "assess" && (
-        <Assessment tier={tier} answers={answers} idx={idx} setIdx={setIdx} setAnswer={setAnswer} comp={comp} onFinish={async () => { await computeScores(); setStage("results"); }} />
+        <Assessment tier={tier} answers={answers} idx={idx} setIdx={setIdx} setAnswer={setAnswer} comp={comp} onFinish={async () => { await computeScores(); setStage("results"); }} onExport={exportJSON} />
       )}
       {stage === "results" && (
         <Results org={org} tier={tier} answers={answers} scoring={scoring} badge={badge} onBack={() => setStage("assess")} onExport={exportJSON} onUpgrade={upgradeAssessment} onIssueBadge={issueBadge} />
@@ -540,7 +540,7 @@ function DomainStrip() {
 }
 
 /* ---------- ASSESSMENT ---------- */
-function Assessment({ tier, answers, idx, setIdx, setAnswer, comp, onFinish }) {
+function Assessment({ tier, answers, idx, setIdx, setAnswer, comp, onFinish, onExport }) {
   const q = QUESTIONS[idx];
   const a = answers[String(q.id)] || {};
   const dom = DOMAINS.find((d) => d.id === q.domain);
@@ -611,7 +611,10 @@ function Assessment({ tier, answers, idx, setIdx, setAnswer, comp, onFinish }) {
               {isLast && <button className="btn btn-accent" onClick={onFinish}>See results →</button>}
             </div>
           </div>
-          <button className="finish-link" onClick={onFinish}>Finish & view results now ({comp.answered}/{comp.total} answered)</button>
+          <div className="finish-row">
+            <button className="finish-link" onClick={onFinish}>Finish assessment ({comp.answered}/{comp.total} answered)</button>
+            <button className="finish-link finish-link-secondary" onClick={onExport}>Download your progress to continue later</button>
+          </div>
         </section>
       </div>
     </main>
@@ -674,7 +677,7 @@ function Results({ org, tier, answers, scoring, badge, onBack, onExport, onUpgra
         </div>
         <div className="res-actions">
           <button className="btn btn-ghost" onClick={onBack}>← Edit answers</button>
-          <button className="btn btn-ghost" onClick={onExport}>Save / export</button>
+          <button className="btn btn-ghost" onClick={onExport}>Download progress</button>
           <button className="btn btn-ghost" onClick={() => window.print()}>Print / PDF</button>
         </div>
       </div>
@@ -1007,8 +1010,10 @@ body{margin:0}
 /* nav */
 .nav{display:flex;justify-content:space-between;align-items:center;gap:12px;margin-top:8px}
 .nav-right{display:flex;gap:10px}
-.finish-link{display:block;margin:18px auto 0;background:none;border:0;color:${C.mute};font-size:13px;cursor:pointer;text-decoration:underline;text-underline-offset:3px;font-family:inherit}
+.finish-row{display:flex;gap:16px;justify-content:center;margin:20px 0 0;flex-wrap:wrap}
+.finish-link{background:none;border:0;color:${C.mute};font-size:13px;cursor:pointer;text-decoration:underline;text-underline-offset:3px;font-family:inherit;padding:0}
 .finish-link:hover{color:${C.inkSoft}}
+.finish-link-secondary{color:${C.ocean};font-weight:600}
 
 /* results */
 .res-top{display:flex;justify-content:space-between;align-items:flex-end;gap:16px;margin-bottom:22px;flex-wrap:wrap}
