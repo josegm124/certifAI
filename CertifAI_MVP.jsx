@@ -114,9 +114,16 @@ function completion(answers) {
   const answered = QUESTIONS.filter((q) => answers[String(q.id)]?.score != null).length;
   return { answered, total: QUESTIONS.length, pct: Math.round((answered / QUESTIONS.length) * 100) };
 }
-// Resume point: first unanswered question, or the last question if everything is answered.
-function resumeIdx(answers) {
-  const i = QUESTIONS.findIndex((q) => answers[String(q.id)]?.score == null);
+// Resume point. Tier 1: first question without a score. Tier 2: score is usually
+// already 100% (copied from Tier 1), so "unanswered" can't be the signal — instead
+// resume at the first question not yet passed through in the Tier 2 evidence pass
+// (reviewedT2, set when the user moves past a question while in Tier 2). Evidence
+// itself stays optional; reviewedT2 only tracks "did they reach/pass this one".
+function resumeIdx(answers, tier) {
+  const notDone = tier === 2
+    ? (q) => !answers[String(q.id)]?.reviewedT2
+    : (q) => answers[String(q.id)]?.score == null;
+  const i = QUESTIONS.findIndex(notDone);
   return i === -1 ? QUESTIONS.length - 1 : i;
 }
 
@@ -209,6 +216,12 @@ export default function App() {
     }
   }
 
+  // Local-only marker: "the user moved past this question in Tier 2's evidence
+  // pass". No backend call — it's purely a navigation/resume signal.
+  function markVisited(qid) {
+    setAnswers((p) => ({ ...p, [String(qid)]: { ...p[String(qid)], reviewedT2: true } }));
+  }
+
   async function setAnswer(qid, patch) {
     const current = answers[String(qid)] || {};
     const updated = { ...current, ...patch };
@@ -286,7 +299,7 @@ export default function App() {
       setAssessmentId(newAssess.id);
       setTier(2);
       setStage("assess");
-      setIdx(resumeIdx(answers));
+      setIdx(resumeIdx(answers, 2));
       setBadge(null);
       setScoring(null);
 
@@ -407,10 +420,10 @@ export default function App() {
       <Header stage={stage} comp={comp} onHome={() => setStage("intro")} />
       {stage === "intro" && <Intro org={org} setOrg={setOrg} email={email} setEmail={setEmail} role={role} setRole={setRole} onStart={startAssessment} onImport={importJSON} />}
       {stage === "assess" && (
-        <Assessment tier={tier} answers={answers} idx={idx} setIdx={setIdx} setAnswer={setAnswer} comp={comp} onFinish={async () => { await computeScores(); setStage("results"); }} onExport={exportJSON} />
+        <Assessment tier={tier} answers={answers} idx={idx} setIdx={setIdx} setAnswer={setAnswer} markVisited={markVisited} comp={comp} onFinish={async () => { await computeScores(); setStage("results"); }} onExport={exportJSON} />
       )}
       {stage === "results" && (
-        <Results org={org} tier={tier} answers={answers} scoring={scoring} badge={badge} onBack={() => { setStage("assess"); setIdx(resumeIdx(answers)); }} onExport={exportJSON} onUpgrade={upgradeAssessment} onIssueBadge={issueBadge} />
+        <Results org={org} tier={tier} answers={answers} scoring={scoring} badge={badge} onBack={() => { setStage("assess"); setIdx(resumeIdx(answers, tier)); }} onExport={exportJSON} onUpgrade={upgradeAssessment} onIssueBadge={issueBadge} />
       )}
     </div>
   );
@@ -547,7 +560,7 @@ function DomainStrip() {
 }
 
 /* ---------- ASSESSMENT ---------- */
-function Assessment({ tier, answers, idx, setIdx, setAnswer, comp, onFinish, onExport }) {
+function Assessment({ tier, answers, idx, setIdx, setAnswer, markVisited, comp, onFinish, onExport }) {
   const q = QUESTIONS[idx];
   const a = answers[String(q.id)] || {};
   const dom = DOMAINS.find((d) => d.id === q.domain);
@@ -613,9 +626,9 @@ function Assessment({ tier, answers, idx, setIdx, setAnswer, comp, onFinish, onE
           <div className="nav">
             <button className="btn btn-ghost" disabled={isFirst} onClick={() => setIdx(idx - 1)}>← Previous</button>
             <div className="nav-right">
-              {a.score != null && !isLast && <button className="btn btn-primary" onClick={() => setIdx(idx + 1)}>Next →</button>}
-              {a.score == null && !isLast && <button className="btn btn-ghost" onClick={() => setIdx(idx + 1)}>Skip →</button>}
-              {isLast && <button className="btn btn-accent" onClick={onFinish}>See results →</button>}
+              {a.score != null && !isLast && <button className="btn btn-primary" onClick={() => { if (tier === 2) markVisited(q.id); setIdx(idx + 1); }}>Next →</button>}
+              {a.score == null && !isLast && <button className="btn btn-ghost" onClick={() => { if (tier === 2) markVisited(q.id); setIdx(idx + 1); }}>Skip →</button>}
+              {isLast && <button className="btn btn-accent" onClick={() => { if (tier === 2) markVisited(q.id); onFinish(); }}>See results →</button>}
             </div>
           </div>
           <div className="finish-row">
