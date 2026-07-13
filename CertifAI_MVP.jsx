@@ -403,7 +403,7 @@ export default function App() {
         <Assessment tier={tier} answers={answers} idx={idx} setIdx={setIdx} setAnswer={setAnswer} comp={comp} onFinish={async () => { await computeScores(); setStage("results"); }} onExport={exportJSON} />
       )}
       {stage === "results" && (
-        <Results org={org} tier={tier} answers={answers} scoring={scoring} badge={badge} onBack={() => setStage("assess")} onExport={exportJSON} onUpgrade={upgradeAssessment} onIssueBadge={issueBadge} />
+        <Results org={org} tier={tier} answers={answers} scoring={scoring} badge={badge} onBack={() => { setStage("assess"); setIdx(0); }} onExport={exportJSON} onUpgrade={upgradeAssessment} onIssueBadge={issueBadge} />
       )}
     </div>
   );
