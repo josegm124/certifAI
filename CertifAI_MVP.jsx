@@ -632,7 +632,7 @@ function Assessment({ tier, answers, idx, setIdx, setAnswer, markVisited, comp, 
             </div>
           </div>
           <div className="finish-row">
-            <button className="finish-link" onClick={onFinish}>Finish assessment ({comp.answered}/{comp.total} answered)</button>
+            <button className="finish-link" onClick={onFinish}>Finish with what I have ({comp.answered}/{comp.total} answered)</button>
             <button className="finish-link finish-link-secondary" onClick={onExport}>Download your progress to continue later</button>
           </div>
         </section>
@@ -987,7 +987,7 @@ body{margin:0}
 .dot-cur{box-shadow:0 0 0 3px ${C.pineSoft};border-color:${C.pine}}
 .assess-main{min-width:0}
 .q-head{display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:14px}
-.q-num{font-family:'Lora',serif;font-size:15px;font-weight:700;color:${C.pine}}
+.q-num{font-family:'Lora',serif;font-size:22px;font-weight:700;color:${C.pine}}
 .q-of{color:${C.mute};font-weight:400}
 .q-crit{font-size:10.5px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:${C.red};background:${C.redSoft};padding:3px 9px;border-radius:99px}
 .q-frameworks{font-size:11.5px;color:${C.mute};margin-left:auto}
