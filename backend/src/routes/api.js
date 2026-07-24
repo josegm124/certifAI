@@ -147,7 +147,7 @@ const createRoutes = (services) => {
   // SCORING & METRICS
   router.post('/assessments/:assessmentId/compute-score', async (req, res, next) => {
     try {
-      const { questionMapping } = req.body;
+      const { questionMapping, selfCertified, selfCertifiedAt } = req.body;
       const assessment = await assessmentService.getAssessment(req.params.assessmentId);
 
       if (!assessment) return res.status(404).json({ error: 'Assessment not found' });
@@ -155,7 +155,13 @@ const createRoutes = (services) => {
       const domainScores = await scoringService.computeDomainScores(req.params.assessmentId, questionMapping);
       const overallScore = scoringService.computeOverallScore(domainScores);
       const criticalGating = await scoringService.checkCriticalGating(req.params.assessmentId, questionMapping);
-      const { tier: badgeTier } = scoringService.resolveBadgeTier(overallScore, criticalGating);
+      let { tier: badgeTier } = scoringService.resolveBadgeTier(overallScore, criticalGating);
+
+      // Advanced tier requires self-certification; downgrade to Assured if not certified
+      if (badgeTier === 'advanced' && !selfCertified) {
+        badgeTier = 'assured';
+      }
+
       const completion = await scoringService.computeCompletion(req.params.assessmentId, Object.keys(questionMapping).length);
       const gaps = await scoringService.computeGapAnalysis(req.params.assessmentId, domainScores, questionMapping);
 
@@ -164,7 +170,9 @@ const createRoutes = (services) => {
         completion,
         overallScore,
         badgeTier,
-        criticalGating
+        criticalGating,
+        selfCertified,
+        selfCertifiedAt
       );
 
       res.json({

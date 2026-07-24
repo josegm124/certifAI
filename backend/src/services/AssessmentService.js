@@ -74,12 +74,14 @@ class AssessmentService {
     return answer;
   }
 
-  async updateAssessmentMetrics(assessmentId, completion, overallScore, badgeTier, criticalGating) {
+  async updateAssessmentMetrics(assessmentId, completion, overallScore, badgeTier, criticalGating, selfCertified, selfCertifiedAt) {
     const assessment = await this.assessmentRepository.findById(assessmentId);
     assessment.completionPercentage = completion.percentage;
     assessment.overallScore = overallScore;
     assessment.badgeTier = badgeTier;
     assessment.criticalGatingActive = criticalGating;
+    if (selfCertified !== undefined) assessment.selfCertified = selfCertified;
+    if (selfCertifiedAt !== undefined) assessment.selfCertifiedAt = selfCertifiedAt;
 
     if (completion.percentage === 100) {
       assessment.completedAt = new Date();

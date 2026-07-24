@@ -9,8 +9,8 @@ class AssessmentRepository extends BaseRepository {
   async create(assessment) {
     const sql = `
       INSERT INTO assessments
-      (id, user_id, ai_system_id, tier, completion_percentage, overall_score, badge_tier, critical_gating_active, completed_at, created_at, updated_at)
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+      (id, user_id, ai_system_id, tier, completion_percentage, overall_score, badge_tier, critical_gating_active, self_certified, self_certified_at, completed_at, created_at, updated_at)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     `;
     await this.run(sql, [
       assessment.id,
@@ -21,6 +21,8 @@ class AssessmentRepository extends BaseRepository {
       assessment.overallScore,
       assessment.badgeTier,
       assessment.criticalGatingActive ? 1 : 0,
+      assessment.selfCertified ? 1 : 0,
+      assessment.selfCertifiedAt,
       assessment.completedAt,
       assessment.createdAt,
       assessment.updatedAt
@@ -31,7 +33,7 @@ class AssessmentRepository extends BaseRepository {
   async update(assessment) {
     const sql = `
       UPDATE assessments
-      SET completion_percentage = ?, overall_score = ?, badge_tier = ?, critical_gating_active = ?, completed_at = ?, updated_at = ?
+      SET completion_percentage = ?, overall_score = ?, badge_tier = ?, critical_gating_active = ?, self_certified = ?, self_certified_at = ?, completed_at = ?, updated_at = ?
       WHERE id = ?
     `;
     await this.run(sql, [
@@ -39,6 +41,8 @@ class AssessmentRepository extends BaseRepository {
       assessment.overallScore,
       assessment.badgeTier,
       assessment.criticalGatingActive ? 1 : 0,
+      assessment.selfCertified ? 1 : 0,
+      assessment.selfCertifiedAt,
       assessment.completedAt,
       new Date(),
       assessment.id
@@ -77,6 +81,8 @@ class AssessmentRepository extends BaseRepository {
       overallScore: row.overall_score,
       badgeTier: row.badge_tier,
       criticalGatingActive: row.critical_gating_active === 1,
+      selfCertified: row.self_certified === 1,
+      selfCertifiedAt: row.self_certified_at ? new Date(row.self_certified_at) : null,
       completedAt: row.completed_at ? new Date(row.completed_at) : null,
       createdAt: new Date(row.created_at),
       updatedAt: new Date(row.updated_at)

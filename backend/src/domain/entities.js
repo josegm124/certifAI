@@ -12,7 +12,8 @@ const TIERS = {
 const BADGE_TIERS = {
   AWARE: 'aware',
   ALIGNED: 'aligned',
-  ASSURED: 'assured'
+  ASSURED: 'assured',
+  ADVANCED: 'advanced'
 };
 
 // Company: the business entity being assessed. Deduplicated by name so the
@@ -90,6 +91,8 @@ class Assessment {
     overallScore = 0,
     badgeTier = BADGE_TIERS.AWARE,
     criticalGatingActive = false,
+    selfCertified = false,
+    selfCertifiedAt = null,
     completedAt = null,
     createdAt = new Date(),
     updatedAt = new Date()
@@ -102,6 +105,8 @@ class Assessment {
     this.overallScore = overallScore;
     this.badgeTier = badgeTier;
     this.criticalGatingActive = criticalGatingActive;
+    this.selfCertified = selfCertified;
+    this.selfCertifiedAt = selfCertifiedAt;
     this.completedAt = completedAt;
     this.createdAt = createdAt;
     this.updatedAt = updatedAt;

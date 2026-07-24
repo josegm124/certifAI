@@ -8,23 +8,24 @@ Write-Host "====== CERTIFAI HAPPY PATH TEST ======" -ForegroundColor Cyan
 Write-Host ""
 
 Try {
-  # ========== STEP 1: Create Organization ==========
-  Write-Host "[1/6] Creating Organization..." -ForegroundColor Green
-  $orgBody = @{ name = $orgName; email = $orgEmail } | ConvertTo-Json
-  $org = Invoke-RestMethod -Uri "$API/organizations" -Method POST -Body $orgBody -ContentType "application/json"
-  $orgId = $org.id
-  Write-Host "      [OK] ID: $orgId" -ForegroundColor Green
+  # ========== STEP 1: Create Company + User (lead) ==========
+  Write-Host "[1/6] Creating Company + User..." -ForegroundColor Green
+  $orgBody = @{ name = $orgName; email = $orgEmail; role = "Compliance/Risk" } | ConvertTo-Json
+  $org = Invoke-RestMethod -Uri "$API/companies" -Method POST -Body $orgBody -ContentType "application/json"
+  $userId = $org.userId
+  $companyId = $org.companyId
+  Write-Host "      [OK] userId: $userId  companyId: $companyId" -ForegroundColor Green
   Write-Host ""
 
   # ========== STEP 2: Create Assessments ==========
   Write-Host "[2/6] Creating Tier 1 & Tier 2 Assessments..." -ForegroundColor Green
   $systemId = "system-$(Get-Random -Minimum 100000 -Maximum 999999)"
 
-  $assess1Body = @{ organizationId = $orgId; aiSystemId = $systemId; tier = "free" } | ConvertTo-Json
+  $assess1Body = @{ userId = $userId; aiSystemId = $systemId; tier = "free" } | ConvertTo-Json
   $assess1 = Invoke-RestMethod -Uri "$API/assessments" -Method POST -Body $assess1Body -ContentType "application/json"
   $assessId1 = $assess1.id
 
-  $assess2Body = @{ organizationId = $orgId; aiSystemId = $systemId; tier = "professional" } | ConvertTo-Json
+  $assess2Body = @{ userId = $userId; aiSystemId = $systemId; tier = "professional" } | ConvertTo-Json
   $assess2 = Invoke-RestMethod -Uri "$API/assessments" -Method POST -Body $assess2Body -ContentType "application/json"
   $assessId2 = $assess2.id
 
@@ -33,10 +34,10 @@ Try {
   Write-Host ""
 
   # ========== STEP 3: Record Answers ==========
-  Write-Host "[3/6] Recording 32 Answers x 2 Assessments..." -ForegroundColor Green
+  Write-Host "[3/6] Recording 36 Answers x 2 Assessments..." -ForegroundColor Green
   $count = 0
   foreach ($aId in @($assessId1, $assessId2)) {
-    for ($i = 1; $i -le 32; $i++) {
+    for ($i = 1; $i -le 36; $i++) {
       $score = (3 + ($i % 3))
       $ansBody = @{
         questionId = [string]$i
@@ -49,14 +50,27 @@ Try {
       if ($ans.id) { $count++ }
     }
   }
-  Write-Host "      [OK] Saved $count/64 answers" -ForegroundColor Green
+  Write-Host "      [OK] Saved $count/72 answers" -ForegroundColor Green
   Write-Host ""
 
   # ========== STEP 4: Compute Scores ==========
   Write-Host "[4/6] Computing Scores..." -ForegroundColor Green
   $qMap = @{}
-  $doms = @("strategy","strategy","strategy","strategy","strategy","governance","governance","governance","governance","governance","risk","risk","risk","risk","risk","data","data","data","data","data","human","human","human","human","trust","trust","trust","workforce","workforce","workforce","workforce","improve")
-  for ($i=1; $i -le 32; $i++) {
+  # Canonical 36Q/9-domain instrument (Marika's June document): strategy 1-5,
+  # revenue 6-9, governance 10-14, risk 15-19, data 20-25, human 26-28, trust 29-31,
+  # workforce 32-35, improve 36.
+  $doms = @(
+    "strategy","strategy","strategy","strategy","strategy",
+    "revenue","revenue","revenue","revenue",
+    "governance","governance","governance","governance","governance",
+    "risk","risk","risk","risk","risk",
+    "data","data","data","data","data","data",
+    "human","human","human",
+    "trust","trust","trust",
+    "workforce","workforce","workforce","workforce",
+    "improve"
+  )
+  for ($i=1; $i -le 36; $i++) {
     $qMap[[string]$i] = @{ domain = $doms[$i-1]; description = "Q$i" }
   }
 
@@ -71,7 +85,7 @@ Try {
   # ========== STEP 5: Issue Badge ==========
   Write-Host "[5/6] Issuing Badge (Tier 2)..." -ForegroundColor Green
   $badgeBody = @{
-    organizationId = $orgId
+    companyId = $companyId
     tier = $score2.badgeTier
     overallScore = $score2.overallScore
     frameworks = @("aiact","gdpr","oecd","iso","nist")

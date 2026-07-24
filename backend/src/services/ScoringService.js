@@ -1,20 +1,23 @@
 const logger = require('../config/logger');
 
 // Domain ids/weights/critical ids must mirror DOMAINS/QUESTIONS in CertifAI_MVP.jsx exactly —
-// they are the source of truth for the 32-question model. Keep both in sync when questions change.
+// they are the source of truth for the 36-question canonical model (Marika's June
+// instrument, 9 domains). Keep both in sync when questions change. Revenue weight
+// (0.06) is provisional pending Georges's confirmation (brief section 6).
 const DOMAINS = {
-  'strategy': { name: 'Strategy & Leadership', weight: 0.10 },
-  'governance': { name: 'Governance & Oversight', weight: 0.14 },
-  'risk': { name: 'Risk & Compliance', weight: 0.20 },
-  'data': { name: 'Data & Model Governance', weight: 0.18 },
-  'human': { name: 'Human Oversight & Accountability', weight: 0.13 },
-  'trust': { name: 'Trust, Transparency & Fairness', weight: 0.13 },
+  'strategy': { name: 'Strategy & Leadership', weight: 0.09 },
+  'revenue': { name: 'Revenue & Value Generation through AI', weight: 0.06 },
+  'governance': { name: 'Governance & Oversight', weight: 0.13 },
+  'risk': { name: 'Risk & Compliance', weight: 0.19 },
+  'data': { name: 'Data & Model Governance', weight: 0.17 },
+  'human': { name: 'Human Oversight & Accountability', weight: 0.12 },
+  'trust': { name: 'Trust, Transparency & Fairness', weight: 0.12 },
   'workforce': { name: 'Workforce & Capability', weight: 0.08 },
   'improve': { name: 'Continuous Improvement', weight: 0.04 }
 };
 
-// Critical controls: Q13 (EU AI Act Readiness), Q14 (High-Risk AI Identification), Q22 (Human Accountability)
-const CRITICAL_QUESTION_IDS = ['13', '14', '22'];
+// Critical controls: Q17 (EU AI Act Readiness), Q18 (High-Risk AI Identification), Q26 (Human Accountability)
+const CRITICAL_QUESTION_IDS = ['17', '18', '26'];
 
 class ScoringService {
   constructor(answerRepository) {
@@ -77,14 +80,18 @@ class ScoringService {
   }
 
   // Resuelve badge tier con lógica de gating.
-  // Thresholds mirror frontend BADGE_TIERS (0-40 aware, 41-70 aligned, 71-100 assured),
-  // applied to overallScore converted from its 0-5 scale to a 0-100 percentage.
+  // Thresholds mirror frontend BADGE_TIERS (0-40 aware, 41-65 aligned, 66-85
+  // assured, 86-100 advanced), applied to overallScore converted from its 0-5
+  // scale to a 0-100 percentage. Still pending Georges's final sign-off
+  // (brief section 6) — this is the only non-overlapping set on the table.
   resolveBadgeTier(overallScore, isCriticalGating) {
     const percentage = (overallScore / 5) * 100;
     let tier = 'aware'; // Default
     let cappedFrom = null;
 
-    if (percentage >= 71) {
+    if (percentage >= 86) {
+      tier = 'advanced';
+    } else if (percentage >= 66) {
       tier = 'assured';
     } else if (percentage >= 41) {
       tier = 'aligned';

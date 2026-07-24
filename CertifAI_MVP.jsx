@@ -16,13 +16,19 @@ const MATURITY_LEVELS = [
   { score: 5, label: "Optimised", desc: "Fully embedded and continuously refined." },
 ];
 
+// Canonical instrument: Marika's June "AI Adoption & Governance Maturity
+// Assessment" — 36 questions, 9 domains, 7 frameworks, 0-5 maturity scale.
+// Revenue & Value Generation weight (0.06) is provisional pending Georges's
+// confirmation (brief section 6); the other 8 domains are scaled by 0.94 to
+// keep the total at 1.00. Mirror any change here in backend/src/services/ScoringService.js.
 const DOMAINS = [
-  { id: "strategy", name: "Strategy & Leadership", weight: 0.10 },
-  { id: "governance", name: "Governance & Oversight", weight: 0.14 },
-  { id: "risk", name: "Risk & Compliance", weight: 0.20 },
-  { id: "data", name: "Data & Model Governance", weight: 0.18 },
-  { id: "human", name: "Human Oversight & Accountability", weight: 0.13 },
-  { id: "trust", name: "Trust, Transparency & Fairness", weight: 0.13 },
+  { id: "strategy", name: "Strategy & Leadership", weight: 0.09 },
+  { id: "revenue", name: "Revenue & Value Generation through AI", weight: 0.06 },
+  { id: "governance", name: "Governance & Oversight", weight: 0.13 },
+  { id: "risk", name: "Risk & Compliance", weight: 0.19 },
+  { id: "data", name: "Data & Model Governance", weight: 0.17 },
+  { id: "human", name: "Human Oversight & Accountability", weight: 0.12 },
+  { id: "trust", name: "Trust, Transparency & Fairness", weight: 0.12 },
   { id: "workforce", name: "Workforce & Capability", weight: 0.08 },
   { id: "improve", name: "Continuous Improvement", weight: 0.04 },
 ];
@@ -32,45 +38,60 @@ const FRAMEWORKS = {
   g7: "G7 Hiroshima", gpai: "GPAI Code", iso: "ISO/IEC 42001", nist: "NIST AI RMF",
 };
 
+// Framework tags on Q6-Q9 (Revenue & Value) are provisional — they originate
+// from the build, not from Marika's June document, which specifies evidence
+// and KPIs but doesn't assign frameworks per question (brief section 4.6).
 const QUESTIONS = [
   { id: 1, domain: "strategy", title: "AI Strategy", text: "Does your organisation have a documented AI strategy that defines its vision, objectives, and roadmap for AI adoption?", evidence: ["Approved AI strategy", "AI roadmap", "AI vision statement", "Strategic AI objectives"], kpi: "% business units covered", frameworks: ["oecd", "iso"] },
   { id: 2, domain: "strategy", title: "Leadership Commitment", text: "To what extent is senior leadership actively engaged in and accountable for AI-related decisions and outcomes?", evidence: ["Executive sponsor", "Board minutes", "Steering committee charter"], kpi: "Executive participation rate", frameworks: ["iso", "g7"] },
   { id: 3, domain: "strategy", title: "AI Governance Ownership", text: "Is there a clearly defined owner or body responsible for AI governance across the organisation?", evidence: ["RACI matrix", "Governance structure", "Committee terms of reference"], kpi: "% AI systems with owner assigned", frameworks: ["iso", "nist"] },
   { id: 4, domain: "strategy", title: "AI Investment Planning", text: "Does the organisation have a structured process for planning and prioritising AI investments?", evidence: ["Investment plans", "Business cases", "Budget approvals"], kpi: "AI spend vs budget", frameworks: ["iso"] },
   { id: 5, domain: "strategy", title: "AI Business Objectives", text: "Are clear, measurable business objectives defined for each AI initiative?", evidence: ["Business KPIs", "Benefits register", "Performance dashboards"], kpi: "Value generated", frameworks: ["oecd"] },
-  { id: 6, domain: "governance", title: "AI System Inventory", text: "Does the organisation maintain an up-to-date inventory of all AI systems in use or development?", evidence: ["AI inventory", "Asset register", "Model register"], kpi: "% AI systems registered", frameworks: ["aiact", "iso", "nist"] },
-  { id: 7, domain: "governance", title: "AI Governance Policies", text: "Are formal AI governance policies in place that define standards, responsibilities, and acceptable use?", evidence: ["AI policy", "Responsible AI policy", "Governance framework"], kpi: "Policy compliance rate", frameworks: ["aiact", "iso", "oecd"] },
-  { id: 8, domain: "governance", title: "Use-Case Approval", text: "Is there a defined process for reviewing and approving new AI use cases before deployment?", evidence: ["Approval workflow", "Use-case register", "Sign-off logs"], kpi: "% use-cases reviewed", frameworks: ["aiact", "iso"] },
-  { id: 9, domain: "governance", title: "Governance Reporting", text: "Are regular reports on AI governance, risk, and performance provided to leadership?", evidence: ["Governance reports", "Dashboards", "Board packs"], kpi: "Reporting frequency", frameworks: ["iso", "nist"] },
-  { id: 10, domain: "governance", title: "Third-Party AI Oversight", text: "Does the organisation have controls to oversee AI systems or services provided by third parties?", evidence: ["Vendor assessments", "Contract clauses", "Due diligence records"], kpi: "% vendors assessed", frameworks: ["aiact", "iso", "gpai"] },
-  { id: 11, domain: "risk", title: "AI Risk Identification", text: "Does the organisation have a process for systematically identifying risks associated with AI systems?", evidence: ["Risk register", "Risk taxonomy", "Threat assessments"], kpi: "Risks identified per system", frameworks: ["aiact", "nist", "iso"] },
-  { id: 12, domain: "risk", title: "AI Risk Assessments", text: "Are formal risk assessments conducted for AI systems before and during deployment?", evidence: ["Risk assessments", "Mitigation plans", "Residual risk records"], kpi: "% systems assessed", frameworks: ["aiact", "nist", "iso"] },
-  { id: 13, domain: "risk", title: "EU AI Act Readiness", critical: true, text: "How prepared is the organisation to comply with the requirements of the EU AI Act?", evidence: ["Gap analysis", "Compliance roadmap", "Annex IV technical file"], kpi: "Compliance maturity score", frameworks: ["aiact"] },
-  { id: 14, domain: "risk", title: "High-Risk AI Identification", critical: true, text: "Has the organisation identified which AI systems fall into high-risk categories under Annex III?", evidence: ["Classification methodology", "High-risk register", "Annex III mapping"], kpi: "% systems classified", frameworks: ["aiact"] },
-  { id: 15, domain: "risk", title: "AI Incident Response", text: "Is there a defined process for detecting, reporting, and responding to AI-related incidents?", evidence: ["Incident response plan", "Incident log", "Escalation procedures"], kpi: "Incident response time", frameworks: ["aiact", "nist"] },
-  { id: 16, domain: "data", title: "AI Audit Readiness", text: "Is the organisation prepared to demonstrate AI system behaviour, decisions, and compliance to auditors?", evidence: ["Audit trails", "Logging records", "Documentation packs"], kpi: "Audit findings", frameworks: ["aiact", "iso"] },
-  { id: 17, domain: "data", title: "Data Suitability", text: "Are the data sources used to train or operate AI systems assessed for suitability and quality?", evidence: ["Dataset inventory", "Data quality assessments"], kpi: "Data quality score", frameworks: ["aiact", "iso"] },
-  { id: 18, domain: "data", title: "Data Quality Controls", text: "Are controls in place to ensure the quality, accuracy, and consistency of data used by AI systems?", evidence: ["Validation reports", "Data quality controls", "Monitoring records"], kpi: "Data accuracy", frameworks: ["aiact", "iso"] },
-  { id: 19, domain: "data", title: "Personal Data Protection", text: "Are appropriate safeguards in place to protect personal data when used by AI systems?", evidence: ["DPIA records", "Processing records", "GDPR controls"], kpi: "Privacy incidents", frameworks: ["gdpr", "aiact"] },
-  { id: 20, domain: "data", title: "Privacy Impact Assessments", text: "Are Privacy/Data Protection Impact Assessments conducted for AI systems?", evidence: ["PIAs", "Risk reviews", "Mitigation tracking"], kpi: "% systems assessed", frameworks: ["gdpr"] },
-  { id: 21, domain: "data", title: "Training Data Management", text: "Does the organisation manage the provenance, lineage, and versioning of training data?", evidence: ["Dataset documentation", "Data lineage", "Version control records"], kpi: "Documented datasets", frameworks: ["aiact", "gpai", "iso"] },
-  { id: 22, domain: "human", title: "Human Accountability", critical: true, text: "Are named individuals accountable for the decisions and outputs produced by AI systems?", evidence: ["Accountability matrix", "Approval records", "Governance roles"], kpi: "Ownership coverage", frameworks: ["aiact", "oecd", "iso"] },
-  { id: 23, domain: "human", title: "Output Verification", text: "Are processes in place to verify the accuracy and reliability of AI outputs before they are acted upon?", evidence: ["Testing reports", "Validation procedures", "Monitoring logs"], kpi: "Output accuracy", frameworks: ["aiact", "nist"] },
-  { id: 24, domain: "human", title: "Human Review Requirements", text: "Are there defined criteria for when human review of AI outputs is required?", evidence: ["Review procedures", "Exception logs", "Escalation workflows"], kpi: "Human review rate", frameworks: ["aiact", "oecd"] },
-  { id: 25, domain: "trust", title: "AI Bias Assessments", text: "Does the organisation conduct assessments to identify and mitigate bias in AI systems?", evidence: ["Bias reports", "Fairness metrics", "Mitigation plans"], kpi: "Bias incidents", frameworks: ["aiact", "oecd", "nist"] },
-  { id: 26, domain: "trust", title: "Transparency of AI Use", text: "Are stakeholders or affected individuals informed when AI is used to make or support decisions?", evidence: ["Disclosure notices", "Customer communications", "Usage statements"], kpi: "Disclosure coverage", frameworks: ["aiact", "oecd"] },
-  { id: 27, domain: "trust", title: "Explainability", text: "Can the organisation explain how its AI systems reach decisions in understandable terms?", evidence: ["Model cards", "Explainability reports", "Decision records"], kpi: "Explainability coverage", frameworks: ["aiact", "oecd", "nist"] },
-  { id: 28, domain: "workforce", title: "Autonomous Agent Oversight", text: "Does the organisation have controls for overseeing AI systems that act autonomously?", evidence: ["Agent governance framework", "Monitoring records", "Intervention logs"], kpi: "Agent review frequency", frameworks: ["aiact", "g7", "gpai"] },
-  { id: 29, domain: "workforce", title: "AI Literacy", text: "Do staff across the organisation have a sufficient understanding of AI and its responsible use?", evidence: ["Training records", "Assessment results", "Awareness campaigns"], kpi: "Training completion rate", frameworks: ["aiact", "oecd"] },
-  { id: 30, domain: "workforce", title: "AI Governance Training", text: "Are employees with governance, risk, or oversight responsibilities trained on AI governance?", evidence: ["Governance curriculum", "Attendance logs", "Competency tests"], kpi: "Governance training coverage", frameworks: ["iso", "aiact"] },
-  { id: 31, domain: "workforce", title: "Workforce Readiness", text: "Is the organisation prepared to manage the workforce implications of AI adoption?", evidence: ["Skills assessments", "Workforce plans", "Change management plans"], kpi: "Readiness score", frameworks: ["oecd", "g7"] },
-  { id: 32, domain: "improve", title: "Continuous Improvement", text: "Does the organisation have a structured process for reviewing and continuously improving its AI governance?", evidence: ["Improvement plans", "Lessons learned", "Corrective action logs"], kpi: "Actions completed", frameworks: ["iso", "nist"] },
+  { id: 6, domain: "revenue", title: "AI Revenue Contribution", text: "Does the organisation track and report the proportion of revenue directly attributable to AI-enabled products, services, or features?", evidence: ["AI revenue attribution methodology", "Product/service revenue breakdowns", "Management reporting on AI-linked revenue", "Finance sign-off on attribution model"], kpi: "% of total revenue attributable to AI-enabled offerings", frameworks: ["iso"] },
+  { id: 7, domain: "revenue", title: "AI Monetisation Strategy", text: "Has the organisation defined a strategy for monetising AI capabilities, whether through new products, premium features, pricing changes, or new business models?", evidence: ["AI monetisation strategy or business case", "New AI product/feature launch plans", "Pricing and packaging documentation", "Commercial roadmap referencing AI"], kpi: "% of product roadmap items with an identified AI monetisation path", frameworks: ["iso"] },
+  { id: 8, domain: "revenue", title: "AI ROI & Value Realisation", text: "Does the organisation measure the financial return on its AI investments, including cost savings, efficiency gains, and incremental revenue?", evidence: ["AI value realisation reports", "Business case vs actuals tracking", "ROI calculation methodology", "Finance or governance sign-off on results"], kpi: "% of AI initiatives with a measured ROI", frameworks: ["iso"] },
+  { id: 9, domain: "revenue", title: "AI-Driven Customer Growth", text: "Does the organisation measure the impact of AI on customer acquisition, retention, and account growth (upsell or cross-sell)?", evidence: ["Customer analytics linking AI to growth metrics", "Upsell/cross-sell performance data", "Retention and churn reports segmented by AI use", "A/B test or experiment results for AI features"], kpi: "% change in customer retention attributable to AI features", frameworks: ["oecd", "iso"] },
+  { id: 10, domain: "governance", title: "AI System Inventory", text: "Does the organisation maintain an up-to-date inventory of all AI systems in use or development?", evidence: ["AI inventory", "Asset register", "Model register"], kpi: "% AI systems registered", frameworks: ["aiact", "iso", "nist"] },
+  { id: 11, domain: "governance", title: "AI Governance Policies", text: "Are formal AI governance policies in place that define standards, responsibilities, and acceptable use?", evidence: ["AI policy", "Responsible AI policy", "Governance framework"], kpi: "Policy compliance rate", frameworks: ["aiact", "iso", "oecd"] },
+  { id: 12, domain: "governance", title: "Use-Case Approval", text: "Is there a defined process for reviewing and approving new AI use cases before deployment?", evidence: ["Approval workflow", "Use-case register", "Sign-off logs"], kpi: "% use-cases reviewed", frameworks: ["aiact", "iso"] },
+  { id: 13, domain: "governance", title: "Governance Reporting", text: "Are regular reports on AI governance, risk, and performance provided to leadership?", evidence: ["Governance reports", "Dashboards", "Board packs"], kpi: "Reporting frequency", frameworks: ["iso", "nist"] },
+  { id: 14, domain: "governance", title: "Third-Party AI Oversight", text: "Does the organisation have controls to oversee AI systems or services provided by third parties?", evidence: ["Vendor assessments", "Contract clauses", "Due diligence records"], kpi: "% vendors assessed", frameworks: ["aiact", "iso", "gpai"] },
+  { id: 15, domain: "risk", title: "AI Risk Identification", text: "Does the organisation have a process for systematically identifying risks associated with AI systems?", evidence: ["Risk register", "Risk taxonomy", "Threat assessments"], kpi: "Risks identified per system", frameworks: ["aiact", "nist", "iso"] },
+  { id: 16, domain: "risk", title: "AI Risk Assessments", text: "Are formal risk assessments conducted for AI systems before and during deployment?", evidence: ["Risk assessments", "Mitigation plans", "Residual risk records"], kpi: "% systems assessed", frameworks: ["aiact", "nist", "iso"] },
+  { id: 17, domain: "risk", title: "EU AI Act Readiness", critical: true, text: "How prepared is the organisation to comply with the requirements of the EU AI Act?", evidence: ["Gap analysis", "Compliance roadmap", "Annex IV technical file"], kpi: "Compliance maturity score", frameworks: ["aiact"] },
+  { id: 18, domain: "risk", title: "High-Risk AI Identification", critical: true, text: "Has the organisation identified which AI systems fall into high-risk categories under Annex III?", evidence: ["Classification methodology", "High-risk register", "Annex III mapping"], kpi: "% systems classified", frameworks: ["aiact"] },
+  { id: 19, domain: "risk", title: "AI Incident Response", text: "Is there a defined process for detecting, reporting, and responding to AI-related incidents?", evidence: ["Incident response plan", "Incident log", "Escalation procedures"], kpi: "Incident response time", frameworks: ["aiact", "nist"] },
+  { id: 20, domain: "data", title: "AI Audit Readiness", text: "Is the organisation prepared to demonstrate AI system behaviour, decisions, and compliance to auditors?", evidence: ["Audit trails", "Logging records", "Documentation packs"], kpi: "Audit findings", frameworks: ["aiact", "iso"] },
+  { id: 21, domain: "data", title: "Data Suitability", text: "Are the data sources used to train or operate AI systems assessed for suitability and quality?", evidence: ["Dataset inventory", "Data quality assessments"], kpi: "Data quality score", frameworks: ["aiact", "iso"] },
+  { id: 22, domain: "data", title: "Data Quality Controls", text: "Are controls in place to ensure the quality, accuracy, and consistency of data used by AI systems?", evidence: ["Validation reports", "Data quality controls", "Monitoring records"], kpi: "Data accuracy", frameworks: ["aiact", "iso"] },
+  { id: 23, domain: "data", title: "Personal Data Protection", text: "Are appropriate safeguards in place to protect personal data when used by AI systems?", evidence: ["DPIA records", "Processing records", "GDPR controls"], kpi: "Privacy incidents", frameworks: ["gdpr", "aiact"] },
+  { id: 24, domain: "data", title: "Privacy Impact Assessments", text: "Are Privacy/Data Protection Impact Assessments conducted for AI systems?", evidence: ["PIAs", "Risk reviews", "Mitigation tracking"], kpi: "% systems assessed", frameworks: ["gdpr"] },
+  { id: 25, domain: "data", title: "Training Data Management", text: "Does the organisation manage the provenance, lineage, and versioning of training data?", evidence: ["Dataset documentation", "Data lineage", "Version control records"], kpi: "Documented datasets", frameworks: ["aiact", "gpai", "iso"] },
+  { id: 26, domain: "human", title: "Human Accountability", critical: true, text: "Are named individuals accountable for the decisions and outputs produced by AI systems?", evidence: ["Accountability matrix", "Approval records", "Governance roles"], kpi: "Ownership coverage", frameworks: ["aiact", "oecd", "iso"] },
+  { id: 27, domain: "human", title: "Output Verification", text: "Are processes in place to verify the accuracy and reliability of AI outputs before they are acted upon?", evidence: ["Testing reports", "Validation procedures", "Monitoring logs"], kpi: "Output accuracy", frameworks: ["aiact", "nist"] },
+  { id: 28, domain: "human", title: "Human Review Requirements", text: "Are there defined criteria for when human review of AI outputs is required?", evidence: ["Review procedures", "Exception logs", "Escalation workflows"], kpi: "Human review rate", frameworks: ["aiact", "oecd"] },
+  { id: 29, domain: "trust", title: "AI Bias Assessments", text: "Does the organisation conduct assessments to identify and mitigate bias in AI systems?", evidence: ["Bias reports", "Fairness metrics", "Mitigation plans"], kpi: "Bias incidents", frameworks: ["aiact", "oecd", "nist"] },
+  { id: 30, domain: "trust", title: "Transparency of AI Use", text: "Are stakeholders or affected individuals informed when AI is used to make or support decisions?", evidence: ["Disclosure notices", "Customer communications", "Usage statements"], kpi: "Disclosure coverage", frameworks: ["aiact", "oecd"] },
+  { id: 31, domain: "trust", title: "Explainability", text: "Can the organisation explain how its AI systems reach decisions in understandable terms?", evidence: ["Model cards", "Explainability reports", "Decision records"], kpi: "Explainability coverage", frameworks: ["aiact", "oecd", "nist"] },
+  { id: 32, domain: "workforce", title: "Autonomous Agent Oversight", text: "Does the organisation have controls for overseeing AI systems that act autonomously?", evidence: ["Agent governance framework", "Monitoring records", "Intervention logs"], kpi: "Agent review frequency", frameworks: ["aiact", "g7", "gpai"] },
+  { id: 33, domain: "workforce", title: "AI Literacy", text: "Do staff across the organisation have a sufficient understanding of AI and its responsible use?", evidence: ["Training records", "Assessment results", "Awareness campaigns"], kpi: "Training completion rate", frameworks: ["aiact", "oecd"] },
+  { id: 34, domain: "workforce", title: "AI Governance Training", text: "Are employees with governance, risk, or oversight responsibilities trained on AI governance?", evidence: ["Governance curriculum", "Attendance logs", "Competency tests"], kpi: "Governance training coverage", frameworks: ["iso", "aiact"] },
+  { id: 35, domain: "workforce", title: "Workforce Readiness", text: "Is the organisation prepared to manage the workforce implications of AI adoption?", evidence: ["Skills assessments", "Workforce plans", "Change management plans"], kpi: "Readiness score", frameworks: ["oecd", "g7"] },
+  { id: 36, domain: "improve", title: "Continuous Improvement", text: "Does the organisation have a structured process for reviewing and continuously improving its AI governance?", evidence: ["Improvement plans", "Lessons learned", "Corrective action logs"], kpi: "Actions completed", frameworks: ["iso", "nist"] },
 ];
 
+// Cutoffs: the deck's version (Aligned 41-70, Assured 71-100, Advanced also
+// 71-100) overlaps and can't be implemented; this is the only working set
+// (matches the actual build), still pending Georges's final sign-off (brief
+// section 6). "Advanced" additionally requires a signed self-certification
+// with no failed critical controls per the brief — that's not yet a distinct
+// enforced gate in this product; only the score band + critical-control gate
+// below are mechanically enforced today.
 const BADGE_TIERS = [
   { id: "aware", name: "Aware", min: 0, max: 40, blurb: "Assessment completed and gap profile received. Internal-use signal of where you stand." },
-  { id: "aligned", name: "Aligned", min: 41, max: 70, blurb: "Structured evidence across core domains. Remediation underway. First displayable badge." },
-  { id: "assured", name: "Assured", min: 71, max: 100, blurb: "Strong governance posture across all domains. Audit-ready evidence. Shareable trust badge." },
+  { id: "aligned", name: "Aligned", min: 41, max: 65, blurb: "Structured evidence across core domains. Remediation underway. First displayable badge." },
+  { id: "assured", name: "Assured", min: 66, max: 85, blurb: "Strong governance posture across all domains. Audit-ready evidence. Shareable trust badge." },
+  { id: "advanced", name: "Advanced", min: 86, max: 100, blurb: "Signed self-certification on top of Assured evidence, with no failed critical controls. Highest trust tier, renewed annually." },
 ];
 const CRITICAL_IDS = QUESTIONS.filter((q) => q.critical).map((q) => q.id);
 
@@ -135,7 +156,7 @@ const C = {
   ocean: "#10566E", oceanSoft: "#E2EEF2", gold: "#B8893B",
   red: "#A8392E", redSoft: "#F6E7E4",
 };
-const tierColor = (id) => (id === "assured" ? C.pine : id === "aligned" ? C.ocean : C.mute);
+const tierColor = (id) => (id === "advanced" ? C.gold : id === "assured" ? C.pine : id === "aligned" ? C.ocean : C.mute);
 
 /* ---------- ROOT ---------- */
 const API_BASE = "http://localhost:3001/api";
@@ -177,6 +198,8 @@ export default function App() {
   const [assessmentId, setAssessmentId] = useState("");
   const [badge, setBadge] = useState(null);
   const [scoring, setScoring] = useState(null);
+  const [selfCertified, setSelfCertified] = useState(false); // Tier 2 only: I certify this assessment
+  const [selfCertifiedAt, setSelfCertifiedAt] = useState(null); // timestamp
 
   const comp = useMemo(() => completion(answers), [answers]);
 
@@ -250,7 +273,7 @@ export default function App() {
       const res = await fetch(`${API_BASE}/assessments/${assessmentId}/compute-score`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ questionMapping })
+        body: JSON.stringify({ questionMapping, ...(tier === 2 && { selfCertified, selfCertifiedAt }) })
       });
       const data = await res.json();
       setScoring(data);
@@ -394,7 +417,7 @@ export default function App() {
       const scoreRes = await fetch(`${API_BASE}/assessments/${assessData.id}/compute-score`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ questionMapping })
+        body: JSON.stringify({ questionMapping, ...(tier === 2 && { selfCertified, selfCertifiedAt }) })
       });
       if (scoreRes.ok) setScoring(await scoreRes.json());
     } catch (err) {
@@ -480,9 +503,9 @@ function Intro({ org, setOrg, email, setEmail, role, setRole, onStart, onImport 
     <main className="wrap">
       <div className="intro-grid">
         <section className="intro-lead">
-          <div className="eyebrow">EU AI Act · 8 domains · 32 controls</div>
+          <div className="eyebrow">EU AI Act · 9 domains · 36 controls</div>
           <h1 className="h1">Know exactly where your AI governance stands.</h1>
-          <p className="lead">A structured readiness assessment for organisations deploying AI under the EU AI Act. Answer 32 questions across 8 governance domains, see your maturity by domain and framework, and get a prioritised remediation path — in about 20 minutes.</p>
+          <p className="lead">A structured readiness assessment for organisations deploying AI under the EU AI Act. Answer 36 questions across 9 governance domains, see your maturity by domain and framework, and get a prioritised remediation path — in about 20 minutes.</p>
           <div className="field">
             <label className="lbl" htmlFor="org">Organisation name</label>
             <input id="org" className="inp" value={org} onChange={(e) => setOrg(e.target.value)} placeholder="Northstar Recruitment AI" />
@@ -511,7 +534,7 @@ function Intro({ org, setOrg, email, setEmail, role, setRole, onStart, onImport 
           <TierCard
             active={picked === 1} onClick={() => setPicked(1)}
             tag="Tier 1 · Free" name="Readiness Snapshot"
-            points={["Self-scored across all 32 controls", "Maturity by domain + framework", "Prioritised gap profile", "No badge issued"]}
+            points={["Self-scored across all 36 controls", "Maturity by domain + framework", "Prioritised gap profile", "No badge issued"]}
             cta="Start free assessment"
             onStart={() => onStart(1)} disabled={!canStart}
           />
@@ -587,7 +610,7 @@ function Assessment({ tier, answers, idx, setIdx, setAnswer, markVisited, comp, 
 
         <section className="assess-main">
           <div className="q-head">
-            <span className="q-num">Q{q.id}<span className="q-of"> / 32</span></span>
+            <span className="q-num">Q{q.id}<span className="q-of"> / 36</span></span>
             {q.critical && <span className="q-crit">Critical control</span>}
             <span className="q-frameworks">{q.frameworks.map((f) => FRAMEWORKS[f]).join(" · ")}</span>
           </div>
@@ -718,14 +741,24 @@ function Results({ org, tier, answers, scoring, badge, onBack, onExport, onUpgra
 
       {comp.pct < 100 && (
         <div className="banner banner-warn">
-          <strong>{comp.answered} of {comp.total} controls answered.</strong> Unanswered controls are excluded from the score. Complete all 32 for a defensible result.
+          <strong>{comp.answered} of {comp.total} controls answered.</strong> Unanswered controls are excluded from the score. Complete all 36 for a defensible result.
+        </div>
+      )}
+
+      {tier === 2 && displayScoring.badgeTier === "advanced" && (
+        <div className="banner banner-cert">
+          <strong>Self-certification required for Advanced tier.</strong>
+          <label className="cert-label">
+            <input type="checkbox" checked={selfCertified} onChange={(e) => { setSelfCertified(e.target.checked); if (e.target.checked) setSelfCertifiedAt(new Date().toISOString()); }} />
+            <span>I certify that the information and evidence provided in this assessment are accurate, complete, and truthfully represent our organization's AI governance posture.</span>
+          </label>
         </div>
       )}
 
       <div className="res-hero">
         <ScoreDial pct={Math.round((displayScoring.overallScore / 5) * 100)} tier={{ id: displayScoring.badgeTier }} />
         <div className="res-hero-body">
-          <BadgePanel org={org} tier={{ id: displayScoring.badgeTier, name: displayScoring.badgeTier.charAt(0).toUpperCase() + displayScoring.badgeTier.slice(1) }} earned={badgeEarned} tierMode={tier} cappedFrom={cappedFrom} gate={gate} badge={badge} />
+          <BadgePanel org={org} tier={{ id: displayScoring.badgeTier, name: displayScoring.badgeTier.charAt(0).toUpperCase() + displayScoring.badgeTier.slice(1) }} earned={badgeEarned} tierMode={tier} cappedFrom={cappedFrom} gate={gate} badge={badge} selfCertified={selfCertified} />
         </div>
       </div>
 
@@ -815,7 +848,7 @@ function ScoreDial({ pct, tier }) {
   );
 }
 
-function BadgePanel({ org, tier, earned, tierMode, cappedFrom, badge }) {
+function BadgePanel({ org, tier, earned, tierMode, cappedFrom, badge, selfCertified }) {
   const col = tierColor(tier.id);
   // Public, server-rendered verification page (carries OpenGraph tags for social
   // previews). Must be publicly reachable in production — see VERIFY_BASE_URL.
@@ -861,7 +894,7 @@ function BadgePanel({ org, tier, earned, tierMode, cappedFrom, badge }) {
         <div className="badge-meta">
           <div className="badge-tier" style={{ color: col }}>{tier.name}</div>
           <div className="badge-state">
-            {badge ? `✓ Badge issued on ${new Date(badge.issuedAt).toLocaleDateString()}` : earned ? "Processing badge..." : tierMode === 1 ? "Tier 1 — no badge issued" : cappedFrom ? "Capped — critical control gap" : "Complete all controls to earn"}
+            {badge ? `✓ Badge issued on ${new Date(badge.issuedAt).toLocaleDateString()}` : earned ? "Processing badge..." : tierMode === 1 ? "Tier 1 — no badge issued" : cappedFrom ? "Capped — critical control gap" : tier.id === "advanced" && !selfCertified ? "Self-certification required" : "Complete all controls to earn"}
           </div>
         </div>
       </div>

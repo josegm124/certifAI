@@ -114,6 +114,12 @@ class BadgeService {
         icon: '✓',
         description: 'Comprehensive governance assurance',
         color: '#00AA00'
+      },
+      [BADGE_TIERS.ADVANCED]: {
+        label: 'Advanced',
+        icon: '🏆',
+        description: 'Signed self-certification, no failed critical controls, renewed annually',
+        color: '#B8893B'
       }
     };
 
