@@ -10,7 +10,7 @@ Complete full-stack setup for frontend (React/Vite) + backend (Express/SQLite).
 
 ### Terminal 1: Frontend
 ```bash
-cd C:\Users\jose.guerrero_isol\Desktop\certifAI_MVP
+cd C:\Users\jose.guerrero_isol\Desktop\certifAI
 npm install
 npm run dev
 ```
@@ -18,7 +18,7 @@ npm run dev
 
 ### Terminal 2: Backend
 ```bash
-cd C:\Users\jose.guerrero_isol\Desktop\certifAI_MVP\backend
+cd C:\Users\jose.guerrero_isol\Desktop\certifAI\backend
 npm install
 npm start
 ```

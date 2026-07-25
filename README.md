@@ -82,3 +82,4 @@ User Flow (Lo que ves)
 4. POST /api/assessments/:id/compute-score → calcular scores + gaps
 5. POST /api/assessments/:id/badges  → emitir badge (si tier 2 + 100%)
 6. GET  /api/badges/:token/verify    → link público para compartir badge
+claude --resume 0d3c5b9b-5f30-4dc1-a6e1-79fa4dd8d92d

@@ -185,7 +185,8 @@ const deobfuscate = (d) => {
 };
 
 export default function App() {
-  const [stage, setStage] = useState("intro"); // intro | assess | results
+  const [stage, setStage] = useState("landing");
+  const [isLoading, setIsLoading] = useState(false); // intro | assess | results
   const [tier, setTier] = useState(1); // 1 = free (score+note), 2 = evidence attest
   const [org, setOrg] = useState("");
   const [email, setEmail] = useState(""); // real corporate email (lead contact)
@@ -267,20 +268,33 @@ export default function App() {
   }
 
   async function computeScores() {
-    if (!assessmentId) return;
+    setIsLoading(true);
     try {
-      const questionMapping = Object.fromEntries(QUESTIONS.map(q => [q.id, { domain: q.domain, description: q.title }]));
-      const res = await fetch(`${API_BASE}/assessments/${assessmentId}/compute-score`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ questionMapping, ...(tier === 2 && { selfCertified, selfCertifiedAt }) })
-      });
-      const data = await res.json();
-      setScoring(data);
-      return data;
+      if (assessmentId) {
+        const questionMapping = Object.fromEntries(QUESTIONS.map(q => [q.id, { domain: q.domain, description: q.title }]));
+        const res = await fetch(`${API_BASE}/assessments/${assessmentId}/compute-score`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ questionMapping, ...(tier === 2 && { selfCertified, selfCertifiedAt }) })
+        });
+        if (res.ok) {
+          const data = await res.json();
+          setScoring(data);
+          setIsLoading(false);
+          return data;
+        }
+      }
     } catch (err) {
-      console.error("Error computing scores:", err);
+      console.error("Error computing scores from backend:", err);
     }
+    // Fallback: compute locally if backend unavailable or no assessmentId
+    console.log("Using local scoring fallback");
+    const { overall, tier: badgeTier } = resolveTier(answers);
+    const ds = domainScores(answers);
+    const localScoring = { overallScore: overall, badgeTier, domainScores: ds };
+    setScoring(localScoring);
+    setIsLoading(false);
+    return localScoring;
   }
 
   async function upgradeAssessment() {
@@ -417,14 +431,15 @@ export default function App() {
       const scoreRes = await fetch(`${API_BASE}/assessments/${assessData.id}/compute-score`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ questionMapping, ...(tier === 2 && { selfCertified, selfCertifiedAt }) })
+        body: JSON.stringify({ questionMapping, ...(restoredTier === 2 && { selfCertified, selfCertifiedAt }) })
       });
       if (scoreRes.ok) setScoring(await scoreRes.json());
     } catch (err) {
       console.error("Error resuming assessment:", err);
       alert(`Resumed locally, but backend sync failed: ${err.message}. You can view results, but editing and badges need the backend.`);
     } finally {
-      setStage("results");
+      setStage("assess");
+      setIdx(resumeIdx(restoredAnswers, restoredTier));
     }
   }
 
@@ -443,15 +458,103 @@ export default function App() {
   return (
     <div style={{ minHeight: "100vh", background: C.paper, color: C.ink, fontFamily: "'Inter', system-ui, sans-serif" }}>
       <style>{CSS}</style>
-      <Header stage={stage} comp={comp} onHome={() => setStage("intro")} />
+      <Header stage={stage} comp={comp} onHome={() => setStage("landing")} />
+      {stage === "landing" && <Landing onStartAssessment={() => setStage("intro")} />}
       {stage === "intro" && <Intro org={org} setOrg={setOrg} email={email} setEmail={setEmail} role={role} setRole={setRole} onStart={startAssessment} onImport={importJSON} />}
       {stage === "assess" && (
-        <Assessment tier={tier} answers={answers} idx={idx} setIdx={setIdx} setAnswer={setAnswer} markVisited={markVisited} comp={comp} onFinish={async () => { await computeScores(); setStage("results"); }} onExport={exportJSON} />
+        <Assessment tier={tier} answers={answers} idx={idx} setIdx={setIdx} setAnswer={setAnswer} markVisited={markVisited} comp={comp} onFinish={async () => { setIsLoading(true); await computeScores(); setStage("results"); }} onExport={exportJSON} />
       )}
       {stage === "results" && (
-        <Results org={org} tier={tier} answers={answers} scoring={scoring} badge={badge} onBack={() => { setStage("assess"); setIdx(resumeIdx(answers, tier)); }} onExport={exportJSON} onUpgrade={upgradeAssessment} onIssueBadge={issueBadge} />
+        isLoading ? (
+          <main className="wrap" style={{ textAlign: "center", paddingTop: "100px" }}>
+            <p style={{ fontSize: "16px", color: C.inkSoft }}>Computing your scores...</p>
+          </main>
+        ) : (
+          <Results org={org} tier={tier} answers={answers} scoring={scoring} badge={badge} selfCertified={selfCertified} onBack={() => { setStage("assess"); setIdx(resumeIdx(answers, tier)); }} onExport={exportJSON} onUpgrade={upgradeAssessment} onIssueBadge={issueBadge} />
+        )
       )}
     </div>
+  );
+}
+
+/* ---------- LANDING PAGE ---------- */
+function Landing({ onStartAssessment }) {
+  return (
+    <main className="wrap">
+      <section className="landing-hero">
+        <div className="landing-hero-content">
+          <div className="eyebrow">AI Governance Readiness Assessment</div>
+          <h1 className="h1">Know exactly where your AI governance stands.</h1>
+          <p className="lead">A structured readiness assessment for organisations deploying AI under the EU AI Act. Assess your maturity across 9 governance domains, identify gaps, and get a prioritised remediation path.</p>
+          <button className="btn btn-primary" onClick={onStartAssessment}>Start Assessment</button>
+        </div>
+      </section>
+
+      <section className="landing-domains">
+        <h2 className="h2">9 Governance Domains</h2>
+        <p className="section-desc">CertifAI evaluates your AI governance across these interconnected domains:</p>
+        <div className="domains-grid">
+          {DOMAINS.map((d) => (
+            <div key={d.id} className="domain-card">
+              <h3 className="domain-card-title">{d.name}</h3>
+              <p className="domain-card-weight">Weight: {Math.round(d.weight * 100)}%</p>
+            </div>
+          ))}
+        </div>
+      </section>
+
+      <section className="landing-features">
+        <h2 className="h2">How It Works</h2>
+        <div className="features-grid">
+          <div className="feature-box">
+            <div className="feature-icon">📋</div>
+            <h3>36 Questions</h3>
+            <p>Across 9 governance domains, mapped to 7 frameworks (EU AI Act, GDPR, ISO, NIST, OECD, G7, GPAI).</p>
+          </div>
+          <div className="feature-box">
+            <div className="feature-icon">⭐</div>
+            <h3>Maturity Scoring</h3>
+            <p>0-5 scale per question. Domain-weighted overall score. Gap analysis prioritised by impact.</p>
+          </div>
+          <div className="feature-box">
+            <div className="feature-icon">🏆</div>
+            <h3>Badge Tiers</h3>
+            <p>Aware · Aligned · Assured · Advanced. Critical controls gating. Self-certification required for highest tier.</p>
+          </div>
+        </div>
+      </section>
+
+      <section className="landing-tiers">
+        <h2 className="h2">Choose Your Path</h2>
+        <div className="tiers-preview">
+          <div className="tier-preview-box">
+            <h3>Tier 1: Free</h3>
+            <p className="tier-tag">Readiness Snapshot</p>
+            <ul className="tier-list">
+              <li>Self-scored assessment</li>
+              <li>Domain maturity analysis</li>
+              <li>Gap profile + priorities</li>
+              <li>No badge</li>
+            </ul>
+          </div>
+          <div className="tier-preview-box accent">
+            <h3>Tier 2: Professional</h3>
+            <p className="tier-tag">Evidence & Badge</p>
+            <ul className="tier-list">
+              <li>Everything in Tier 1</li>
+              <li>Evidence attestation</li>
+              <li>Issued badge (12 months)</li>
+              <li>Self-certification option</li>
+            </ul>
+          </div>
+        </div>
+      </section>
+
+      <div className="landing-cta">
+        <button className="btn btn-primary btn-large" onClick={onStartAssessment}>Start Your Assessment</button>
+        <p className="disclaimer">CertifAI produces a self-assessed, evidence-backed readiness signal. It is not a certification, legal advice, or a conformity assessment under the EU AI Act.</p>
+      </div>
+    </main>
   );
 }
 
@@ -654,7 +757,7 @@ function Assessment({ tier, answers, idx, setIdx, setAnswer, markVisited, comp, 
             <div className="nav-right">
               {a.score != null && !isLast && <button className="btn btn-primary" onClick={() => { if (tier === 2) markVisited(q.id); setIdx(idx + 1); }}>Next →</button>}
               {a.score == null && !isLast && <button className="btn btn-ghost" onClick={() => { if (tier === 2) markVisited(q.id); setIdx(idx + 1); }}>Skip →</button>}
-              {isLast && <button className="btn btn-accent" onClick={() => { if (tier === 2) markVisited(q.id); onFinish(); }}>See results →</button>}
+              {isLast && <button className="btn btn-accent" onClick={() => { console.log("See results clicked, isLast:", isLast, "tier:", tier, "idx:", idx); if (tier === 2) markVisited(q.id); onFinish(); }}>See results →</button>}
             </div>
           </div>
           <div className="finish-row">
@@ -692,27 +795,42 @@ function DomainNav({ answers, currentId, onJump }) {
 }
 
 /* ---------- RESULTS ---------- */
-function Results({ org, tier, answers, scoring, badge, onBack, onExport, onUpgrade, onIssueBadge }) {
+function Results({ org, tier, answers, scoring, badge, selfCertified, onBack, onExport, onUpgrade, onIssueBadge }) {
+  if (!answers || Object.keys(answers).length === 0) {
+    return <main className="wrap"><p style={{color: C.red}}>Error: No answers found. Please go back and try again.</p></main>;
+  }
+
   const { overall, tier: badgeTier, gate, cappedFrom } = useMemo(() => resolveTier(answers), [answers]);
   const ds = useMemo(() => domainScores(answers), [answers]);
   const gaps = useMemo(() => gapAnalysis(answers), [answers]);
   const comp = completion(answers);
-  const fw = useMemo(() => Object.entries(FRAMEWORKS).map(([k, name]) => {
-    const qs = QUESTIONS.filter((q) => q.frameworks.includes(k));
-    const ans = qs.filter((q) => answers[String(q.id)]?.score != null);
-    const sum = ans.reduce((a, q) => a + answers[String(q.id)].score, 0);
-    return { k, name, pct: ans.length ? Math.round((sum / (ans.length * 5)) * 100) : 0 };
-  }), [answers]);
+  const fw = useMemo(() => {
+    try {
+      return Object.entries(FRAMEWORKS).map(([k, name]) => {
+        const qs = QUESTIONS.filter((q) => q.frameworks.includes(k));
+        const ans = qs.filter((q) => answers[String(q.id)]?.score != null);
+        const sum = ans.reduce((a, q) => a + (answers[String(q.id)]?.score || 0), 0);
+        return { k, name, pct: ans.length ? Math.round((sum / (ans.length * 5)) * 100) : 0 };
+      });
+    } catch (err) {
+      console.error("Error computing frameworks:", err);
+      return Object.entries(FRAMEWORKS).map(([k, name]) => ({ k, name, pct: 0 }));
+    }
+  }, [answers]);
 
   // Use backend scoring if available
   const displayScoring = scoring || { overallScore: overall, badgeTier: badgeTier, domainScores: ds };
   const badgeEarned = tier === 2 && comp.pct === 100;
 
   useEffect(() => {
-    if (badgeEarned && !badge) {
-      onIssueBadge();
+    if (badgeEarned && !badge && onIssueBadge) {
+      try {
+        onIssueBadge();
+      } catch (err) {
+        console.error("Error issuing badge:", err);
+      }
     }
-  }, [badgeEarned, badge]);
+  }, [badgeEarned, badge, onIssueBadge]);
 
   return (
     <main className="wrap">
@@ -1132,6 +1250,57 @@ body{margin:0}
  .res-hero{grid-template-columns:1fr;text-align:center}
  .dstrip{grid-template-columns:repeat(2,1fr)}
  .upsell{flex-direction:column;align-items:flex-start}
+}
+
+/* landing page */
+.landing-hero{text-align:center;padding:60px 0 80px;background:linear-gradient(180deg,${C.pineSoft} 0%,transparent 100%);border-radius:16px;margin-bottom:60px}
+.landing-hero-content{max-width:54ch;margin:0 auto}
+.landing-hero .eyebrow{justify-content:center}
+.landing-hero .h1{font-size:48px;margin-bottom:24px}
+.landing-hero .lead{margin:0 auto 32px}
+.landing-hero .btn{max-width:280px;margin:0 auto}
+
+.landing-domains{margin-bottom:60px}
+.landing-domains .h2{font-size:36px;margin-bottom:12px}
+.section-desc{font-size:15px;color:${C.inkSoft};margin-bottom:36px;max-width:60ch}
+.domains-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:18px}
+.domain-card{border:1.5px solid ${C.line};border-radius:12px;padding:20px;background:${C.panel};transition:border-color .2s,box-shadow .2s}
+.domain-card:hover{border-color:${C.pine};box-shadow:0 4px 16px rgba(14,107,83,.06)}
+.domain-card-title{font-size:15px;font-weight:600;color:${C.ink};margin:0 0 8px}
+.domain-card-weight{font-size:12px;color:${C.mute};margin:0}
+
+.landing-features{margin-bottom:60px}
+.landing-features .h2{font-size:36px;margin-bottom:12px}
+.features-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:24px;margin-top:36px}
+.feature-box{border:1.5px solid ${C.line};border-radius:12px;padding:28px;background:${C.panel};text-align:center;transition:border-color .2s}
+.feature-box:hover{border-color:${C.ocean}}
+.feature-icon{font-size:44px;margin-bottom:14px}
+.feature-box h3{font-size:16px;font-weight:600;color:${C.ink};margin:0 0 10px}
+.feature-box p{font-size:13.5px;color:${C.inkSoft};line-height:1.5;margin:0}
+
+.landing-tiers{margin-bottom:60px}
+.landing-tiers .h2{font-size:36px;margin-bottom:36px}
+.tiers-preview{display:grid;grid-template-columns:1fr 1fr;gap:24px}
+.tier-preview-box{border:1.5px solid ${C.line};border-radius:12px;padding:32px;background:${C.panel};transition:border-color .2s}
+.tier-preview-box:hover{border-color:${C.pine}}
+.tier-preview-box.accent{border-color:${C.ocean};background:linear-gradient(135deg,${C.oceanSoft} 0%,${C.panel} 100%)}
+.tier-preview-box h3{font-family:'Lora',serif;font-size:20px;font-weight:600;color:${C.ink};margin:0 0 8px}
+.tier-preview-box .tier-tag{display:inline-block;margin-bottom:14px}
+.tier-list{list-style:none;padding:0;margin:0;display:flex;flex-direction:column;gap:10px}
+.tier-list li{font-size:14px;color:${C.inkSoft};display:flex;align-items:center;gap:8px}
+.tier-list li:before{content:"✓";color:${C.pine};font-weight:700}
+
+.landing-cta{text-align:center;padding:60px 0;border-top:1px solid ${C.line}}
+.landing-cta .btn-large{max-width:320px;margin:0 auto 28px;padding:16px 32px;font-size:15.5px}
+
+.h2{font-family:'Lora',Georgia,serif;font-size:32px;font-weight:600;color:${C.ink};margin:0 0 8px;letter-spacing:-.01em}
+
+@media (max-width:768px){
+ .landing-hero{padding:40px 0 60px;margin-bottom:40px}
+ .landing-hero .h1{font-size:32px}
+ .domains-grid,.features-grid{grid-template-columns:1fr}
+ .tiers-preview{grid-template-columns:1fr}
+ .landing-domains,.landing-features,.landing-tiers{margin-bottom:40px}
 }
 @media print{
  .hdr,.res-actions,.upsell,.finish-link{display:none}
