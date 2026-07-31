@@ -1,3 +1,15 @@
 node_modules/
 dist/
 *.local
+
+# Env files. frontend/src/lib/api.ts reads VITE_API_URL, so a frontend .env is
+# now plausible — and only backend/.gitignore covered .env before this.
+# Note: VITE_-prefixed vars are compiled into the client bundle and are readable
+# by anyone, so never put a secret in one.
+.env
+.env.*
+!.env.example
+
+# SQLite
+*.db
+*.sqlite

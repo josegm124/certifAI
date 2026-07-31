@@ -12,6 +12,7 @@ const createRoutes = (services) => {
     userService,
     assessmentService,
     scoringService,
+    resultService,
     badgeService,
     subscriptionService,
     auditLogRepository
@@ -182,6 +183,93 @@ const createRoutes = (services) => {
         criticalGating,
         completion,
         gaps: gaps.slice(0, 10) // Top 10 gaps
+      });
+    } catch (err) {
+      next(err);
+    }
+  });
+
+  // RESULTS — ported from the merge package (backend/src/routes/api.route-changes.md).
+  //
+  // The merge's position: the frontend engine is authoritative, and the backend
+  // validates and persists what it produced rather than recomputing it with a
+  // second engine. This route implements that. It is added ALONGSIDE
+  // compute-score rather than replacing it, so nothing that currently calls
+  // compute-score breaks while the team decides which engine to keep.
+  //
+  // Scale note: this route takes overallScore on the 0-100 scale the frontend
+  // engine produces. compute-score returns 0-5. That difference is the live
+  // symptom of having two engines.
+  //
+  // THIS ROUTE IS THE BADGE AUTHORITY. The client sends its computed score and
+  // its LevelContext; the server re-derives the critical-control gate and the
+  // evidence check from STORED ANSWERS, resolves the level itself, and only
+  // then issues a badge. A client cannot mint a badge by asserting
+  // hasSignature or hasEvidence over an empty answer table.
+  router.post('/assessments/:assessmentId/result', async (req, res, next) => {
+    try {
+      const assessment = await assessmentService.getAssessment(req.params.assessmentId);
+      if (!assessment) return res.status(404).json({ error: 'Assessment not found' });
+
+      // Validates the payload, re-derives gating/evidence from stored answers,
+      // and resolves the level of record server-side.
+      const result = await resultService.buildResult(req.params.assessmentId, req.body);
+
+      await assessmentService.updateAssessmentMetrics(
+        req.params.assessmentId,
+        result.completion,
+        result.overallScore,
+        result.badgeTier,
+        result.criticalGating.capped,
+        result.selfCertified,
+        result.selfCertifiedAt
+      );
+
+      // Issue the badge only if the SERVER-resolved level is badge-bearing and
+      // the assessment is actually complete. Re-issuing for an assessment that
+      // already has a live badge returns the existing one rather than minting
+      // duplicates.
+      let badge = null;
+      if (result.badgeEligible && result.completion.percentage === 100) {
+        // The badge belongs to the company, and an assessment reaches its
+        // company through the user who started it.
+        const owner = await userService.getUser(assessment.userId);
+        const companyId = owner?.companyId;
+        if (!companyId) return res.status(409).json({ error: 'Assessment has no owning company; cannot issue badge' });
+
+        badge = await badgeService.getActiveBadge(req.params.assessmentId);
+        if (!badge || badge.tier !== result.badgeTier) {
+          badge = await badgeService.issueBadge(
+            req.params.assessmentId,
+            companyId,
+            result.badgeTier,
+            result.overallScore,
+            req.body.frameworks || []
+          );
+          await auditLogRepository.create(new AuditLog({
+            id: uuidv4(),
+            companyId,
+            userId: assessment.userId,
+            assessmentId: req.params.assessmentId,
+            action: 'BADGE_ISSUED',
+            ipAddress: req.ip
+          }));
+        }
+      }
+
+      res.json({
+        ...result,
+        badge: badge
+          ? {
+              id: badge.id,
+              tier: badge.tier,
+              score: badge.score,
+              verificationToken: badge.verificationToken,
+              issuedAt: badge.issuedAt,
+              expiresAt: badge.expiresAt,
+              verifyUrl: `${process.env.PUBLIC_BASE_URL || `${req.protocol}://${req.get('host')}`}/verify/${badge.verificationToken}`,
+            }
+          : null,
       });
     } catch (err) {
       next(err);

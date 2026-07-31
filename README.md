@@ -1,85 +1,83 @@
-# Backend Completado – Arquitectura & Resumen
+# CertifAI
 
-## Arquitectura Implementada
+AI governance maturity assessment. A 36-question self-assessment across 9 governance
+domains, mapped to 7 regulatory frameworks and scored on a 0–5 maturity scale.
 
-Clean Architecture + SOLID + DI (Dependency Injection)
+## Layout
 
-Controllers → Services → Repositories → SQLite
-
-Patrones:
-- Repository Pattern – Data abstraction (SQLite ↔ Postgres fácil después)
-- Service Layer – Toda lógica de negocio aquí (ScoringService, BadgeService, etc.)
-- Dependency Injection – Services reciben dependencias, no crean
-- Factory Pattern – Badge creation con metadata
-- Observer-ready – Audit logs en todo mutation
-
-SOLID Principles:
-- SRP – Cada servicio = 1 responsabilidad (no mixed concerns)
-- OCP – Extensible (agregar frameworks sin modificar scoring)
-- LSP – Repositories consistentes
-- ISP – Services pequeños, no god objects
-- DIP – Depend on abstractions (repositories), no concrete classes
-
-# Stack Final
-
-Frontend: React 18 + Vite + CertifAI_MVP.jsx (original file intacto)
-Backend: Express.js + SQLite + Pino logger
-Database: SQLite (file-based, 0 setup) con schema + indexes
-
----
-# INICIO (Getting Started)
-
-## Prerequisitos
-- **Node.js 18+** y **npm** (verifica con `node -v` y `npm -v`)
-- No requiere instalar ninguna base de datos: SQLite es file-based y se crea sola.
-
-## 1. Clonar el repo
-```bash
-git clone <repo-url>
-cd certifAI_MVP
+```
+frontend/         React 18 + TypeScript + Vite   → http://localhost:5173
+backend/          Express 5 + SQLite             → http://localhost:3001
+legacy-frontend/  the earlier single-file JSX build, kept for reference
+ARCHITECTURE.md   backend architecture notes (Clean Architecture / SOLID / DI)
 ```
 
-## 2. Backend (Terminal 1)
+## Start it (two terminals)
+
 ```bash
-cd backend
-cp .env.example .env      # Windows PowerShell: copy .env.example .env
-npm install
-npm start
+npm --prefix backend run dev
 ```
-→ Corre en http://localhost:3001
-El backend crea la base de datos SQLite y el schema automáticamente al arrancar.
-En modo dev (`.env` por defecto) resetea la DB en cada arranque — como Spring create-drop.
 
-## 3. Frontend (Terminal 2)
 ```bash
-cd certifAI_MVP        # raíz del proyecto (no la carpeta backend)
-npm install
-npm run dev
+npm --prefix frontend run dev
 ```
-→ Abre en http://localhost:5173
 
-> **Nota:** arranca primero el backend. El frontend en :5173 llama a la API en :3001.
+First time only:
 
-User Flow (Lo que ves)
+```bash
+npm run install:all
+```
 
-1. Intro: Ingresas nombre org + email → tier 1 (free) o tier 2 (professional)
-2. Assessment: Respondes 32 preguntas (one-by-one)
-  - Tier 2 muestra evidencia + attestation campos
-  - Sidebar muestra dominios (8) para navegar
-3. Results: Ves
-  - Score por dominio (%)
-  - Score overall (0-5, ponderado)
-  - Badge tier (Aware/Aligned/Assured) con gating logic
-  - Gap analysis (top 10 items to fix, priorizados)
-  - Framework coverage rings (7 frameworks)
-  - JSON export/import buttons
+The backend creates and seeds its SQLite database on start. `backend/.env` sets
+`RESET_DB_ON_START=true` by default, so **data is wiped on every restart** — set it
+to `false` to keep records between runs.
 
-# El frontend llama estos endpoints:
+## Tests
 
-1. POST /api/organizations           → crear org
-2. POST /api/assessments             → crear assessment
-3. POST /api/assessments/:id/answers → guardar respuestas (loop)
-4. POST /api/assessments/:id/compute-score → calcular scores + gaps
-5. POST /api/assessments/:id/badges  → emitir badge (si tier 2 + 100%)
-6. GET  /api/badges/:token/verify    → link público para compartir badge
-claude --resume 0d3c5b9b-5f30-4dc1-a6e1-79fa4dd8d92d
+```bash
+npm --prefix frontend run test
+```
+
+Covers the scoring engine and the 4A ladder.
+
+## How scoring and badges are split
+
+There is one scoring engine, in `frontend/src/lib/scoring.ts`, reading the canonical
+instrument from `frontend/src/lib/data.ts`. It produces the score you see on screen
+immediately, as a **preview**.
+
+The **badge is issued by the backend, not the browser.** When a tier-2 user signs the
+self-certification, the frontend posts its score plus the level context to
+`POST /api/assessments/:id/result`. The server then, from its own stored answers:
+
+- re-derives the critical-control gate (Q17, Q18, Q26 at or below 1 → capped to Aware)
+- re-derives whether any evidence actually exists
+- resolves the level itself, applying the tier, evidence and signature requirements
+- issues the badge only if the level it resolved is badge-bearing and the assessment is complete
+
+A client asserting `hasSignature` or `hasEvidence` over an empty answer table gets no
+badge. If the backend is unreachable the app still works, shows the local preview, and
+issues **no** badge — it says so rather than implying a credential exists.
+
+Badges carry a 12-month expiry and a verification token. Anyone can check one without
+logging in:
+
+```bash
+curl http://localhost:3001/api/badges/<token>/verify
+```
+
+`http://localhost:3001/verify/<token>` serves the public HTML page with OpenGraph tags
+for link previews.
+
+## Known limitations, stated plainly
+
+- The submitted score is not tamper-proof. The gates above mean an inflated score alone
+  cannot mint a badge, but moving the scoring module server-side is the production fix.
+  It is written with no DOM or React dependency so it can be lifted across unchanged.
+- The self-certification is an attestation, not a verified signature.
+- `POST /api/assessments/:id/compute-score` still exists alongside `/result` and runs a
+  second, older scoring engine on a 0–5 scale. `/result` is the one that issues badges.
+- The AI narrative and improvement plans are produced deterministically from the user's
+  own answers, as stand-ins for live model calls.
+- Pricing presents four tiers as the commercial model; the build implements the free and
+  professional flows.

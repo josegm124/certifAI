@@ -32,6 +32,17 @@ const createVerifyRoutes = ({ badgeService, companyService }) => {
   const fmtDate = (d) =>
     new Date(d).toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' });
 
+  /* Badge scores arrive on two scales, because two routes issue them:
+       /assessments/:id/result       -> 0-100 (the frontend engine's scale)
+       /assessments/:id/compute-score -> 0-5  (the legacy backend engine)
+     Blindly multiplying by 20 rendered a 69/100 badge as "1380%" on the public
+     share preview. Badges are only ever issued at Aligned or above, which is
+     >= 41 on the 0-100 scale, so anything <= 5 is unambiguously the old scale. */
+  const toPercent = (score) => {
+    const n = Number(score) || 0;
+    return Math.round(n <= 5 ? n * 20 : n);
+  };
+
   const loadBadge = async (token) => {
     const badge = await badgeService.verifyBadge(token);
     if (!badge) return null;
@@ -62,7 +73,7 @@ const createVerifyRoutes = ({ badgeService, companyService }) => {
 
       const { badge, orgName, meta } = data;
       const tierLabel = meta.label;
-      const scorePct = Math.round((Number(badge.score) || 0) * 20); // 0-5 → 0-100%
+      const scorePct = toPercent(badge.score);
       const imageUrl = `${origin}/verify/${encodeURIComponent(badge.verificationToken)}/badge.svg`;
       const pageUrl = `${origin}/verify/${encodeURIComponent(badge.verificationToken)}`;
       const title = `${orgName} — CertifAI ${tierLabel} Badge`;
@@ -150,7 +161,7 @@ const createVerifyRoutes = ({ badgeService, companyService }) => {
       const data = await loadBadge(req.params.token);
       if (!data) return res.status(404).send('Not found');
       const { badge, orgName, meta } = data;
-      const scorePct = Math.round((Number(badge.score) || 0) * 20);
+      const scorePct = toPercent(badge.score);
       const accent = meta.color;
       const esc = (s) => escapeHtml(s);
       const org = orgName.length > 34 ? orgName.slice(0, 33) + '…' : orgName;

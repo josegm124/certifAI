@@ -19,6 +19,7 @@ const CompanyService = require('./services/CompanyService');
 const UserService = require('./services/UserService');
 const AssessmentService = require('./services/AssessmentService');
 const ScoringService = require('./services/ScoringService');
+const AssessmentResultService = require('./services/AssessmentResultService');
 const BadgeService = require('./services/BadgeService');
 const SubscriptionService = require('./services/SubscriptionService');
 
@@ -74,6 +75,7 @@ const startServer = async () => {
       auditLogRepository
     );
     const scoringService = new ScoringService(answerRepository);
+    const resultService = new AssessmentResultService(answerRepository);
     const badgeService = new BadgeService(badgeRepository, assessmentRepository);
     const subscriptionService = new SubscriptionService(
       {
@@ -90,6 +92,7 @@ const startServer = async () => {
       userService,
       assessmentService,
       scoringService,
+      resultService,
       badgeService,
       subscriptionService,
       auditLogRepository
