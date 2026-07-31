@@ -1,6 +1,10 @@
 import { Link, useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
-import { DOMAINS, FRAMEWORKS } from "../lib/data";
+import {
+  DOMAINS, FRAMEWORKS, DOMAIN_SHORT,
+  TOTAL_QUESTIONS, TOTAL_DOMAINS, TOTAL_FRAMEWORKS, MAX_SCORE,
+  numberWord, NumberWord,
+} from "../lib/data";
 import LadderVis from "../components/LadderVis";
 import RadarChart, { type RadarPoint } from "../components/RadarChart";
 import { Check, Arrow, Sparkle } from "../components/icons";
@@ -15,17 +19,14 @@ const fadeUp = {
   transition: { duration: 0.6, ease: [0.22, 1, 0.36, 1] as const },
 };
 
-const shortName: Record<string, string> = {
-  strategy: "Strategy", governance: "Governance", risk: "Risk", data: "Data",
-  human: "Oversight", trust: "Trust", workforce: "Workforce", improve: "Improve",
-};
-
 export default function Landing() {
   const nav = useNavigate();
   const loadSample = useStore((s) => s.loadSample);
 
+  // DOMAIN_SHORT is owned by data.ts — the local copy here was missing
+  // "revenue", so the radar drew nine axes with only eight labelled.
   const preview: RadarPoint[] = domainScores(SAMPLE_ANSWERS).map((d) => ({
-    id: d.id, label: d.name, short: shortName[d.id], pct: d.pct,
+    id: d.id, label: d.name, short: DOMAIN_SHORT[d.id], pct: d.pct,
   }));
 
   return (
@@ -34,12 +35,14 @@ export default function Landing() {
         {/* hero */}
         <section className="hero">
           <motion.div {...fadeUp}>
-            <div className="eyebrow">EU AI Act · 8 domains · 32 controls · AI-reviewed</div>
+            <div className="eyebrow">EU AI Act · {TOTAL_DOMAINS} domains · {TOTAL_QUESTIONS} controls · AI-reviewed</div>
             <h1 className="h1">Know exactly where your AI governance stands — and prove it.</h1>
             <p className="lead">
               A structured readiness assessment for organisations deploying AI under the EU AI Act.
-              Score 32 controls across 8 governance domains, watch your maturity come alive on an
-              interactive dashboard, then add evidence and earn an AI-reviewed trust level.
+              Score {TOTAL_QUESTIONS} controls across {TOTAL_DOMAINS} governance domains, mapped to{" "}
+              {TOTAL_FRAMEWORKS} regulatory frameworks and scored on a 0 to {MAX_SCORE} maturity scale.
+              Watch your maturity come alive on an interactive dashboard, then add evidence and earn
+              an AI-reviewed trust level.
             </p>
             <div className="hero-cta">
               <Link to="/assess" className="btn btn-primary btn-lg">Start free assessment <Arrow color="#fff" /></Link>
@@ -67,7 +70,7 @@ export default function Landing() {
 
         {/* domain strip */}
         <motion.section {...fadeUp} style={{ marginTop: 38 }}>
-          <h2 className="h2">Eight weighted governance domains.</h2>
+          <h2 className="h2">{NumberWord(TOTAL_DOMAINS)} weighted governance domains.</h2>
           <div className="dstrip">
             {DOMAINS.map((d) => (
               <div key={d.id} className="dstrip-item">
@@ -93,7 +96,7 @@ export default function Landing() {
           <h2 className="h2">How it works.</h2>
           <div className="how">
             {[
-              { t: "Assess", d: "Answer 32 controls on a 0–5 maturity scale across all eight domains. No signup required." },
+              { t: "Assess", d: `Answer ${TOTAL_QUESTIONS} controls on a 0–${MAX_SCORE} maturity scale across all ${numberWord(TOTAL_DOMAINS)} domains. No signup required.` },
               { t: "Add evidence", d: "Attach documents and written detail to each control to build an audit-ready record." },
               { t: "Get AI-reviewed", d: "Claude validates your evidence against each control, suggests a substantiated score, and drafts remediation." },
               { t: "Earn your level", d: "Sign your self-certification and earn Aligned, Assured, or Advanced — a badge you can share." },
@@ -116,7 +119,7 @@ export default function Landing() {
               <div className="price-name">Readiness Snapshot</div>
               <div className="price-cost"><b>€0</b> · self-scored</div>
               <ul className="plist">
-                {["All 32 controls, self-scored", "Maturity by domain + framework", "Interactive dashboard & deep-dives", "Prioritised gap profile", "Internal Aware signal — no badge"].map((p) => (
+                {[`All ${TOTAL_QUESTIONS} controls, self-scored`, "Maturity by domain + framework", "Interactive dashboard & deep-dives", "Prioritised gap profile", "Internal Aware signal — no badge"].map((p) => (
                   <li key={p}><Check /> {p}</li>
                 ))}
               </ul>

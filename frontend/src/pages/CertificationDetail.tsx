@@ -1,7 +1,7 @@
 import { useMemo } from "react";
 import { useParams, Link, useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
-import { QUESTIONS, DOMAINS, type FrameworkKey } from "../lib/data";
+import { QUESTIONS, DOMAINS, TOTAL_QUESTIONS, type FrameworkKey } from "../lib/data";
 import { CERTIFICATIONS } from "../lib/certifications";
 import { useStore } from "../store/useStore";
 import { C, barColor } from "../theme";
@@ -96,7 +96,7 @@ export default function CertificationDetail() {
           </div>
 
           <h3 className="sec-h">Your controls mapped to this framework</h3>
-          <p className="sec-note">{data.qs.length} of 32 CertifAI controls map to {cert.short}. {data.answered.length} answered.</p>
+          <p className="sec-note">{data.qs.length} of {TOTAL_QUESTIONS} CertifAI controls map to {cert.short}. {data.answered.length} answered.</p>
           {scored.length === 0 && <p className="sec-note">No mapped controls answered yet. <Link to="/assess">Answer them →</Link></p>}
           {strong.length > 0 && (
             <>

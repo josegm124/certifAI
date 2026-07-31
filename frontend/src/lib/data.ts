@@ -154,10 +154,63 @@ export const CRITICAL_IDS: number[] = QUESTIONS.filter((q) => q.critical).map((q
    silently skewing every score. */
 export const TOTAL_QUESTIONS = QUESTIONS.length; // 36
 export const TOTAL_DOMAINS = DOMAINS.length; // 9
+export const TOTAL_FRAMEWORKS = Object.keys(FRAMEWORKS).length; // 7
+export const MAX_SCORE = MATURITY_LEVELS[MATURITY_LEVELS.length - 1].score; // 5
+
+/* ------------------------------------------------------------------------------
+   DERIVED FACTS — every user-facing statement of "how big is the instrument"
+   must come from here.
+
+   The landing page previously hardcoded "32 controls" and "8 domains" in five
+   places and went stale the moment the ninth domain landed, telling visitors
+   the wrong instrument while the page rendered the right one. Nothing below is
+   typed; it is all counted from the arrays above.
+   ------------------------------------------------------------------------------ */
+
+/** Canonical sentence from the project brief, section 3, with live numbers. */
+export const CANONICAL_SENTENCE =
+  `${TOTAL_QUESTIONS} questions across ${TOTAL_DOMAINS} governance domains, ` +
+  `mapped to ${TOTAL_FRAMEWORKS} regulatory frameworks and scored on a 0 to ${MAX_SCORE} maturity scale`;
+
+/** English word for the small counts the copy uses ("Nine weighted domains."). */
+const NUMBER_WORDS = ["zero", "one", "two", "three", "four", "five", "six", "seven", "eight", "nine", "ten", "eleven", "twelve"];
+export const numberWord = (n: number): string => NUMBER_WORDS[n] ?? String(n);
+
+/** Sentence-case variant for the start of a sentence. */
+export const NumberWord = (n: number): string => {
+  const w = numberWord(n);
+  return w.charAt(0).toUpperCase() + w.slice(1);
+};
+
+/**
+ * Short axis labels for the radar and any tight layout.
+ *
+ * SINGLE SOURCE. This lived as a private copy in both Landing.tsx and
+ * Dashboard.tsx; both were missing "revenue" when the ninth domain was added,
+ * so the radar silently drew an unlabelled axis. Derived from DOMAINS so a new
+ * domain gets a usable label automatically, with overrides only where the full
+ * name is too long for an axis.
+ */
+const SHORT_OVERRIDES: Record<string, string> = {
+  human: "Oversight",
+  trust: "Trust",
+  improve: "Improve",
+  revenue: "Revenue",
+};
+export const DOMAIN_SHORT: Record<string, string> = Object.fromEntries(
+  DOMAINS.map((d) => [d.id, SHORT_OVERRIDES[d.id] ?? d.name.split(/[\s&]/)[0]])
+);
 
 const WEIGHT_SUM = DOMAINS.reduce((a, d) => a + d.weight, 0);
 if (Math.abs(WEIGHT_SUM - 1) > 0.0001) {
   throw new Error(
     `CertifAI domain weights must sum to 1.00, got ${WEIGHT_SUM.toFixed(4)}. Check DOMAINS in data.ts.`
   );
+}
+
+/* Every domain must have a short label, or the radar draws a blank axis —
+   which is exactly how the missing "revenue" entry went unnoticed. */
+const MISSING_SHORT = DOMAINS.filter((d) => !DOMAIN_SHORT[d.id]).map((d) => d.id);
+if (MISSING_SHORT.length) {
+  throw new Error(`CertifAI: no short label for domain(s) ${MISSING_SHORT.join(", ")}. Check DOMAIN_SHORT in data.ts.`);
 }

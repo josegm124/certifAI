@@ -12,13 +12,10 @@ import ScoreDial from "../components/ScoreDial";
 import LevelBadge, { LEVEL_COLOR } from "../components/Badges";
 import { Arrow, ShieldAlert } from "../components/icons";
 import { CERTIFICATIONS, CERT_ORDER } from "../lib/certifications";
+// DOMAIN_SHORT is owned by data.ts. A private copy lived here and another in
+// Landing.tsx; both went stale when the ninth domain landed.
+import { DOMAIN_SHORT } from "../lib/data";
 
-// "revenue" added with the canonical 9-domain instrument — without it the new
-// domain rendered with a blank label on the radar and matrix.
-const shortName: Record<string, string> = {
-  strategy: "Strategy", revenue: "Revenue", governance: "Governance", risk: "Risk", data: "Data",
-  human: "Oversight", trust: "Trust", workforce: "Workforce", improve: "Improve",
-};
 const fwShort: Record<string, string> = {
   aiact: "EU AI Act", gdpr: "GDPR", oecd: "OECD", g7: "G7", gpai: "GPAI", iso: "ISO 42001", nist: "NIST",
 };
@@ -57,7 +54,7 @@ export default function Dashboard() {
     );
   }
 
-  const domainRadar: RadarPoint[] = ds.map((d) => ({ id: d.id, label: d.name, short: shortName[d.id], pct: d.pct }));
+  const domainRadar: RadarPoint[] = ds.map((d) => ({ id: d.id, label: d.name, short: DOMAIN_SHORT[d.id], pct: d.pct }));
   const fwRadar: RadarPoint[] = fw.map((f) => ({ id: f.k, label: f.name, short: fwShort[f.k], pct: f.pct }));
 
   // next-level guidance

@@ -6,6 +6,9 @@
    Sources are cited in the UI and README.
    ============================================================ */
 import type { FrameworkKey } from "./data";
+// Counts interpolated rather than typed — the notes below said "eight domains"
+// and went stale when the ninth landed.
+import { TOTAL_DOMAINS, numberWord } from "./data";
 
 export type CertType = "Binding law" | "Certifiable standard" | "Voluntary code" | "Principles";
 
@@ -122,7 +125,7 @@ export const CERTIFICATIONS: Record<FrameworkKey, Certification> = {
     status: "Updated May 2024; adhered to by 47+ governments and referenced across the G20.",
     stakes: "Non-binding, but the reference point for regulators and procurement due-diligence worldwide.",
     certifaiNote:
-      "CertifAI treats the OECD principles as the values lens across all eight domains, showing how your practice expresses them.",
+      `CertifAI treats the OECD principles as the values lens across all ${numberWord(TOTAL_DOMAINS)} domains, showing how your practice expresses them.`,
     source: { label: "OECD AI Principles", url: "https://www.oecd.org/en/topics/ai-principles.html" },
   },
 
@@ -214,7 +217,7 @@ export const CERTIFICATIONS: Record<FrameworkKey, Certification> = {
       "Published Dec 2023. Certification via accredited bodies runs a Stage 1 + Stage 2 audit, is valid three years with annual surveillance.",
     stakes: "Voluntary certification, but a growing market signal for enterprise and public-sector procurement.",
     certifaiNote:
-      "CertifAI's eight domains align closely with the AIMS structure — it's a strong readiness pre-check before a formal ISO 42001 audit.",
+      `CertifAI's ${numberWord(TOTAL_DOMAINS)} domains align closely with the AIMS structure — it's a strong readiness pre-check before a formal ISO 42001 audit.`,
     source: { label: "ISO/IEC 42001 explained", url: "https://www.iso.org/standard/42001" },
   },
 
