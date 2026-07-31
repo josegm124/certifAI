@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { DOMAINS, QUESTIONS, MATURITY_LEVELS, FRAMEWORKS } from "../lib/data";
+import { DOMAINS, QUESTIONS, MATURITY_LEVELS, FRAMEWORKS, TOTAL_QUESTIONS } from "../lib/data";
 import { useStore } from "../store/useStore";
 import { completion } from "../lib/scoring";
 import { Dot, Arrow } from "../components/icons";
@@ -62,7 +62,7 @@ export default function Assess() {
 
         <section>
           <div className="q-head">
-            <span className="q-num">Q{q.id}<span className="q-of"> / 32</span></span>
+            <span className="q-num">Q{q.id}<span className="q-of"> / {TOTAL_QUESTIONS}</span></span>
             {q.critical && <span className="q-crit">Critical control</span>}
             <span className="q-frameworks">{q.frameworks.map((f) => FRAMEWORKS[f]).join(" · ")}</span>
           </div>
