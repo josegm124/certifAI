@@ -1,7 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const logger = require('../config/logger');
-const { AuditLog } = require('../domain/entities');
+const { AuditLog, BADGE_TIERS } = require('../domain/entities');
 const { v4: uuidv4 } = require('uuid');
 const { isValidEmail } = require('../utils/validators');
 
@@ -230,17 +230,82 @@ const createRoutes = (services) => {
   });
 
   // BADGES (the certified entity is the company)
+  //
+  // HARDENED. This route used to take tier and overallScore straight from the
+  // request body, which meant a caller could ask for a badge it had not earned:
+  // an assessment with zero answers on the free tier could be issued "advanced"
+  // at 100. With compute-score retired this was the last forgeable path, and it
+  // undermined the one claim the product makes — that a badge is earned.
+  //
+  // The tier and score now come from what the SERVER resolved and stored on the
+  // assessment via POST /result. Anything in the body is ignored.
   router.post('/assessments/:assessmentId/badges', async (req, res, next) => {
     try {
-      const { companyId, tier, overallScore, frameworks } = req.body;
+      const assessment = await assessmentService.getAssessment(req.params.assessmentId);
+      if (!assessment) return res.status(404).json({ error: 'Assessment not found' });
+
+      // A result must have been computed and stored first. A fresh assessment
+      // still carries its defaults (0% complete, score 0), so this is the
+      // "you never submitted a result" case, distinct from "you scored badly".
+      if (assessment.completionPercentage === 0 && Number(assessment.overallScore) === 0) {
+        return res.status(409).json({
+          error: 'No result recorded for this assessment. POST /assessments/:id/result first; that route resolves the level and issues the badge.',
+        });
+      }
+
+      // Aware is not badge-bearing. This also catches every gate /result
+      // applied — critical-control cap, missing evidence, free tier, unsigned
+      // — because each of them resolves the stored tier down to aware.
+      if (assessment.badgeTier === BADGE_TIERS.AWARE) {
+        return res.status(409).json({
+          error: 'Aware is not badge-bearing, so no badge can be issued for this assessment.',
+          storedTier: assessment.badgeTier,
+        });
+      }
+
+      if (assessment.completionPercentage !== 100) {
+        return res.status(409).json({
+          error: 'Assessment is not complete, so no badge can be issued.',
+          completionPercentage: assessment.completionPercentage,
+        });
+      }
+
+      // The badge belongs to the company, reached through the user who started
+      // the assessment — not through a companyId supplied by the caller.
+      const owner = await userService.getUser(assessment.userId);
+      const companyId = owner?.companyId;
+      if (!companyId) return res.status(409).json({ error: 'Assessment has no owning company; cannot issue badge' });
+
+      // Surface a mismatch rather than silently discarding it: a body asking
+      // for a different tier than the one stored is worth seeing in the log.
+      if (req.body?.tier && req.body.tier !== assessment.badgeTier) {
+        logger.warn(
+          { assessmentId: assessment.id, requested: req.body.tier, stored: assessment.badgeTier },
+          'Badge request asked for a tier the assessment did not earn; stored tier used'
+        );
+      }
+
+      const existing = await badgeService.getActiveBadge(req.params.assessmentId);
+      if (existing && existing.tier === assessment.badgeTier) {
+        return res.status(200).json(existing);
+      }
 
       const badge = await badgeService.issueBadge(
         req.params.assessmentId,
         companyId,
-        tier,
-        overallScore,
-        frameworks || []
+        assessment.badgeTier,
+        assessment.overallScore,
+        req.body?.frameworks || []
       );
+
+      await auditLogRepository.create(new AuditLog({
+        id: uuidv4(),
+        companyId,
+        userId: assessment.userId,
+        assessmentId: req.params.assessmentId,
+        action: 'BADGE_ISSUED',
+        ipAddress: req.ip
+      }));
 
       res.status(201).json(badge);
     } catch (err) {

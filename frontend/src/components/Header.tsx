@@ -14,7 +14,7 @@ export default function Header() {
           <NavLink to="/dashboard" className="hdr-link">Dashboard</NavLink>
           <NavLink to="/assess" className="hdr-link">Assessment</NavLink>
           <NavLink to="/results" className="hdr-link">Results</NavLink>
-          <Link to="/assess" className="btn btn-primary hdr-cta">Start free assessment</Link>
+          <Link to="/start" className="btn btn-primary hdr-cta">Start free assessment</Link>
         </nav>
       </div>
     </header>

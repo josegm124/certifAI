@@ -7,6 +7,7 @@ import { SAMPLE_ANSWERS, SAMPLE_ORG } from "../lib/sampleData";
 interface CertState {
   org: string;
   email: string;
+  role: string;
   tier: 1 | 2;
   answers: Answers;
   /** whether the Tier-2 self-certification has been signed */
@@ -22,6 +23,7 @@ interface CertState {
 
   setOrg: (org: string) => void;
   setEmail: (email: string) => void;
+  setRole: (role: string) => void;
   setTier: (tier: 1 | 2) => void;
   setAnswer: (qid: number, patch: Answer) => void;
   setSigned: (v: boolean) => void;
@@ -36,6 +38,7 @@ export const useStore = create<CertState>()(
     (set) => ({
       org: "",
       email: "",
+      role: "",
       tier: 1,
       answers: {},
       signed: false,
@@ -46,6 +49,7 @@ export const useStore = create<CertState>()(
 
       setOrg: (org) => set({ org }),
       setEmail: (email) => set({ email }),
+      setRole: (role) => set({ role }),
       setTier: (tier) => set({ tier }),
       // Any change to an answer invalidates the server's verdict — the badge
       // on screen must never outlive the answers it was issued against.
@@ -55,7 +59,7 @@ export const useStore = create<CertState>()(
       setIdentity: (userId, assessmentId) => set({ userId, assessmentId }),
       setServer: (server) => set({ server }),
       reset: () =>
-        set({ org: "", email: "", tier: 1, answers: {}, signed: false, userId: null, assessmentId: null, server: null }),
+        set({ org: "", email: "", role: "", tier: 1, answers: {}, signed: false, userId: null, assessmentId: null, server: null }),
       // signed:false on purpose — the sample should walk the signature and
       // certification step, not skip past the part where the badge is earned.
       loadSample: () =>

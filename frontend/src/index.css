@@ -270,3 +270,18 @@ a{color:inherit;text-decoration:none}
 @media(prefers-reduced-motion:reduce){
   *{animation-duration:.001ms!important;transition-duration:.001ms!important}
 }
+
+/* ---------- Start / intake gate ----------
+   Added with the intake gate (Start.tsx). v2 previously had no form styling
+   beyond .input, because it collected nothing but an organisation name. */
+.start-grid{display:grid;grid-template-columns:1fr 1.15fr;gap:22px;align-items:start;margin-top:26px}
+@media(max-width:900px){.start-grid{grid-template-columns:1fr}}
+.field{margin-top:14px}
+.field:first-of-type{margin-top:6px}
+.lbl{display:block;font-size:13px;font-weight:600;color:var(--ink);margin-bottom:6px}
+.input-err{border-color:var(--red)}
+.input-err:focus{border-color:var(--red);box-shadow:0 0 0 3px var(--red-soft)}
+.field-err{margin-top:6px;font-size:12.5px;color:var(--red);font-weight:500}
+select.input{appearance:none;cursor:pointer;background-image:linear-gradient(45deg,transparent 50%,var(--mute) 50%),linear-gradient(135deg,var(--mute) 50%,transparent 50%);background-position:calc(100% - 18px) 52%,calc(100% - 13px) 52%;background-size:5px 5px,5px 5px;background-repeat:no-repeat;padding-right:38px}
+.price-on{border-color:var(--pine);box-shadow:0 0 0 3px var(--pine-soft)}
+.price{cursor:pointer}

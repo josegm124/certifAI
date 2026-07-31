@@ -6,9 +6,17 @@ import { completion } from "../lib/scoring";
 import { Dot, Arrow } from "../components/icons";
 
 export default function Assess() {
-  const { tier, setTier, answers, setAnswer, org, setOrg } = useStore();
+  const { tier, setTier, answers, setAnswer, org, setOrg, email, seeded } = useStore();
   const [idx, setIdx] = useState(0);
   const nav = useNavigate();
+
+  // Intake gate. Nobody answers 36 controls anonymously — a deep link or the
+  // header nav lands here without details, so send them through /start first.
+  // The seeded sample profile is exempt: it is a demo, not a lead.
+  const gated = !seeded && !(org.trim() && email.trim());
+  useEffect(() => {
+    if (gated) nav("/start", { replace: true });
+  }, [gated, nav]);
 
   const q = QUESTIONS[idx];
   const a = answers[q.id] || {};

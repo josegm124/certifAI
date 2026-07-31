@@ -46,7 +46,7 @@ export default function Dashboard() {
           <h2 className="h2">Your dashboard is waiting.</h2>
           <p className="lead" style={{ margin: "0 auto 22px" }}>Take the free assessment to bring it to life — or load a sample profile to explore.</p>
           <div style={{ display: "flex", gap: 12, justifyContent: "center", flexWrap: "wrap" }}>
-            <Link to="/assess" className="btn btn-primary btn-lg">Start assessment</Link>
+            <Link to="/start" className="btn btn-primary btn-lg">Start assessment</Link>
             <button className="btn btn-ghost btn-lg" onClick={loadSample}>Load sample profile</button>
           </div>
         </div>

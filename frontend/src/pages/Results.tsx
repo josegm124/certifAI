@@ -63,7 +63,7 @@ export default function Results() {
       <main className="wrap"><div className="card" style={{ textAlign: "center", padding: 48 }}>
         <h2 className="h2">No results yet.</h2>
         <p className="lead" style={{ margin: "0 auto 22px" }}>Take the assessment to generate your readiness report.</p>
-        <Link to="/assess" className="btn btn-primary btn-lg">Start assessment</Link>
+        <Link to="/start" className="btn btn-primary btn-lg">Start assessment</Link>
       </div></main>
     );
   }

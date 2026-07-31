@@ -45,12 +45,12 @@ export default function Landing() {
               an AI-reviewed trust level.
             </p>
             <div className="hero-cta">
-              <Link to="/assess" className="btn btn-primary btn-lg">Start free assessment <Arrow color="#fff" /></Link>
+              <Link to="/start" className="btn btn-primary btn-lg">Start free assessment <Arrow color="#fff" /></Link>
               <button className="btn btn-ghost btn-lg" onClick={() => { loadSample(); nav("/dashboard"); }}>
                 See a live dashboard
               </button>
             </div>
-            <div className="hero-trust"><Check /> No signup to assess · results unlock when you create an account</div>
+            <div className="hero-trust"><Check /> Free to assess · organisation, work email and role to begin · no payment</div>
           </motion.div>
           <motion.div className="hero-art" initial={{ opacity: 0, scale: 0.94 }} animate={{ opacity: 1, scale: 1 }} transition={{ duration: 0.7, ease: [0.22, 1, 0.36, 1] }}>
             <div className="card">
@@ -96,7 +96,7 @@ export default function Landing() {
           <h2 className="h2">How it works.</h2>
           <div className="how">
             {[
-              { t: "Assess", d: `Answer ${TOTAL_QUESTIONS} controls on a 0–${MAX_SCORE} maturity scale across all ${numberWord(TOTAL_DOMAINS)} domains. No signup required.` },
+              { t: "Assess", d: `Answer ${TOTAL_QUESTIONS} controls on a 0–${MAX_SCORE} maturity scale across all ${numberWord(TOTAL_DOMAINS)} domains. Takes about 20 minutes.` },
               { t: "Add evidence", d: "Attach documents and written detail to each control to build an audit-ready record." },
               { t: "Get AI-reviewed", d: "Claude validates your evidence against each control, suggests a substantiated score, and drafts remediation." },
               { t: "Earn your level", d: "Sign your self-certification and earn Aligned, Assured, or Advanced — a badge you can share." },
@@ -123,7 +123,7 @@ export default function Landing() {
                   <li key={p}><Check /> {p}</li>
                 ))}
               </ul>
-              <Link to="/assess" className="btn btn-primary" style={{ width: "100%" }}>Start free assessment</Link>
+              <Link to="/start" className="btn btn-primary" style={{ width: "100%" }}>Start free assessment</Link>
             </div>
             <div className="price price-accent">
               <div className="price-tag">Paid · Tier 2</div>
@@ -134,7 +134,7 @@ export default function Landing() {
                   <li key={p}><Sparkle size={15} color="var(--ocean)" /> {p}</li>
                 ))}
               </ul>
-              <Link to="/assess" className="btn btn-accent" style={{ width: "100%" }}>Begin certification</Link>
+              <Link to="/start" className="btn btn-accent" style={{ width: "100%" }}>Begin certification</Link>
             </div>
           </div>
         </motion.section>
