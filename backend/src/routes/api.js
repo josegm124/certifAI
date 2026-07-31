@@ -11,7 +11,6 @@ const createRoutes = (services) => {
     companyService,
     userService,
     assessmentService,
-    scoringService,
     resultService,
     badgeService,
     subscriptionService,
@@ -146,60 +145,14 @@ const createRoutes = (services) => {
   });
 
   // SCORING & METRICS
-  router.post('/assessments/:assessmentId/compute-score', async (req, res, next) => {
-    try {
-      const { questionMapping, selfCertified, selfCertifiedAt } = req.body;
-      const assessment = await assessmentService.getAssessment(req.params.assessmentId);
-
-      if (!assessment) return res.status(404).json({ error: 'Assessment not found' });
-
-      const domainScores = await scoringService.computeDomainScores(req.params.assessmentId, questionMapping);
-      const overallScore = scoringService.computeOverallScore(domainScores);
-      const criticalGating = await scoringService.checkCriticalGating(req.params.assessmentId, questionMapping);
-      let { tier: badgeTier } = scoringService.resolveBadgeTier(overallScore, criticalGating);
-
-      // Advanced tier requires self-certification; downgrade to Assured if not certified
-      if (badgeTier === 'advanced' && !selfCertified) {
-        badgeTier = 'assured';
-      }
-
-      const completion = await scoringService.computeCompletion(req.params.assessmentId, Object.keys(questionMapping).length);
-      const gaps = await scoringService.computeGapAnalysis(req.params.assessmentId, domainScores, questionMapping);
-
-      await assessmentService.updateAssessmentMetrics(
-        req.params.assessmentId,
-        completion,
-        overallScore,
-        badgeTier,
-        criticalGating,
-        selfCertified,
-        selfCertifiedAt
-      );
-
-      res.json({
-        domainScores,
-        overallScore,
-        badgeTier,
-        criticalGating,
-        completion,
-        gaps: gaps.slice(0, 10) // Top 10 gaps
-      });
-    } catch (err) {
-      next(err);
-    }
-  });
-
-  // RESULTS — ported from the merge package (backend/src/routes/api.route-changes.md).
   //
-  // The merge's position: the frontend engine is authoritative, and the backend
-  // validates and persists what it produced rather than recomputing it with a
-  // second engine. This route implements that. It is added ALONGSIDE
-  // compute-score rather than replacing it, so nothing that currently calls
-  // compute-score breaks while the team decides which engine to keep.
+  // POST /assessments/:id/compute-score was REMOVED. It ran a second scoring
+  // engine (ScoringService, now deleted) that returned 0-5 while the frontend
+  // worked in 0-100, downgraded only Advanced without a signature, and had no
+  // evidence check at all. Keeping two engines aligned by hand was the defect;
+  // /result below is the single path.
   //
-  // Scale note: this route takes overallScore on the 0-100 scale the frontend
-  // engine produces. compute-score returns 0-5. That difference is the live
-  // symptom of having two engines.
+  // RESULTS — the only route that issues a badge.
   //
   // THIS ROUTE IS THE BADGE AUTHORITY. The client sends its computed score and
   // its LevelContext; the server re-derives the critical-control gate and the

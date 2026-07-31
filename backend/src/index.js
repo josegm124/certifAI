@@ -18,7 +18,6 @@ const AuditLogRepository = require('./repositories/AuditLogRepository');
 const CompanyService = require('./services/CompanyService');
 const UserService = require('./services/UserService');
 const AssessmentService = require('./services/AssessmentService');
-const ScoringService = require('./services/ScoringService');
 const AssessmentResultService = require('./services/AssessmentResultService');
 const BadgeService = require('./services/BadgeService');
 const SubscriptionService = require('./services/SubscriptionService');
@@ -77,7 +76,6 @@ const startServer = async () => {
       aiSystemRepository,
       auditLogRepository
     );
-    const scoringService = new ScoringService(answerRepository);
     const resultService = new AssessmentResultService(answerRepository);
     const badgeService = new BadgeService(badgeRepository, assessmentRepository);
     const subscriptionService = new SubscriptionService(
@@ -94,7 +92,6 @@ const startServer = async () => {
       companyService,
       userService,
       assessmentService,
-      scoringService,
       resultService,
       badgeService,
       subscriptionService,

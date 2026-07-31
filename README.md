@@ -75,8 +75,12 @@ for link previews.
   cannot mint a badge, but moving the scoring module server-side is the production fix.
   It is written with no DOM or React dependency so it can be lifted across unchanged.
 - The self-certification is an attestation, not a verified signature.
-- `POST /api/assessments/:id/compute-score` still exists alongside `/result` and runs a
-  second, older scoring engine on a 0–5 scale. `/result` is the one that issues badges.
+- `POST /api/assessments/:id/badges` still trusts the `tier` in its request body rather
+  than the tier the server already resolved and stored. With `compute-score` retired this
+  is the last route where a caller could ask for a tier it did not earn. Open decision.
+- Older docs (`ARCHITECTURE.md`, `HAPPY_PATH.md`, `SETUP.md`, `TESTING.md`,
+  `backend/ENDPOINTS.md`, `backend/README.md`) still describe the retired
+  `compute-score` endpoint and need updating.
 - The AI narrative and improvement plans are produced deterministically from the user's
   own answers, as stand-ins for live model calls.
 - Pricing presents four tiers as the commercial model; the build implements the free and

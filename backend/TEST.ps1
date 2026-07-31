@@ -1,4 +1,10 @@
 # CertifAI Happy Path Test - PowerShell 5.1 Compatible
+#
+# Ported from the retired POST /assessments/:id/compute-score to
+# POST /assessments/:id/result, which is now the only route that issues a badge.
+# The instrument lives in CanonicalScoring.ps1, not in this file.
+
+. "$PSScriptRoot\CanonicalScoring.ps1"
 
 $API = "http://localhost:3001/api"
 $orgName = "Test Corp $(Get-Date -Format 'HHmmss')"
@@ -53,49 +59,47 @@ Try {
   Write-Host "      [OK] Saved $count/72 answers" -ForegroundColor Green
   Write-Host ""
 
-  # ========== STEP 4: Compute Scores ==========
-  Write-Host "[4/6] Computing Scores..." -ForegroundColor Green
-  $qMap = @{}
-  # Canonical 36Q/9-domain instrument (Marika's June document): strategy 1-5,
-  # revenue 6-9, governance 10-14, risk 15-19, data 20-25, human 26-28, trust 29-31,
-  # workforce 32-35, improve 36.
-  $doms = @(
-    "strategy","strategy","strategy","strategy","strategy",
-    "revenue","revenue","revenue","revenue",
-    "governance","governance","governance","governance","governance",
-    "risk","risk","risk","risk","risk",
-    "data","data","data","data","data","data",
-    "human","human","human",
-    "trust","trust","trust",
-    "workforce","workforce","workforce","workforce",
-    "improve"
-  )
-  for ($i=1; $i -le 36; $i++) {
-    $qMap[[string]$i] = @{ domain = $doms[$i-1]; description = "Q$i" }
-  }
+  # ========== STEP 4: Submit Results ==========
+  # compute-score is gone. The backend no longer computes a score; it validates
+  # the one the canonical engine produced, re-derives the gates from stored
+  # answers, and decides the level itself. Scores are 0-100, not 0-5.
+  Write-Host "[4/6] Submitting Results..." -ForegroundColor Green
 
-  $scoreBody = @{ questionMapping = $qMap } | ConvertTo-Json -Depth 10
-  $score1 = Invoke-RestMethod -Uri "$API/assessments/$assessId1/compute-score" -Method POST -Body $scoreBody -ContentType "application/json"
-  $score2 = Invoke-RestMethod -Uri "$API/assessments/$assessId2/compute-score" -Method POST -Body $scoreBody -ContentType "application/json"
+  $answers = @{}
+  for ($i = 1; $i -le 36; $i++) { $answers[$i] = (3 + ($i % 3)) }
 
-  Write-Host "      [OK] Tier 1: $($score1.overallScore)/5 - $($score1.badgeTier)" -ForegroundColor Green
-  Write-Host "      [OK] Tier 2: $($score2.overallScore)/5 - $($score2.badgeTier)" -ForegroundColor Green
+  # Tier 1 is the free snapshot: no badge, whatever the score.
+  $payload1 = New-CertifAIResultPayload -Answers $answers -Tier 1 -HasEvidence $true -HasSignature $false
+  $score1 = Submit-CertifAIResult -Api $API -AssessmentId $assessId1 -Payload $payload1
+
+  # Tier 2 with evidence and a signature is the badge-bearing path.
+  $payload2 = New-CertifAIResultPayload -Answers $answers -Tier 2 -HasEvidence $true -HasSignature $true
+  $score2 = Submit-CertifAIResult -Api $API -AssessmentId $assessId2 -Payload $payload2
+
+  Write-Host "      [OK] Tier 1: $($score1.overallScore)/100 - $($score1.level) $($score1.badgeTier)" -ForegroundColor Green
+  Write-Host "      [OK] Tier 2: $($score2.overallScore)/100 - $($score2.level) $($score2.badgeTier)" -ForegroundColor Green
+  if ($score1.cappedFrom) { Write-Host "      [OK] Tier 1 correctly capped $($score1.cappedFrom) -> $($score1.level)" -ForegroundColor DarkGray }
   Write-Host ""
 
-  # ========== STEP 5: Issue Badge ==========
-  Write-Host "[5/6] Issuing Badge (Tier 2)..." -ForegroundColor Green
-  $badgeBody = @{
-    companyId = $companyId
-    tier = $score2.badgeTier
-    overallScore = $score2.overallScore
-    frameworks = @("aiact","gdpr","oecd","iso","nist")
-  } | ConvertTo-Json
+  # ========== STEP 5: Badge ==========
+  # /result issues the badge itself when the level it resolved is badge-bearing
+  # and the assessment is complete. There is no separate issue call any more.
+  Write-Host "[5/6] Reading Issued Badge (Tier 2)..." -ForegroundColor Green
+  $badge = $score2.badge
 
-  $badge = Invoke-RestMethod -Uri "$API/assessments/$assessId2/badges" -Method POST -Body $badgeBody -ContentType "application/json"
+  if (-not $badge) {
+    Write-Host "      [ERROR] No badge issued. Server said: $($score2.cappedReason)" -ForegroundColor Red
+    throw "Expected a badge for a complete, evidenced, signed Tier 2 assessment."
+  }
+  if ($score1.badge) {
+    Write-Host "      [ERROR] Tier 1 was issued a badge; the free tier must never earn one." -ForegroundColor Red
+    throw "Tier 1 badge gate failed."
+  }
 
   Write-Host "      [OK] Badge ID: $($badge.id)" -ForegroundColor Green
-  Write-Host "      [OK] Tier: $($badge.tier)" -ForegroundColor Green
+  Write-Host "      [OK] Tier: $($badge.tier)  Score: $($badge.score)/100" -ForegroundColor Green
   Write-Host "      [OK] Expires: $($badge.expiresAt)" -ForegroundColor Green
+  Write-Host "      [OK] Tier 1 issued no badge, as required" -ForegroundColor Green
   Write-Host ""
 
   # ========== STEP 6: Verify Badge ==========
