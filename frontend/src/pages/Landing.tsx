@@ -2,7 +2,7 @@ import { Link, useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import {
   DOMAINS, FRAMEWORKS, DOMAIN_SHORT,
-  TOTAL_QUESTIONS, TOTAL_DOMAINS, TOTAL_FRAMEWORKS, MAX_SCORE,
+  TOTAL_QUESTIONS, TOTAL_DOMAINS, MAX_SCORE, CANONICAL_SENTENCE,
   numberWord, NumberWord,
 } from "../lib/data";
 import LadderVis from "../components/LadderVis";
@@ -35,12 +35,11 @@ export default function Landing() {
         {/* hero */}
         <section className="hero">
           <motion.div {...fadeUp}>
-            <div className="eyebrow">EU AI Act · {TOTAL_DOMAINS} domains · {TOTAL_QUESTIONS} controls</div>
+            <div className="eyebrow">EU AI Act · {TOTAL_DOMAINS} domains · {TOTAL_QUESTIONS} questions</div>
             <h1 className="h1">Know exactly where your AI governance stands, and prove it.</h1>
             <p className="lead">
               A structured readiness assessment for organisations deploying AI under the EU AI Act.
-              Score {TOTAL_QUESTIONS} controls across {TOTAL_DOMAINS} governance domains, mapped to{" "}
-              {TOTAL_FRAMEWORKS} regulatory frameworks and scored on a 0 to {MAX_SCORE} maturity scale.
+              Score {CANONICAL_SENTENCE}.
               See where you stand by domain and by framework, then attach evidence and earn a trust
               level you can show.
             </p>
@@ -96,7 +95,7 @@ export default function Landing() {
           <h2 className="h2">How it works.</h2>
           <div className="how">
             {[
-              { t: "Assess", d: `Answer ${TOTAL_QUESTIONS} controls on a 0–${MAX_SCORE} maturity scale across all ${numberWord(TOTAL_DOMAINS)} domains. Takes about 20 minutes.` },
+              { t: "Assess", d: `Answer ${TOTAL_QUESTIONS} questions on a 0 to ${MAX_SCORE} maturity scale across all ${numberWord(TOTAL_DOMAINS)} domains. Takes about 20 minutes.` },
               { t: "Add evidence", d: "Attach documents and written detail to each control to build an audit-ready record." },
               { t: "AI review, in development", d: "Automated review of your evidence against each control, with a suggested score and drafted remediation. Not available in this build." },
               { t: "Earn your level", d: "Sign your self-certification and earn Aligned, Assured or Advanced, a badge you can share." },
@@ -119,7 +118,7 @@ export default function Landing() {
               <div className="price-name">Readiness Snapshot</div>
               <div className="price-cost"><b>€0</b> · self-scored</div>
               <ul className="plist">
-                {[`All ${TOTAL_QUESTIONS} controls, self-scored`, "Maturity by domain + framework", "Interactive dashboard & deep-dives", "Prioritised gap profile", "Your Aware baseline, for internal use"].map((p) => (
+                {[`All ${TOTAL_QUESTIONS} questions, self-scored`, "Maturity by domain + framework", "Interactive dashboard & deep-dives", "Prioritised gap profile", "Your Aware baseline, for internal use"].map((p) => (
                   <li key={p}><Check /> {p}</li>
                 ))}
               </ul>
@@ -138,11 +137,6 @@ export default function Landing() {
             </div>
           </div>
         </motion.section>
-
-        <p className="disclaimer">
-          CertifAI produces a self-assessed, evidence-backed readiness signal. It is not a certification,
-          legal advice, or a conformity assessment under the EU AI Act.
-        </p>
       </div>
     </main>
   );

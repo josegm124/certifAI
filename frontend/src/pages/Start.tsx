@@ -20,7 +20,7 @@ import { useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import { motion } from "framer-motion";
 import {
-  TOTAL_QUESTIONS, TOTAL_DOMAINS, TOTAL_FRAMEWORKS, MAX_SCORE, numberWord,
+  TOTAL_QUESTIONS, TOTAL_DOMAINS, CANONICAL_SENTENCE,
 } from "../lib/data";
 import { useStore } from "../store/useStore";
 import { registerLead, createAssessment } from "../lib/api";
@@ -78,13 +78,12 @@ export default function Start() {
   return (
     <main className="wrap wrap-wide">
       <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5 }}>
-        <div className="eyebrow">EU AI Act · {TOTAL_DOMAINS} domains · {TOTAL_QUESTIONS} controls</div>
+        <div className="eyebrow">EU AI Act · {TOTAL_DOMAINS} domains · {TOTAL_QUESTIONS} questions</div>
         <h1 className="h1">Know exactly where your AI governance stands.</h1>
         <p className="lead" style={{ maxWidth: "64ch" }}>
           A structured readiness assessment for organisations deploying AI under the EU AI Act.
-          Answer {TOTAL_QUESTIONS} questions across {numberWord(TOTAL_DOMAINS)} governance domains,
-          mapped to {TOTAL_FRAMEWORKS} regulatory frameworks and scored on a 0 to {MAX_SCORE} maturity
-          scale. It takes about 20 minutes, and you will see your maturity by domain and by framework
+          Answer {CANONICAL_SENTENCE}.
+          It takes about 20 minutes, and you will see your maturity by domain and by framework
           with a prioritised remediation path.
         </p>
       </motion.div>
@@ -121,7 +120,7 @@ export default function Start() {
 
           {hasSaved && (
             <div className="sec-note" style={{ marginTop: 14 }}>
-              You have {saved.answered} of {saved.total} controls saved in this browser.{" "}
+              You have {saved.answered} of {saved.total} questions saved in this browser.{" "}
               <Link to="/assess" className="finish-link">Resume that assessment →</Link>
             </div>
           )}
@@ -134,7 +133,7 @@ export default function Start() {
             active={picked === 1} onSelect={() => setPicked(1)}
             tag="Tier 1 · Free" name="Readiness Snapshot"
             points={[
-              `Self-scored across all ${TOTAL_QUESTIONS} controls`,
+              `Self-scored across all ${TOTAL_QUESTIONS} questions`,
               "Maturity by domain + framework",
               "Prioritised gap profile",
               "Your Aware baseline, for internal use",

@@ -64,7 +64,7 @@ export default function Dashboard() {
 
   const certifications = [
     { key: "snapshot", tag: "Free · Tier 1", name: "AI Governance Readiness Snapshot", level: result.level.id, pct: comp.pct, live: true },
-    { key: "aipowered", tag: "Paid · Tier 2", name: "AI-Powered Certification", level: result.level.id, pct: result.overall, live: true },
+    { key: "aipowered", tag: "Paid · Tier 2", name: "Evidence-Based Certification", level: result.level.id, pct: result.overall, live: true },
     { key: "aiact", tag: "Coming soon", name: "EU AI Act Conformity Pack", level: "A1" as const, pct: 0, live: false },
     { key: "iso", tag: "Coming soon", name: "ISO/IEC 42001 Certification", level: "A1" as const, pct: 0, live: false },
   ];
@@ -232,13 +232,13 @@ export default function Dashboard() {
                 </div>
               </li>
             ))}
-            {gaps.length === 0 && <div style={{ fontSize: 13.5, color: C.pine, padding: "10px 0" }}>No gaps — every answered control is at Managed or above.</div>}
+            {gaps.length === 0 && <div style={{ fontSize: 13.5, color: C.pine, padding: "10px 0" }}>No gaps. Every answered question sits at Managed or above.</div>}
           </ul>
         </div>
       </div>
 
       <p className="disclaimer">
-        Self-assessed, AI-assisted, evidence-backed readiness signal. Not a certification, legal advice, or a conformity assessment under the EU AI Act.
+        A self-assessed, evidence-backed readiness signal. Not a certification, legal advice, or a conformity assessment under the EU AI Act.
       </p>
     </main>
   );

@@ -94,9 +94,9 @@ export default function Results() {
           <div className="lvlpanel" style={{ border: 0, padding: 0 }}>
             <div className="lvlpanel-body">
               <div className="lvlpanel-name">No level yet</div>
-              <div className="lvlpanel-state">{comp.answered} of {comp.total} controls answered · {comp.pct}%</div>
+              <div className="lvlpanel-state">{comp.answered} of {comp.total} questions answered · {comp.pct}%</div>
               <div className="lvlpanel-blurb">
-                A level is recorded once every control has been answered. The score above is a running
+                A level is recorded once every question has been answered. The score above is a running
                 preview of what you have answered so far.{" "}
                 <Link to="/assess" className="finish-link">Continue the assessment →</Link>
               </div>
@@ -188,7 +188,7 @@ export default function Results() {
                   <div className="gap-meta">{g.domainName} · raise {g.gapSize} {g.gapSize === 1 ? "level" : "levels"}</div></div>
               </li>
             ))}
-            {gaps.length === 0 && <div style={{ fontSize: 13.5, color: C.pine, padding: "10px 0" }}>No gaps. Every answered control sits at Managed or above.</div>}
+            {gaps.length === 0 && <div style={{ fontSize: 13.5, color: C.pine, padding: "10px 0" }}>No gaps. Every answered question sits at Managed or above.</div>}
           </ul>
         </div>
         <div>
@@ -211,7 +211,7 @@ export default function Results() {
           finished assessment. What signing does is unchanged, only when. */}
       {tier === 2 && (
         <div className="card" style={{ marginTop: 24, opacity: incomplete ? 0.6 : 1 }}>
-          <div className="card-h"><span className="card-t">Self-certification</span><span className="card-sub">required for Assured and above, available once every control is answered</span></div>
+          <div className="card-h"><span className="card-t">Self-certification</span><span className="card-sub">required for Assured and above, available once every question is answered</span></div>
           {signed ? (
             <div className="banner banner-info" style={{ margin: "10px 0 0" }}>
               <Check color={C.ocean} />
@@ -227,7 +227,7 @@ export default function Results() {
                   {issuing ? "Submitting for certification…" : "Sign & submit for certification"}
                 </button>
               </div>
-              {incomplete && <p className="sec-note" style={{ margin: "10px 0 0" }}>Unlocks when every control is answered.</p>}
+              {incomplete && <p className="sec-note" style={{ margin: "10px 0 0" }}>Unlocks when every question is answered.</p>}
             </>
           )}
         </div>
@@ -235,7 +235,7 @@ export default function Results() {
 
       {tier === 1 && (
         <div className="card" style={{ marginTop: 24, background: C.ink, borderColor: C.ink }}>
-          <div className="cert-tag" style={{ color: "#7FB8C9" }}>Tier 2 · AI-Powered Certification</div>
+          <div className="cert-tag" style={{ color: "#7FB8C9" }}>Tier 2 · Evidence-Based Certification</div>
           <h3 style={{ fontFamily: "'Lora',serif", color: "#fff", fontSize: 21, margin: "6px 0" }}>Turn this snapshot into a credential.</h3>
           <p style={{ color: "#B9C7D0", fontSize: 14, margin: "0 0 16px", maxWidth: "54ch", lineHeight: 1.5 }}>Attach evidence against each control, sign your self-certification, and earn a displayable Aligned, Assured or Advanced badge. Automated evidence review is in development.</p>
           <Link to="/upgrade" className="btn btn-accent" style={{ width: "auto" }}>Add evidence →</Link>
