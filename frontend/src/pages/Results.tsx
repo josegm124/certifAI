@@ -238,7 +238,7 @@ export default function Results() {
           <div className="cert-tag" style={{ color: "#7FB8C9" }}>Tier 2 · AI-Powered Certification</div>
           <h3 style={{ fontFamily: "'Lora',serif", color: "#fff", fontSize: 21, margin: "6px 0" }}>Turn this snapshot into a credential.</h3>
           <p style={{ color: "#B9C7D0", fontSize: 14, margin: "0 0 16px", maxWidth: "54ch", lineHeight: 1.5 }}>Attach evidence, get Claude's review, sign your self-certification, and earn a displayable Aligned, Assured, or Advanced badge.</p>
-          <Link to="/assess" className="btn btn-accent" style={{ width: "auto" }}>Add evidence →</Link>
+          <Link to="/upgrade" className="btn btn-accent" style={{ width: "auto" }}>Add evidence →</Link>
         </div>
       )}
 

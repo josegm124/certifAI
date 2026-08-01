@@ -9,6 +9,7 @@ import CertificationDetail from "./pages/CertificationDetail";
 import Start from "./pages/Start";
 import Assess from "./pages/Assess";
 import Results from "./pages/Results";
+import Upgrade from "./pages/Upgrade";
 
 export default function App() {
   return (
@@ -22,6 +23,7 @@ export default function App() {
         <Route path="/start" element={<Start />} />
         <Route path="/assess" element={<RequireIntake><Assess /></RequireIntake>} />
         <Route path="/results" element={<RequireIntake><Results /></RequireIntake>} />
+        <Route path="/upgrade" element={<RequireIntake><Upgrade /></RequireIntake>} />
       </Routes>
       <Footer />
     </div>
