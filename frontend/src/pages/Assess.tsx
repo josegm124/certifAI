@@ -6,7 +6,7 @@ import { completion } from "../lib/scoring";
 import { Dot, Arrow } from "../components/icons";
 
 export default function Assess() {
-  const { tier, setTier, answers, setAnswer, org } = useStore();
+  const { tier, answers, setAnswer, org } = useStore();
   const [idx, setIdx] = useState(0);
   const nav = useNavigate();
 
@@ -33,10 +33,10 @@ export default function Assess() {
               copy here let the same run carry two different names. */}
           <div className="assess-org">{org}</div>
         </div>
-        <div className="seg">
-          <button className={tier === 1 ? "on" : ""} onClick={() => setTier(1)}>Tier 1 · Free</button>
-          <button className={tier === 2 ? "on" : ""} onClick={() => setTier(2)}>Tier 2 · Evidence</button>
-        </div>
+        {/* Read-only. The tier is chosen at /start by which button was pressed,
+            and the numeric tier is what the server's badge gates read. Letting
+            the assessment flip it mid-run changed what the run was worth. */}
+        <div className="tier-static">{tier === 1 ? "Tier 1 · Free" : "Tier 2 · Evidence"}</div>
       </div>
 
       <div className="assess">
