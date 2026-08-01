@@ -65,6 +65,17 @@ export const useStore = create<CertState>()(
       loadSample: () =>
         set({ org: SAMPLE_ORG, tier: 2, answers: SAMPLE_ANSWERS, signed: false, seeded: true, server: null }),
     }),
+    /* Rehydration is SYNCHRONOUS, and route guards depend on that being true.
+       zustand 4.5.7 defaults `storage` to createJSONStorage(() => localStorage);
+       localStorage.getItem returns a string, never a Promise, so persist's
+       toThenable() runs the rehydration callback inline. `skipHydration` is not
+       set, so hydrate() runs during store creation — i.e. while this module is
+       evaluated, before React renders anything.
+
+       Consequence: a component may read persisted state on its FIRST render.
+       RequireIntake relies on this; if the storage here is ever swapped for an
+       async one, that guard must start waiting on onFinishHydration or it will
+       bounce returning users to /start and discard their run. */
     { name: "certifai-v2" }
   )
 );

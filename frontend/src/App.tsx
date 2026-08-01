@@ -1,6 +1,7 @@
 import { Routes, Route } from "react-router-dom";
 import Header from "./components/Header";
 import Footer from "./components/Footer";
+import RequireIntake from "./components/RequireIntake";
 import Landing from "./pages/Landing";
 import Dashboard from "./pages/Dashboard";
 import DimensionDetail from "./pages/DimensionDetail";
@@ -19,8 +20,8 @@ export default function App() {
         <Route path="/dimensions/:dimId" element={<DimensionDetail />} />
         <Route path="/certifications/:certId" element={<CertificationDetail />} />
         <Route path="/start" element={<Start />} />
-        <Route path="/assess" element={<Assess />} />
-        <Route path="/results" element={<Results />} />
+        <Route path="/assess" element={<RequireIntake><Assess /></RequireIntake>} />
+        <Route path="/results" element={<RequireIntake><Results /></RequireIntake>} />
       </Routes>
       <Footer />
     </div>
