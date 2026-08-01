@@ -155,11 +155,14 @@ export default function Results() {
         </div>
       )}
 
-      {/* AI narrative */}
-      <div className="ai-box" style={{ marginTop: 18 }}>
-        <div className="ai-tag"><Sparkle size={14} /> AI-generated readiness narrative</div>
-        <div className="prose" style={{ fontSize: 14.5 }}><p style={{ margin: 0 }}>{narrative}</p></div>
-      </div>
+      {/* AI narrative. Hidden below 100%: it names a level, which contradicts
+          the "no level is recorded" panel above. The text itself is unchanged. */}
+      {!incomplete && (
+        <div className="ai-box" style={{ marginTop: 18 }}>
+          <div className="ai-tag"><Sparkle size={14} /> AI-generated readiness narrative</div>
+          <div className="prose" style={{ fontSize: 14.5 }}><p style={{ margin: 0 }}>{narrative}</p></div>
+        </div>
+      )}
 
       <h3 className="sec-h">Maturity by domain</h3>
       <div className="dbars">
