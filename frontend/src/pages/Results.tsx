@@ -93,11 +93,11 @@ export default function Results() {
         {incomplete ? (
           <div className="lvlpanel" style={{ border: 0, padding: 0 }}>
             <div className="lvlpanel-body">
-              <div className="lvlpanel-name">Assessment incomplete</div>
+              <div className="lvlpanel-name">No level yet</div>
               <div className="lvlpanel-state">{comp.answered} of {comp.total} controls answered · {comp.pct}%</div>
               <div className="lvlpanel-blurb">
-                No level is recorded until every control is answered. The score shown is a running
-                preview of the controls answered so far.{" "}
+                A level is recorded once every control has been answered. The score above is a running
+                preview of what you have answered so far.{" "}
                 <Link to="/assess" className="finish-link">Continue the assessment →</Link>
               </div>
             </div>
@@ -136,7 +136,7 @@ export default function Results() {
         <div className="banner banner-info" style={{ marginTop: 14 }}>
           <Check color={C.ocean} />
           <div>
-            <strong>Badge issued · {server.badge.tier}</strong> — score of record {server.badge.score}/100.
+            <strong>Badge issued · {server.badge.tier}</strong> · score of record {server.badge.score}/100.
             <div style={{ marginTop: 6, fontSize: 13.5 }}>
               Token <code>{server.badge.verificationToken}</code><br />
               Issued {new Date(server.badge.issuedAt).toLocaleDateString()} · expires {new Date(server.badge.expiresAt).toLocaleDateString()}<br />
@@ -149,8 +149,8 @@ export default function Results() {
       {apiError && (
         <div className="banner banner-cap" style={{ marginTop: 14 }}>
           <ShieldAlert />
-          <div><strong>No badge issued — the certification service is unreachable.</strong> The score above is your local preview only.
-            A signature on this device cannot mint a credential on its own; the badge is issued by the server after it re-checks your stored evidence and critical controls. Try again once the backend is running.
+          <div><strong>No badge issued.</strong> The certification service is unreachable, so the score above is your local preview only.
+            A signature on this device cannot create a credential on its own, because the badge is issued only after the server re-checks your stored evidence and critical controls. Try again once the service is running.
             <em style={{ display: "block", marginTop: 4, opacity: 0.8 }}>{apiError}</em></div>
         </div>
       )}
@@ -159,7 +159,7 @@ export default function Results() {
           the "no level is recorded" panel above. The text itself is unchanged. */}
       {!incomplete && (
         <div className="ai-box" style={{ marginTop: 18 }}>
-          <div className="ai-tag"><Sparkle size={14} /> AI-generated readiness narrative</div>
+          <div className="ai-tag"><Sparkle size={14} /> Readiness summary</div>
           <div className="prose" style={{ fontSize: 14.5 }}><p style={{ margin: 0 }}>{narrative}</p></div>
         </div>
       )}
@@ -188,7 +188,7 @@ export default function Results() {
                   <div className="gap-meta">{g.domainName} · raise {g.gapSize} {g.gapSize === 1 ? "level" : "levels"}</div></div>
               </li>
             ))}
-            {gaps.length === 0 && <div style={{ fontSize: 13.5, color: C.pine, padding: "10px 0" }}>No gaps — every answered control is at Managed or above.</div>}
+            {gaps.length === 0 && <div style={{ fontSize: 13.5, color: C.pine, padding: "10px 0" }}>No gaps. Every answered control sits at Managed or above.</div>}
           </ul>
         </div>
         <div>
@@ -211,12 +211,12 @@ export default function Results() {
           finished assessment. What signing does is unchanged, only when. */}
       {tier === 2 && (
         <div className="card" style={{ marginTop: 24, opacity: incomplete ? 0.6 : 1 }}>
-          <div className="card-h"><span className="card-t">Self-certification</span><span className="card-sub">required for Assured and above</span></div>
+          <div className="card-h"><span className="card-t">Self-certification</span><span className="card-sub">required for Assured and above, available once every control is answered</span></div>
           {signed ? (
             <div className="banner banner-info" style={{ margin: "10px 0 0" }}>
               <Check color={C.ocean} />
               <div>Signed by <b>{signName || "authorised signatory"}</b>. This attests that {org || "the organisation"} holds the documented evidence recorded against each control at the stated maturity, as an evidence-backed self-assessment at the {shownLevel.name} level.
-                {!server && <em style={{ display: "block", marginTop: 4, opacity: 0.8 }}>Not submitted for certification — no badge has been issued.</em>}</div>
+                {!server && <em style={{ display: "block", marginTop: 4, opacity: 0.8 }}>Not submitted for certification, so no badge has been issued.</em>}</div>
             </div>
           ) : (
             <>
@@ -237,12 +237,12 @@ export default function Results() {
         <div className="card" style={{ marginTop: 24, background: C.ink, borderColor: C.ink }}>
           <div className="cert-tag" style={{ color: "#7FB8C9" }}>Tier 2 · AI-Powered Certification</div>
           <h3 style={{ fontFamily: "'Lora',serif", color: "#fff", fontSize: 21, margin: "6px 0" }}>Turn this snapshot into a credential.</h3>
-          <p style={{ color: "#B9C7D0", fontSize: 14, margin: "0 0 16px", maxWidth: "54ch", lineHeight: 1.5 }}>Attach evidence, get Claude's review, sign your self-certification, and earn a displayable Aligned, Assured, or Advanced badge.</p>
+          <p style={{ color: "#B9C7D0", fontSize: 14, margin: "0 0 16px", maxWidth: "54ch", lineHeight: 1.5 }}>Attach evidence against each control, sign your self-certification, and earn a displayable Aligned, Assured or Advanced badge. Automated evidence review is in development.</p>
           <Link to="/upgrade" className="btn btn-accent" style={{ width: "auto" }}>Add evidence →</Link>
         </div>
       )}
 
-      <p className="disclaimer">Self-assessed, AI-assisted, evidence-backed readiness signal. Not a certification, legal advice, or a conformity assessment under the EU AI Act.</p>
+      <p className="disclaimer">A self-assessed, evidence-backed readiness signal. Not a certification, legal advice, or a conformity assessment under the EU AI Act.</p>
     </main>
   );
 }

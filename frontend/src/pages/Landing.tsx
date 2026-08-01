@@ -35,14 +35,14 @@ export default function Landing() {
         {/* hero */}
         <section className="hero">
           <motion.div {...fadeUp}>
-            <div className="eyebrow">EU AI Act · {TOTAL_DOMAINS} domains · {TOTAL_QUESTIONS} controls · AI-reviewed</div>
-            <h1 className="h1">Know exactly where your AI governance stands — and prove it.</h1>
+            <div className="eyebrow">EU AI Act · {TOTAL_DOMAINS} domains · {TOTAL_QUESTIONS} controls</div>
+            <h1 className="h1">Know exactly where your AI governance stands, and prove it.</h1>
             <p className="lead">
               A structured readiness assessment for organisations deploying AI under the EU AI Act.
               Score {TOTAL_QUESTIONS} controls across {TOTAL_DOMAINS} governance domains, mapped to{" "}
               {TOTAL_FRAMEWORKS} regulatory frameworks and scored on a 0 to {MAX_SCORE} maturity scale.
-              Watch your maturity come alive on an interactive dashboard, then add evidence and earn
-              an AI-reviewed trust level.
+              See where you stand by domain and by framework, then attach evidence and earn a trust
+              level you can show.
             </p>
             <div className="hero-cta">
               <Link to="/start" className="btn btn-primary btn-lg">Start free assessment <Arrow color="#fff" /></Link>
@@ -64,7 +64,7 @@ export default function Landing() {
         <motion.section {...fadeUp} style={{ marginTop: 34 }}>
           <div className="eyebrow">The 4A ladder</div>
           <h2 className="h2">Four levels of earned trust.</h2>
-          <p className="sec-note">Each level is earned per certification from your score, evidence, and self-certification — with critical controls gating the top.</p>
+          <p className="sec-note">Each level is earned per certification from your score, evidence and self-certification, with critical controls gating the top.</p>
           <LadderVis />
         </motion.section>
 
@@ -83,7 +83,7 @@ export default function Landing() {
 
         {/* frameworks */}
         <motion.section {...fadeUp} style={{ marginTop: 30 }}>
-          <div className="eyebrow">Mapped to the frameworks that matter</div>
+          <div className="eyebrow">Mapped to the frameworks you are measured against</div>
           <div className="fwrow">
             {(Object.entries(FRAMEWORKS) as [string, string][]).map(([k, f]) => (
               <Link key={k} to={`/certifications/${k}`} className="fwchip" style={{ cursor: "pointer" }}>{f}</Link>
@@ -98,8 +98,8 @@ export default function Landing() {
             {[
               { t: "Assess", d: `Answer ${TOTAL_QUESTIONS} controls on a 0–${MAX_SCORE} maturity scale across all ${numberWord(TOTAL_DOMAINS)} domains. Takes about 20 minutes.` },
               { t: "Add evidence", d: "Attach documents and written detail to each control to build an audit-ready record." },
-              { t: "Get AI-reviewed", d: "Claude validates your evidence against each control, suggests a substantiated score, and drafts remediation." },
-              { t: "Earn your level", d: "Sign your self-certification and earn Aligned, Assured, or Advanced — a badge you can share." },
+              { t: "AI review, in development", d: "Automated review of your evidence against each control, with a suggested score and drafted remediation. Not available in this build." },
+              { t: "Earn your level", d: "Sign your self-certification and earn Aligned, Assured or Advanced, a badge you can share." },
             ].map((s, i) => (
               <div key={s.t} className="how-step">
                 <div className="how-num">{i + 1}</div>
@@ -119,7 +119,7 @@ export default function Landing() {
               <div className="price-name">Readiness Snapshot</div>
               <div className="price-cost"><b>€0</b> · self-scored</div>
               <ul className="plist">
-                {[`All ${TOTAL_QUESTIONS} controls, self-scored`, "Maturity by domain + framework", "Interactive dashboard & deep-dives", "Prioritised gap profile", "Internal Aware signal — no badge"].map((p) => (
+                {[`All ${TOTAL_QUESTIONS} controls, self-scored`, "Maturity by domain + framework", "Interactive dashboard & deep-dives", "Prioritised gap profile", "Your Aware baseline, for internal use"].map((p) => (
                   <li key={p}><Check /> {p}</li>
                 ))}
               </ul>
@@ -127,10 +127,10 @@ export default function Landing() {
             </div>
             <div className="price price-accent">
               <div className="price-tag">Paid · Tier 2</div>
-              <div className="price-name">AI-Powered Certification</div>
+              <div className="price-name">Evidence-Based Certification</div>
               <div className="price-cost"><b>€</b> · per certification</div>
               <ul className="plist">
-                {["Everything in the free tier", "Per-control document upload", "Claude evidence review & scoring", "Virtual signature + self-certification", "Earn Aligned / Assured / Advanced", "Verifiable, shareable trust badge"].map((p) => (
+                {["Everything in the free tier", "Per-control document upload", "AI evidence review and scoring, in development", "Virtual signature + self-certification", "Earn Aligned / Assured / Advanced", "Verifiable, shareable trust badge"].map((p) => (
                   <li key={p}><Sparkle size={15} color="var(--ocean)" /> {p}</li>
                 ))}
               </ul>
@@ -140,7 +140,7 @@ export default function Landing() {
         </motion.section>
 
         <p className="disclaimer">
-          CertifAI produces a self-assessed, AI-assisted, evidence-backed readiness signal — not a certification,
+          CertifAI produces a self-assessed, evidence-backed readiness signal. It is not a certification,
           legal advice, or a conformity assessment under the EU AI Act.
         </p>
       </div>

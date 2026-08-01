@@ -68,7 +68,7 @@ export default function Start() {
     } catch {
       // The app stays usable with the backend down; the lead is re-registered
       // on submit. Say so rather than blocking the assessment.
-      setNote("Saved locally — the assessment service is unreachable, so your details will sync when you submit.");
+      setNote("Saved locally. The assessment service is unreachable, so your details will sync when you submit.");
     } finally {
       setBusy(false);
       nav("/assess");
@@ -84,8 +84,8 @@ export default function Start() {
           A structured readiness assessment for organisations deploying AI under the EU AI Act.
           Answer {TOTAL_QUESTIONS} questions across {numberWord(TOTAL_DOMAINS)} governance domains,
           mapped to {TOTAL_FRAMEWORKS} regulatory frameworks and scored on a 0 to {MAX_SCORE} maturity
-          scale. See your maturity by domain and framework, and get a prioritised remediation path —
-          in about 20 minutes.
+          scale. It takes about 20 minutes, and you will see your maturity by domain and by framework
+          with a prioritised remediation path.
         </p>
       </motion.div>
 
@@ -137,7 +137,7 @@ export default function Start() {
               `Self-scored across all ${TOTAL_QUESTIONS} controls`,
               "Maturity by domain + framework",
               "Prioritised gap profile",
-              "No badge issued",
+              "Your Aware baseline, for internal use",
             ]}
             cta="Start free assessment"
             onStart={() => start(1)} disabled={!canStart || busy} busy={busy}
@@ -158,7 +158,7 @@ export default function Start() {
       </div>
 
       <p className="disclaimer">
-        CertifAI produces a self-assessed, AI-assisted, evidence-backed readiness signal — not a
+        CertifAI produces a self-assessed, evidence-backed readiness signal. It is not a
         certification, legal advice, or a conformity assessment under the EU AI Act.
       </p>
     </main>

@@ -7,7 +7,7 @@ export default function Footer() {
         <div>
           <div className="ftr-brand"><Logo size={20} /> CertifAI</div>
           <p className="ftr-txt" style={{ marginTop: 8 }}>
-            A self-assessed, AI-assisted, evidence-backed readiness signal for AI governance.
+            A self-assessed, evidence-backed readiness signal for AI governance.
             Not a certification, legal advice, or a conformity assessment under the EU AI Act.
           </p>
         </div>
