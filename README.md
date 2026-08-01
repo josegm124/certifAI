@@ -12,6 +12,17 @@ legacy-frontend/  the earlier single-file JSX build, kept for reference
 ARCHITECTURE.md   backend architecture notes (Clean Architecture / SOLID / DI)
 ```
 
+## Start it (one terminal)
+
+```bash
+npm run dev:all
+```
+
+Starts the backend, waits until it is accepting connections, then starts the
+frontend. Both stream into the one window, prefixed `[backend]` and `[frontend]`.
+Ctrl+C stops both. They remain two separate servers on their own ports — this
+only supervises them.
+
 ## Start it (two terminals)
 
 ```bash
