@@ -206,9 +206,11 @@ export default function Results() {
         </div>
       </div>
 
-      {/* Tier 2 self-certification */}
+      {/* Tier 2 self-certification. Below 100% the card stays visible so the
+          step is still shown, but muted and inert: signing is a claim about a
+          finished assessment. What signing does is unchanged, only when. */}
       {tier === 2 && (
-        <div className="card" style={{ marginTop: 24 }}>
+        <div className="card" style={{ marginTop: 24, opacity: incomplete ? 0.6 : 1 }}>
           <div className="card-h"><span className="card-t">Self-certification</span><span className="card-sub">required for Assured and above</span></div>
           {signed ? (
             <div className="banner banner-info" style={{ margin: "10px 0 0" }}>
@@ -220,11 +222,12 @@ export default function Results() {
             <>
               <p className="sec-note" style={{ margin: "4px 0 12px" }}>By signing, you attest that the scores and evidence recorded are accurate to the best of your knowledge. Your answers and evidence are then submitted to CertifAI, which re-checks the critical controls and issues the badge. The signature alone does not create a credential.</p>
               <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
-                <input className="input" style={{ maxWidth: 280 }} placeholder="Full name of signatory" value={signName} onChange={(e) => setSignName(e.target.value)} />
-                <button className="btn btn-accent" disabled={!signName.trim() || issuing} onClick={signAndCertify}>
+                <input className="input" style={{ maxWidth: 280 }} placeholder="Full name of signatory" value={signName} onChange={(e) => setSignName(e.target.value)} disabled={incomplete} />
+                <button className="btn btn-accent" disabled={incomplete || !signName.trim() || issuing} onClick={signAndCertify}>
                   {issuing ? "Submitting for certification…" : "Sign & submit for certification"}
                 </button>
               </div>
+              {incomplete && <p className="sec-note" style={{ margin: "10px 0 0" }}>Unlocks when every control is answered.</p>}
             </>
           )}
         </div>
