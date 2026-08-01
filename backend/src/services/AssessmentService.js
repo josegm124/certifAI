@@ -78,7 +78,16 @@ class AssessmentService {
     const assessment = await this.assessmentRepository.findById(assessmentId);
     assessment.completionPercentage = completion.percentage;
     assessment.overallScore = overallScore;
-    assessment.badgeTier = badgeTier;
+    // The stored level is the level OF RECORD, so it is written only once the
+    // assessment is actually complete. Below 100% there is progress but no
+    // level: storing one left half-finished assessments carrying a tier with no
+    // badge behind it, which read as an earned result to anything looking at the
+    // row. Null is "not yet determined", distinct from "determined as aware".
+    //
+    // This changes WHEN the level is persisted, never WHICH level is resolved --
+    // AssessmentResultService still resolves exactly as before, and the live
+    // client-side preview is untouched.
+    assessment.badgeTier = completion.percentage === 100 ? badgeTier : null;
     assessment.criticalGatingActive = criticalGating;
     if (selfCertified !== undefined) assessment.selfCertified = selfCertified;
     if (selfCertifiedAt !== undefined) assessment.selfCertifiedAt = selfCertifiedAt;

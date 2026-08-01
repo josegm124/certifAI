@@ -18,6 +18,10 @@ export default function Results() {
   const [apiError, setApiError] = useState<string | null>(null);
 
   const comp = completion(answers);
+  // Below 100% there is no level of record — the server no longer stores one,
+  // and this page must not present one either. Counts come from completion(),
+  // which reads QUESTIONS, so they track the instrument rather than a typed number.
+  const incomplete = comp.pct < 100;
   const evidence = hasEvidence(answers);
   // LOCAL PREVIEW ONLY. The badge of record comes from the server (`server`).
   const result = useMemo(() => resolveLevel(answers, { tier, hasEvidence: evidence, hasSignature: signed }), [answers, tier, evidence, signed]);
@@ -85,24 +89,40 @@ export default function Results() {
       </div>
 
       <motion.div className="res-hero" initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5 }}>
-        <ScoreDial pct={shownScore} color={LEVEL_COLOR[shownLevel.id]} />
-        <div className="lvlpanel" style={{ border: 0, padding: 0 }}>
-          <LevelBadge level={shownLevel.id} size={62} />
-          <div className="lvlpanel-body">
-            <div className="lvlpanel-name">{shownLevel.name}<span className="rung-code" style={{ background: LEVEL_COLOR[shownLevel.id] }}>{shownLevel.id}</span></div>
-            <div className="lvlpanel-state">
-              {server?.badge
-                ? "Issued by CertifAI · verifiable badge"
-                : server
-                  ? "Score of record · no badge issued"
-                  : "Local preview · not yet submitted"}
+        <ScoreDial pct={shownScore} color={incomplete ? C.mute : LEVEL_COLOR[shownLevel.id]} />
+        {incomplete ? (
+          <div className="lvlpanel" style={{ border: 0, padding: 0 }}>
+            <div className="lvlpanel-body">
+              <div className="lvlpanel-name">Assessment incomplete</div>
+              <div className="lvlpanel-state">{comp.answered} of {comp.total} controls answered · {comp.pct}%</div>
+              <div className="lvlpanel-blurb">
+                No level is recorded until every control is answered. The score shown is a running
+                preview of the controls answered so far.{" "}
+                <Link to="/assess" className="finish-link">Continue the assessment →</Link>
+              </div>
             </div>
-            <div className="lvlpanel-blurb">{shownLevel.blurb}</div>
           </div>
-        </div>
+        ) : (
+          <div className="lvlpanel" style={{ border: 0, padding: 0 }}>
+            <LevelBadge level={shownLevel.id} size={62} />
+            <div className="lvlpanel-body">
+              <div className="lvlpanel-name">{shownLevel.name}<span className="rung-code" style={{ background: LEVEL_COLOR[shownLevel.id] }}>{shownLevel.id}</span></div>
+              <div className="lvlpanel-state">
+                {server?.badge
+                  ? "Issued by CertifAI · verifiable badge"
+                  : server
+                    ? "Score of record · no badge issued"
+                    : "Local preview · not yet submitted"}
+              </div>
+              <div className="lvlpanel-blurb">{shownLevel.blurb}</div>
+            </div>
+          </div>
+        )}
       </motion.div>
 
-      {shownCapFrom && (
+      {/* A cap explains why a level was held down. With no level on show there is
+          nothing to explain, so this stays hidden until the run is complete. */}
+      {!incomplete && shownCapFrom && (
         <div className="banner banner-cap">
           <ShieldAlert />
           <div><strong>Level held at {shownLevel.name}.</strong> {shownCapReason}
