@@ -6,7 +6,7 @@ import { completion } from "../lib/scoring";
 import { Dot, Arrow } from "../components/icons";
 
 export default function Assess() {
-  const { tier, setTier, answers, setAnswer, org, setOrg } = useStore();
+  const { tier, setTier, answers, setAnswer, org } = useStore();
   const [idx, setIdx] = useState(0);
   const nav = useNavigate();
 
@@ -29,7 +29,9 @@ export default function Assess() {
       <div className="dash-top" style={{ marginBottom: 16 }}>
         <div>
           <div className="eyebrow">Assessment</div>
-          <input className="input" style={{ maxWidth: 320 }} value={org} onChange={(e) => setOrg(e.target.value)} placeholder="Organisation name" />
+          {/* Read-only. The organisation is captured once at /start; an editable
+              copy here let the same run carry two different names. */}
+          <div className="assess-org">{org}</div>
         </div>
         <div className="seg">
           <button className={tier === 1 ? "on" : ""} onClick={() => setTier(1)}>Tier 1 · Free</button>
