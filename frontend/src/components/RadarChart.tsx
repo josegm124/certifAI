@@ -27,17 +27,21 @@ export default function RadarChart({
   benchmarkLabel,
   accent = C.pine,
   linkBase = "/dimensions",
+  onSelect,
 }: {
   data: RadarPoint[];
   benchmark?: number;
   benchmarkLabel?: string;
   accent?: string;
   linkBase?: string | null;
+  onSelect?: (id: string) => void;
 }) {
   const n = data.length;
   const [hover, setHover] = useState<number | null>(null);
   const nav = useNavigate();
   const reduce = useReducedMotion();
+  const selectable = Boolean(linkBase || onSelect);
+  const open = (id: string) => onSelect ? onSelect(id) : linkBase && nav(`${linkBase}/${id}`);
 
   const rings = [25, 50, 75, 100];
   const dataPoly = data.map((d, i) => pointAt(i, n, d.pct));
@@ -86,10 +90,10 @@ export default function RadarChart({
                 fill={on ? accent : "#fff"}
                 stroke={accent}
                 strokeWidth="2.2"
-                style={{ cursor: linkBase ? "pointer" : "default", transition: "r .15s" }}
+                style={{ cursor: selectable ? "pointer" : "default", transition: "r .15s" }}
                 onMouseEnter={() => setHover(i)}
                 onMouseLeave={() => setHover(null)}
-                onClick={() => linkBase && nav(`${linkBase}/${data[i].id}`)}
+                onClick={() => open(data[i].id)}
               />
             );
           })}
@@ -111,7 +115,7 @@ export default function RadarChart({
               fill={on ? accent : C.mute}
               onMouseEnter={() => setHover(i)}
               onMouseLeave={() => setHover(null)}
-              onClick={() => linkBase && nav(`${linkBase}/${d.id}`)}
+              onClick={() => open(d.id)}
             >
               {on ? `${d.short} · ${d.pct}%` : d.short}
             </text>

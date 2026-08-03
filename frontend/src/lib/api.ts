@@ -33,13 +33,39 @@ export interface IssuedBadge {
 
 export interface OfficialResult {
   overallScore: number;
-  domainScores: Array<{ id: string; weight: number; pct: number; rawAvg: number }>;
-  level: { id: "A1" | "A2" | "A3" | "A4"; tier: string; name: string; badge: boolean };
-  rawLevel: { id: "A1" | "A2" | "A3" | "A4"; tier: string; name: string; badge: boolean };
+  domainScores: Array<{
+    id: string; name: string; short: string; weight: number; pct: number; rawAvg: number;
+    maturityLevel: number; answeredCount: number; totalCount: number;
+    weakestQuestionId: number | null; weakestQuestionTitle: string | null; weakestScore: number | null;
+  }>;
+  frameworkCoverage: Array<{
+    id: string; name: string; short: string; type: string; pct: number;
+    answeredCount: number; totalCount: number;
+  }>;
+  gaps: Array<{
+    id: number; title: string; domainId: string; domainName: string;
+    score: number; critical: boolean; gapSize: number; priority: number;
+  }>;
+  level: ResultLevel;
+  rawLevel: ResultLevel;
+  cappedFrom: "A1" | "A2" | "A3" | "A4" | null;
   cappedReason: string | null;
+  nextLevel: (ResultLevel & { pointsNeeded: number }) | null;
   hasEvidence: boolean;
   criticalGating: { capped: boolean; failedIds: number[] };
   completion: { answered: number; total: number; percentage: number };
+}
+
+export interface ResultLevel {
+  id: "A1" | "A2" | "A3" | "A4";
+  tier: string;
+  name: string;
+  min: number;
+  max: number;
+  badge: boolean;
+  needsEvidence: boolean;
+  needsSignature: boolean;
+  blurb: string;
 }
 
 export interface FinalizationResponse {
@@ -47,6 +73,8 @@ export interface FinalizationResponse {
   result: OfficialResult;
   badge: IssuedBadge | null;
 }
+
+export type AssessmentDashboardResponse = FinalizationResponse;
 
 export class ApiError extends Error {
   constructor(public status: number, message: string, public code?: string) { super(message); }
@@ -79,6 +107,7 @@ export const createAssessment = (aiSystemName: string, tier: 1 | 2) => post<{ as
 export const getActiveAssessment = () => request<{ assessment: AssessmentRecord | null }>("/assessments/active");
 export const getAssessments = () => request<{ assessments: AssessmentRecord[] }>("/assessments");
 export const getAssessment = (id: string) => request<{ assessment: AssessmentRecord }>(`/assessments/${id}`);
+export const getAssessmentDashboard = (id: string) => request<AssessmentDashboardResponse>(`/assessments/${id}/dashboard`);
 export const getResult = (id: string) => request<FinalizationResponse>(`/assessments/${id}/result`);
 
 export async function saveDomain(assessmentId: string, domainId: string, answers: Answers) {

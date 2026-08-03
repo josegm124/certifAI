@@ -24,6 +24,7 @@ const AuthService = require('./services/AuthService');
 const DomainAnswerService = require('./services/DomainAnswerService');
 const ScoringService = require('./services/ScoringService');
 const AssessmentFinalizationService = require('./services/AssessmentFinalizationService');
+const AssessmentDashboardService = require('./services/AssessmentDashboardService');
 
 // Routes
 const { createRoutes } = require('./routes/api');
@@ -83,6 +84,9 @@ const startServer = async () => {
     const authService = new AuthService(userRepository, companyService, passwordService);
     const domainAnswerService = new DomainAnswerService(assessmentService, answerRepository, assessmentRepository);
     const scoringService = new ScoringService();
+    const assessmentDashboardService = new AssessmentDashboardService(
+      assessmentService, answerRepository, scoringService, badgeService
+    );
     const finalizationService = new AssessmentFinalizationService(
       assessmentService, assessmentRepository, answerRepository, scoringService, badgeService
     );
@@ -93,6 +97,7 @@ const startServer = async () => {
       tokenService,
       userRepository,
       assessmentService,
+      assessmentDashboardService,
       domainAnswerService,
       finalizationService,
       badgeService,

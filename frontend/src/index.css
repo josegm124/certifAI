@@ -102,6 +102,20 @@ a{color:inherit;text-decoration:none}
 /* ---------- dashboard ---------- */
 .dash-top{display:flex;justify-content:space-between;align-items:flex-end;gap:16px;flex-wrap:wrap;margin-bottom:6px}
 .dash-grid{display:grid;grid-template-columns:1.15fr .85fr;gap:24px;align-items:start;margin-top:18px}
+.assessment-cases{margin-top:22px;padding:18px 0 6px;border-top:1px solid var(--line);border-bottom:1px solid var(--line)}
+.assessment-cases-head{display:flex;align-items:baseline;justify-content:space-between;gap:12px;margin-bottom:12px;flex-wrap:wrap}
+.assessment-tabs{display:flex;gap:10px;overflow-x:auto;padding:2px 2px 14px;scrollbar-width:thin}
+.assessment-tab{min-width:238px;max-width:290px;display:flex;flex-direction:column;align-items:flex-start;gap:4px;text-align:left;padding:13px 15px;border:1.5px solid var(--line);border-radius:12px;background:var(--panel);color:var(--ink);font:inherit;cursor:pointer;transition:border-color .15s,box-shadow .15s,transform .15s}
+.assessment-tab:hover{border-color:var(--pine);transform:translateY(-1px)}
+.assessment-tab-on{border-color:var(--pine);box-shadow:0 0 0 3px var(--pine-soft)}
+.assessment-tab strong{font-family:'Lora',serif;font-size:15px;line-height:1.25;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%}
+.assessment-tab>span:last-child,.case-meta{font-size:11.5px;color:var(--mute);line-height:1.4}
+.assessment-tab-tag{font-size:9.5px;letter-spacing:.07em;text-transform:uppercase;font-weight:700;color:var(--pine)}
+.selected-case-head{align-items:center;margin-top:24px}
+.dashboard-loading{text-align:center;color:var(--mute);margin-top:22px;padding:42px}
+.framework-cards{grid-template-columns:repeat(auto-fill,minmax(230px,1fr))}
+.metric-pct{font-size:12px;font-weight:700;color:var(--ink);min-width:34px;text-align:right}
+.empty-gap{font-size:13.5px;color:var(--pine);padding:12px 0;list-style:none}
 .card{background:var(--panel);border:1.5px solid var(--line);border-radius:16px;padding:22px}
 .card-h{display:flex;justify-content:space-between;align-items:baseline;gap:12px;margin-bottom:4px}
 .card-t{font-family:'Lora',serif;font-size:18px;font-weight:600}
@@ -294,4 +308,8 @@ select.input{appearance:none;cursor:pointer;background-image:linear-gradient(45d
   body{background:#fff!important}
   .wrap{max-width:none!important;padding:0!important}
   .card,.res-hero,.banner{break-inside:avoid;box-shadow:none!important}
+}
+@media(max-width:600px){
+  .assessment-tab{min-width:210px}
+  .assessment-cases-head .card-sub{display:none}
 }

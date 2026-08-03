@@ -17,6 +17,16 @@ interface Row {
   improve: string;
 }
 
+export interface MaturityMatrixRow {
+  id: string;
+  name: string;
+  level: number;
+  pct: number;
+  answered: number;
+  weak?: { title: string; score: number };
+  improve: string;
+}
+
 function buildRows(answers: Answers): Row[] {
   return DOMAINS.map((d) => {
     const qs = QUESTIONS.filter((q) => q.domain === d.id);
@@ -36,11 +46,20 @@ function buildRows(answers: Answers): Row[] {
   });
 }
 
-export default function MaturityMatrix({ answers }: { answers: Answers }) {
-  const rows = buildRows(answers);
+export default function MaturityMatrix({
+  answers,
+  rows: suppliedRows,
+  onOpen,
+}: {
+  answers?: Answers;
+  rows?: MaturityMatrixRow[];
+  onOpen?: (domainId: string) => void;
+}) {
+  const rows = suppliedRows ?? buildRows(answers ?? {});
   const [hover, setHover] = useState<string | null>(null);
   const nav = useNavigate();
   const reduce = useReducedMotion();
+  const open = (domainId: string) => onOpen ? onOpen(domainId) : nav(`/dimensions/${domainId}`);
 
   return (
     <div className="matrix" role="grid" aria-label="Maturity by domain">
@@ -69,7 +88,7 @@ export default function MaturityMatrix({ answers }: { answers: Answers }) {
             <button
               className="mrow-label"
               style={{ background: "none", border: 0, cursor: "pointer", font: "inherit", color: "inherit", textAlign: "right" }}
-              onClick={() => nav(`/dimensions/${r.id}`)}
+              onClick={() => open(r.id)}
               onFocus={() => setHover(r.id)}
               onBlur={() => setHover(null)}
               aria-label={`${r.name}, ${r.answered ? r.pct + " percent" : "not answered"}. Open deep-dive.`}
@@ -84,7 +103,7 @@ export default function MaturityMatrix({ answers }: { answers: Answers }) {
                   <div
                     key={c}
                     className={`mcell ${on ? "" : "mcell-empty"}`}
-                    onClick={() => nav(`/dimensions/${r.id}`)}
+                    onClick={() => open(r.id)}
                     style={{
                       background: on ? col : "var(--mist)",
                       boxShadow:

@@ -11,7 +11,7 @@ const cookieOptions = () => ({
   path: '/',
 });
 
-const createRoutes = ({ authService, tokenService, userRepository, assessmentService, domainAnswerService, finalizationService, badgeService }) => {
+const createRoutes = ({ authService, tokenService, userRepository, assessmentService, assessmentDashboardService, domainAnswerService, finalizationService, badgeService }) => {
   const router = express.Router();
   const authenticate = createAuthMiddleware(tokenService);
 
@@ -63,6 +63,11 @@ const createRoutes = ({ authService, tokenService, userRepository, assessmentSer
 
   router.get('/assessments', authenticate, async (req, res, next) => {
     try { res.json({ assessments: await assessmentService.list(req.auth.sub) }); }
+    catch (error) { next(error); }
+  });
+
+  router.get('/assessments/:id/dashboard', authenticate, async (req, res, next) => {
+    try { res.json(await assessmentDashboardService.get(req.auth.sub, req.params.id)); }
     catch (error) { next(error); }
   });
 
