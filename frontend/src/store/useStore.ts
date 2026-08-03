@@ -1,86 +1,89 @@
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
 import type { Answers, Answer } from "../lib/scoring";
-import type { ServerResult } from "../lib/api";
-import { SAMPLE_ANSWERS, SAMPLE_ORG } from "../lib/sampleData";
+import type { AssessmentRecord, FinalizationResponse, Profile } from "../lib/api";
+import { QUESTIONS } from "../lib/data";
 
 interface CertState {
-  org: string;
-  email: string;
-  role: string;
+  authStatus: "loading" | "authenticated" | "anonymous";
+  profile: Profile | null;
+  org: string; email: string; role: string;
   tier: 1 | 2;
+  aiSystemName: string;
   answers: Answers;
-  /** whether the Tier-2 self-certification has been signed */
+  dirtyDomains: string[];
   signed: boolean;
   seeded: boolean;
-
-  /* --- backend identity, so a re-submit reuses the same assessment --- */
   userId: string | null;
   assessmentId: string | null;
-
-  /* --- the server's verdict. This, not the local engine, is the badge. --- */
-  server: ServerResult | null;
-
-  setOrg: (org: string) => void;
-  setEmail: (email: string) => void;
-  setRole: (role: string) => void;
-  setTier: (tier: 1 | 2) => void;
+  assessment: AssessmentRecord | null;
+  server: FinalizationResponse | null;
+  setAuth: (profile: Profile | null) => void;
+  setAssessment: (assessment: AssessmentRecord | null, preserveDirty?: boolean) => void;
+  setOrg: (v: string) => void; setEmail: (v: string) => void; setRole: (v: string) => void;
+  setTier: (v: 1 | 2) => void; setAiSystemName: (v: string) => void;
   setAnswer: (qid: number, patch: Answer) => void;
+  markDomainSynced: (domainId: string) => void;
   setSigned: (v: boolean) => void;
   setIdentity: (userId: string, assessmentId: string) => void;
-  setServer: (r: ServerResult | null) => void;
+  setServer: (r: FinalizationResponse | null) => void;
+  clearAssessment: () => void;
   reset: () => void;
   loadSample: () => void;
 }
 
-export const useStore = create<CertState>()(
-  persist(
-    (set) => ({
-      org: "",
-      email: "",
-      role: "",
-      tier: 1,
-      answers: {},
-      signed: false,
-      seeded: false,
-      userId: null,
-      assessmentId: null,
-      server: null,
-
-      setOrg: (org) => set({ org }),
-      setEmail: (email) => set({ email }),
-      setRole: (role) => set({ role }),
-      setTier: (tier) => set({ tier }),
-      // Any change to an answer invalidates the server's verdict — the badge
-      // on screen must never outlive the answers it was issued against.
-      setAnswer: (qid, patch) =>
-        set((s) => ({ answers: { ...s.answers, [qid]: { ...s.answers[qid], ...patch } }, server: null })),
-      setSigned: (signed) => set({ signed }),
-      setIdentity: (userId, assessmentId) => set({ userId, assessmentId }),
-      setServer: (server) => set({ server }),
-      reset: () =>
-        set({ org: "", email: "", role: "", tier: 1, answers: {}, signed: false, seeded: false, userId: null, assessmentId: null, server: null }),
-      // signed:false on purpose — the sample should walk the signature and
-      // certification step, not skip past the part where the badge is earned.
-      loadSample: () =>
-        set({ org: SAMPLE_ORG, tier: 2, answers: SAMPLE_ANSWERS, signed: false, seeded: true, server: null }),
-    }),
-    /* Rehydration is SYNCHRONOUS, and route guards depend on that being true.
-       zustand 4.5.7 defaults `storage` to createJSONStorage(() => localStorage);
-       localStorage.getItem returns a string, never a Promise, so persist's
-       toThenable() runs the rehydration callback inline. `skipHydration` is not
-       set, so hydrate() runs during store creation — i.e. while this module is
-       evaluated, before React renders anything.
-
-       Consequence: a component may read persisted state on its FIRST render.
-       RequireIntake relies on this; if the storage here is ever swapped for an
-       async one, that guard must start waiting on onFinishHydration or it will
-       bounce returning users to /start and discard their run. */
-    { name: "certifai-v2" }
-  )
+const fromServer = (record: AssessmentRecord): Answers => Object.fromEntries(
+  Object.entries(record.answers).map(([id, answer]) => [Number(id), {
+    score: answer.score, detail: answer.evidence, attested: Boolean(answer.attestation),
+  }])
 );
 
-/** Whether the user has any usable evidence attested. */
+export const useStore = create<CertState>()(persist((set, get) => ({
+  authStatus: "loading", profile: null, org: "", email: "", role: "", tier: 1,
+  aiSystemName: "", answers: {}, dirtyDomains: [], signed: false, seeded: false,
+  userId: null, assessmentId: null, assessment: null, server: null,
+  setAuth: (profile) => set({
+    authStatus: profile ? "authenticated" : "anonymous", profile,
+    userId: profile?.id || null, org: profile?.company.name || "",
+    email: profile?.email || "", role: profile?.role || "",
+  }),
+  setAssessment: (assessment, preserveDirty = true) => {
+    const local = get();
+    const dirtyAnswers = preserveDirty ? Object.fromEntries(Object.entries(local.answers).filter(([id]) => {
+      const domain = QUESTIONS.find((q) => q.id === Number(id))?.domain;
+      return domain && local.dirtyDomains.includes(domain);
+    })) : {};
+    set({ assessment, assessmentId: assessment?.id || null, tier: assessment?.tier || 1,
+      aiSystemName: assessment?.aiSystem.name || "", answers: assessment ? { ...fromServer(assessment), ...dirtyAnswers } : dirtyAnswers,
+      dirtyDomains: preserveDirty ? local.dirtyDomains : [], signed: Boolean(assessment?.signatoryName), server: null });
+  },
+  setOrg: (org) => set({ org }), setEmail: (email) => set({ email }), setRole: (role) => set({ role }),
+  setTier: (tier) => set({ tier }), setAiSystemName: (aiSystemName) => set({ aiSystemName }),
+  setAnswer: (qid, patch) => set((state) => {
+    const domain = QUESTIONS.find((q) => q.id === qid)?.domain;
+    return { answers: { ...state.answers, [qid]: { ...state.answers[qid], ...patch } },
+      dirtyDomains: domain && !state.dirtyDomains.includes(domain) ? [...state.dirtyDomains, domain] : state.dirtyDomains,
+      server: null };
+  }),
+  markDomainSynced: (domainId) => set((state) => ({ dirtyDomains: state.dirtyDomains.filter((id) => id !== domainId) })),
+  setSigned: (signed) => set({ signed }),
+  setIdentity: (userId, assessmentId) => set({ userId, assessmentId }),
+  setServer: (server) => set({ server }),
+  clearAssessment: () => set({ tier: 1, aiSystemName: "", answers: {}, dirtyDomains: [], signed: false, assessmentId: null, assessment: null, server: null }),
+  reset: () => set({ authStatus: "anonymous", profile: null, org: "", email: "", role: "", userId: null, tier: 1, aiSystemName: "", answers: {}, dirtyDomains: [], signed: false, seeded: false, assessmentId: null, assessment: null, server: null }),
+  loadSample: () => undefined,
+}), {
+  name: "certifai-v3",
+  partialize: (state) => ({
+    assessmentId: state.assessmentId,
+    dirtyDomains: state.dirtyDomains,
+    answers: Object.fromEntries(Object.entries(state.answers).filter(([id]) => {
+      const domain = QUESTIONS.find((q) => q.id === Number(id))?.domain;
+      return domain && state.dirtyDomains.includes(domain);
+    })),
+  }),
+}));
+
 export function hasEvidence(answers: Answers): boolean {
-  return Object.values(answers).some((a) => a.attested || (a.detail && a.detail.trim().length > 0));
+  return Object.values(answers).some((a) => a.attested || Boolean(a.detail?.trim()));
 }

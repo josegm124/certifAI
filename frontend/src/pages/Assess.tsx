@@ -3,114 +3,60 @@ import { useNavigate } from "react-router-dom";
 import { DOMAINS, QUESTIONS, MATURITY_LEVELS, FRAMEWORKS, TOTAL_QUESTIONS } from "../lib/data";
 import { useStore } from "../store/useStore";
 import { completion } from "../lib/scoring";
+import { saveDomain } from "../lib/api";
 import { Dot, Arrow } from "../components/icons";
 
 export default function Assess() {
-  const { tier, answers, setAnswer, org } = useStore();
+  const { tier, answers, setAnswer, org, assessmentId, assessment, aiSystemName, dirtyDomains, markDomainSynced } = useStore();
   const [idx, setIdx] = useState(0);
+  const [saving, setSaving] = useState(false);
+  const [saveError, setSaveError] = useState<string | null>(null);
   const nav = useNavigate();
-
-  // The intake gate that used to live here now guards the route itself, in
-  // components/RequireIntake.tsx, so /assess and /results share one rule
-  // instead of two that can drift apart.
-
   const q = QUESTIONS[idx];
-  const a = answers[q.id] || {};
-  const dom = DOMAINS.find((d) => d.id === q.domain)!;
+  const answer = answers[q.id] || {};
+  const domain = DOMAINS.find((item) => item.id === q.domain)!;
+  const domainQuestions = QUESTIONS.filter((item) => item.domain === q.domain);
   const comp = completion(answers);
   const isLast = idx === QUESTIONS.length - 1;
-  const domainQs = QUESTIONS.filter((x) => x.domain === q.domain);
-  const domainPos = domainQs.findIndex((x) => x.id === q.id) + 1;
 
   useEffect(() => { window.scrollTo({ top: 0, behavior: "smooth" }); }, [idx]);
+  useEffect(() => { if (assessment?.status === "finalized") nav("/results", { replace: true }); }, [assessment?.status, nav]);
 
-  return (
-    <main className="wrap wrap-wide">
-      <div className="dash-top" style={{ marginBottom: 16 }}>
-        <div>
-          <div className="eyebrow">Assessment</div>
-          {/* Read-only. The organisation is captured once at /start; an editable
-              copy here let the same run carry two different names. */}
-          <div className="assess-org">{org}</div>
-        </div>
-        {/* Read-only. The tier is chosen at /start by which button was pressed,
-            and the numeric tier is what the server's badge gates read. Letting
-            the assessment flip it mid-run changed what the run was worth. */}
-        <div className="tier-static">{tier === 1 ? "Tier 1 · Free" : "Tier 2 · Evidence"}</div>
-      </div>
+  async function goTo(target: number | "results") {
+    if (!assessmentId || saving) return;
+    const targetDomain = target === "results" ? null : QUESTIONS[target].domain;
+    if (targetDomain !== q.domain && dirtyDomains.includes(q.domain)) {
+      if (!domainQuestions.every((item) => answers[item.id]?.score != null)) {
+        setSaveError(`Answer every question in ${domain.name} before continuing.`); return;
+      }
+      setSaving(true); setSaveError(null);
+      try {
+        await saveDomain(assessmentId, q.domain, Object.fromEntries(domainQuestions.map((item) => [item.id, answers[item.id]])));
+        markDomainSynced(q.domain);
+      } catch (error) {
+        setSaveError(error instanceof Error ? error.message : "Could not save this domain");
+        setSaving(false); return;
+      }
+      setSaving(false);
+    }
+    if (target === "results") nav("/results"); else setIdx(target);
+  }
 
-      <div className="assess">
-        <aside className="assess-side">
-          <div className="side-dom">{dom.name}</div>
-          <div className="side-pos">Question {domainPos} of {domainQs.length} in domain · {comp.answered}/{comp.total} total</div>
-          <nav className="dnav">
-            {DOMAINS.map((d) => {
-              const qs = QUESTIONS.filter((x) => x.domain === d.id);
-              const hasCurrent = qs.some((x) => x.id === q.id);
-              return (
-                <div key={d.id} className={`dnav-grp ${hasCurrent ? "dnav-grp-on" : ""}`}>
-                  <div className="dnav-name">{d.name}</div>
-                  <div className="dnav-dots">
-                    {qs.map((x) => {
-                      const ans = answers[x.id]?.score != null;
-                      const cur = x.id === q.id;
-                      return (
-                        <button key={x.id} className={`dot-btn ${ans ? "dot-ans" : ""} ${cur ? "dot-cur" : ""} ${x.critical ? "dot-crit" : ""}`}
-                          title={`Q${x.id} · ${x.title}`} onClick={() => setIdx(QUESTIONS.findIndex((y) => y.id === x.id))} />
-                      );
-                    })}
-                  </div>
-                </div>
-              );
-            })}
-          </nav>
-        </aside>
-
-        <section>
-          <div className="q-head">
-            <span className="q-num">Q{q.id}<span className="q-of"> / {TOTAL_QUESTIONS}</span></span>
-            {q.critical && <span className="q-crit">Critical control</span>}
-            <span className="q-frameworks">{q.frameworks.map((f) => FRAMEWORKS[f]).join(" · ")}</span>
-          </div>
-          <h2 className="q-title">{q.title}</h2>
-          <p className="q-text">{q.text}</p>
-
-          <div className="scale">
-            {MATURITY_LEVELS.map((m) => {
-              const on = a.score === m.score;
-              return (
-                <button key={m.score} className={`opt ${on ? "opt-on" : ""}`} onClick={() => setAnswer(q.id, { score: m.score })}>
-                  <span className="opt-score">{m.score}</span>
-                  <span className="opt-body"><span className="opt-label">{m.label}</span><span className="opt-desc">{m.desc}</span></span>
-                  <span className="opt-radio">{on ? <Dot /> : null}</span>
-                </button>
-              );
-            })}
-          </div>
-
-          {tier === 2 && (
-            <div className="ev">
-              <span className="ev-title">Evidence</span>
-              <span className="ev-sub">Typical artefacts: {q.evidence.join(", ")}</span>
-              <label className="ev-attest">
-                <input type="checkbox" checked={!!a.attested} onChange={(e) => setAnswer(q.id, { attested: e.target.checked })} />
-                <span>We hold documented evidence supporting this score.</span>
-              </label>
-              <textarea className="ev-note" placeholder="Name the document, owner, or location of the evidence. This is what the evidence dossier is built from."
-                value={a.detail || ""} onChange={(e) => setAnswer(q.id, { detail: e.target.value })} />
-            </div>
-          )}
-
-          <div className="nav">
-            <button className="btn btn-ghost" disabled={idx === 0} onClick={() => setIdx(idx - 1)}>← Previous</button>
-            <div className="nav-right">
-              {!isLast && <button className={`btn ${a.score != null ? "btn-primary" : "btn-ghost"}`} onClick={() => setIdx(idx + 1)}>{a.score != null ? "Next" : "Skip"} <Arrow color={a.score != null ? "#fff" : "currentColor"} /></button>}
-              {isLast && <button className="btn btn-accent" onClick={() => nav("/results")}>See results <Arrow color="#fff" /></button>}
-            </div>
-          </div>
-          <button className="finish-link" onClick={() => nav("/results")}>Finish & view results now ({comp.answered}/{comp.total} answered)</button>
-        </section>
-      </div>
-    </main>
-  );
+  return <main className="wrap wrap-wide">
+    <div className="dash-top" style={{ marginBottom: 16 }}><div><div className="eyebrow">Assessment · {org}</div><div className="assess-org">{aiSystemName}</div></div><div className="tier-static">Tier {tier} · {tier === 1 ? "Free" : "Evidence"}</div></div>
+    <div className="assess">
+      <aside className="assess-side"><div className="side-dom">{domain.name}</div><div className="side-pos">{comp.answered}/{comp.total} answered</div><nav className="dnav">{DOMAINS.map((item) => {
+        const questions = QUESTIONS.filter((question) => question.domain === item.id);
+        return <div key={item.id} className={`dnav-grp ${item.id === q.domain ? "dnav-grp-on" : ""}`}><div className="dnav-name">{item.name}</div><div className="dnav-dots">{questions.map((question) => <button key={question.id} className={`dot-btn ${answers[question.id]?.score != null ? "dot-ans" : ""} ${question.id === q.id ? "dot-cur" : ""} ${question.critical ? "dot-crit" : ""}`} title={`Q${question.id} · ${question.title}`} onClick={() => goTo(QUESTIONS.findIndex((candidate) => candidate.id === question.id))} />)}</div></div>;
+      })}</nav></aside>
+      <section><div className="q-head"><span className="q-num">Q{q.id}<span className="q-of"> / {TOTAL_QUESTIONS}</span></span>{q.critical && <span className="q-crit">Critical control</span>}<span className="q-frameworks">{q.frameworks.map((framework) => FRAMEWORKS[framework]).join(" · ")}</span></div>
+        <h2 className="q-title">{q.title}</h2><p className="q-text">{q.text}</p>
+        <div className="scale">{MATURITY_LEVELS.map((level) => { const selected = answer.score === level.score; return <button key={level.score} className={`opt ${selected ? "opt-on" : ""}`} onClick={() => setAnswer(q.id, { score: level.score })}><span className="opt-score">{level.score}</span><span className="opt-body"><span className="opt-label">{level.label}</span><span className="opt-desc">{level.desc}</span></span><span className="opt-radio">{selected ? <Dot /> : null}</span></button>; })}</div>
+        {tier === 2 && <div className="ev"><span className="ev-title">Evidence reference</span><span className="ev-sub">Typical artefacts: {q.evidence.join(", ")}</span><label className="ev-attest"><input type="checkbox" checked={Boolean(answer.attested)} onChange={(event) => setAnswer(q.id, { attested: event.target.checked })} /><span>We hold documented evidence supporting this score.</span></label><textarea className="ev-note" placeholder="Name the document, owner, or location." value={answer.detail || ""} onChange={(event) => setAnswer(q.id, { detail: event.target.value })} /></div>}
+        {saveError && <div className="banner banner-cap" style={{ marginTop: 14 }}>{saveError}</div>}
+        <div className="nav"><button className="btn btn-ghost" disabled={idx === 0 || saving} onClick={() => goTo(idx - 1)}>← Previous</button><div className="nav-right">{!isLast ? <button disabled={saving} className={`btn ${answer.score != null ? "btn-primary" : "btn-ghost"}`} onClick={() => goTo(idx + 1)}>{saving ? "Saving domain…" : answer.score != null ? "Next" : "Skip"} <Arrow color={answer.score != null ? "#fff" : "currentColor"} /></button> : <button className="btn btn-accent" disabled={saving || comp.pct < 100} onClick={() => goTo("results")}>{saving ? "Saving domain…" : "Review and finalize"} <Arrow color="#fff" /></button>}</div></div>
+        <div className="sec-note">Progress is saved to your account after each complete domain ({comp.answered}/{comp.total}).</div>
+      </section>
+    </div>
+  </main>;
 }

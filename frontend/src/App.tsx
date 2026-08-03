@@ -1,3 +1,4 @@
+import { useEffect } from "react";
 import { Routes, Route } from "react-router-dom";
 import Header from "./components/Header";
 import Footer from "./components/Footer";
@@ -10,19 +11,38 @@ import Start from "./pages/Start";
 import Assess from "./pages/Assess";
 import Results from "./pages/Results";
 import Upgrade from "./pages/Upgrade";
+import Login from "./pages/Login";
+import Register from "./pages/Register";
+import Profile from "./pages/Profile";
+import { getActiveAssessment, getMe } from "./lib/api";
+import { useStore } from "./store/useStore";
 
 export default function App() {
+  const { setAuth, setAssessment } = useStore();
+  useEffect(() => {
+    let active = true;
+    getMe().then(async ({ profile }) => {
+      if (!active) return;
+      setAuth(profile);
+      const response = await getActiveAssessment();
+      if (active) setAssessment(response.assessment);
+    }).catch(() => { if (active) setAuth(null); });
+    return () => { active = false; };
+  }, [setAuth, setAssessment]);
   return (
     <div className="app">
       <Header />
       <Routes>
         <Route path="/" element={<Landing />} />
-        <Route path="/dashboard" element={<Dashboard />} />
-        <Route path="/dimensions/:dimId" element={<DimensionDetail />} />
-        <Route path="/certifications/:certId" element={<CertificationDetail />} />
-        <Route path="/start" element={<Start />} />
-        <Route path="/assess" element={<RequireIntake><Assess /></RequireIntake>} />
-        <Route path="/results" element={<RequireIntake><Results /></RequireIntake>} />
+        <Route path="/login" element={<Login />} />
+        <Route path="/register" element={<Register />} />
+        <Route path="/profile" element={<RequireIntake><Profile /></RequireIntake>} />
+        <Route path="/dashboard" element={<RequireIntake><Dashboard /></RequireIntake>} />
+        <Route path="/dimensions/:dimId" element={<RequireIntake assessment><DimensionDetail /></RequireIntake>} />
+        <Route path="/certifications/:certId" element={<RequireIntake assessment><CertificationDetail /></RequireIntake>} />
+        <Route path="/start" element={<RequireIntake><Start /></RequireIntake>} />
+        <Route path="/assess" element={<RequireIntake assessment><Assess /></RequireIntake>} />
+        <Route path="/results" element={<RequireIntake assessment><Results /></RequireIntake>} />
         <Route path="/upgrade" element={<RequireIntake><Upgrade /></RequireIntake>} />
       </Routes>
       <Footer />

@@ -288,3 +288,10 @@ a{color:inherit;text-decoration:none}
 select.input{appearance:none;cursor:pointer;background-image:linear-gradient(45deg,transparent 50%,var(--mute) 50%),linear-gradient(135deg,var(--mute) 50%,transparent 50%);background-position:calc(100% - 18px) 52%,calc(100% - 13px) 52%;background-size:5px 5px,5px 5px;background-repeat:no-repeat;padding-right:38px}
 .price-on{border-color:var(--pine);box-shadow:0 0 0 3px var(--pine-soft)}
 .price{cursor:pointer}
+
+@media print {
+  .hdr,.ftr,.no-print{display:none!important}
+  body{background:#fff!important}
+  .wrap{max-width:none!important;padding:0!important}
+  .card,.res-hero,.banner{break-inside:avoid;box-shadow:none!important}
+}

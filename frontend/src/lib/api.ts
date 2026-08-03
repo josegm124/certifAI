@@ -1,165 +1,98 @@
-/* ==============================================================================
-   CertifAI — backend client
-
-   Based on merge/frontend/src/lib/api.ts, reconciled to the real backend.
-
-   THE CONTRACT, AS BUILT
-   The local engine in scoring.ts produces an INSTANT ON-SCREEN PREVIEW. It is
-   not the badge. When a tier-2 user signs, we POST the computed score plus the
-   LevelContext to /assessments/:id/result, and the SERVER re-derives the
-   critical-control gate and the evidence check from stored answers, resolves
-   the level itself, and issues the badge. What comes back is the score of
-   record.
-
-   If the backend is unreachable the app stays fully usable: everything renders
-   from local state as a preview, and NO badge is shown. A client-set signature
-   must never mint a badge on its own, so "offline" means "no credential",
-   never "assume it worked".
-   ============================================================================== */
-import type { Answers, LevelContext, LevelId } from "./scoring";
-import { domainScores, gapAnalysis, completion, resolveLevel, gatingStatus } from "./scoring";
+import type { Answers } from "./scoring";
 
 const BASE = import.meta.env.VITE_API_URL ?? "http://localhost:3001/api";
 
-export interface IssuedBadge {
+export interface Profile {
   id: string;
-  tier: string;
-  score: number;
-  verificationToken: string;
-  issuedAt: string;
-  expiresAt: string;
-  verifyUrl: string;
+  email: string;
+  name: string;
+  role: string;
+  company: { id: string; name: string };
 }
 
-/** The server's verdict. `badge` is null whenever no credential was earned. */
-export interface ServerResult {
-  overallScore: number;
-  level: LevelId;
-  levelName: string;
-  badgeTier: string;
-  badgeEligible: boolean;
-  criticalGating: { capped: boolean; failedIds: number[] };
-  hasEvidence: boolean;
-  selfCertified: boolean;
+export interface AssessmentRecord {
+  id: string;
+  tier: 1 | 2;
+  status: "draft" | "finalized";
+  completionPercentage: number;
+  overallScore: number | null;
+  badgeTier: string | null;
+  criticalGatingActive: boolean;
+  signatoryName: string | null;
   selfCertifiedAt: string | null;
-  completion: { answered: number; total: number; percentage: number };
-  cappedFrom: LevelId | null;
+  completedAt: string | null;
+  createdAt: string;
+  aiSystem: { id: string; name: string };
+  answers: Record<string, { score: number; evidence: string; attestation: string }>;
+}
+
+export interface IssuedBadge {
+  id: string; tier: string; score: number; verificationToken: string;
+  issuedAt: string; expiresAt: string;
+}
+
+export interface OfficialResult {
+  overallScore: number;
+  domainScores: Array<{ id: string; weight: number; pct: number; rawAvg: number }>;
+  level: { id: "A1" | "A2" | "A3" | "A4"; tier: string; name: string; badge: boolean };
+  rawLevel: { id: "A1" | "A2" | "A3" | "A4"; tier: string; name: string; badge: boolean };
   cappedReason: string | null;
+  hasEvidence: boolean;
+  criticalGating: { capped: boolean; failedIds: number[] };
+  completion: { answered: number; total: number; percentage: number };
+}
+
+export interface FinalizationResponse {
+  assessment: AssessmentRecord;
+  result: OfficialResult;
   badge: IssuedBadge | null;
 }
 
-export interface RegisteredLead {
-  userId: string;
-  companyId: string;
+export class ApiError extends Error {
+  constructor(public status: number, message: string, public code?: string) { super(message); }
 }
 
-async function post<T>(path: string, body: unknown): Promise<T> {
-  const res = await fetch(`${BASE}${path}`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(body),
+async function request<T>(path: string, init: RequestInit = {}): Promise<T> {
+  const response = await fetch(`${BASE}${path}`, {
+    ...init,
+    credentials: "include",
+    headers: { ...(init.body ? { "Content-Type": "application/json" } : {}), ...init.headers },
   });
-  if (!res.ok) {
-    const detail = await res.text().catch(() => "");
-    throw new Error(`${res.status} ${res.statusText}${detail ? `: ${detail}` : ""}`);
+  if (!response.ok) {
+    const data = await response.json().catch(() => ({}));
+    throw new ApiError(response.status, data.error || response.statusText, data.code);
   }
-  return res.json() as Promise<T>;
+  if (response.status === 204) return undefined as T;
+  return response.json() as Promise<T>;
 }
 
-/** Find-or-create the company and the lead under it. */
-export async function registerLead(org: string, email: string, role = ""): Promise<RegisteredLead> {
-  const r = await post<{ userId: string; companyId: string }>("/companies", { name: org, email, role });
-  return { userId: r.userId, companyId: r.companyId };
+const post = <T>(path: string, body?: unknown) => request<T>(path, { method: "POST", body: body === undefined ? undefined : JSON.stringify(body) });
+const put = <T>(path: string, body: unknown) => request<T>(path, { method: "PUT", body: JSON.stringify(body) });
+
+export const register = (input: { companyName: string; email: string; password: string; name: string; role: string }) =>
+  post<{ profile: Profile }>("/auth/register", input);
+export const login = (email: string, password: string) => post<{ profile: Profile }>("/auth/login", { email, password });
+export const logout = () => post<void>("/auth/logout");
+export const getMe = () => request<{ profile: Profile }>("/auth/me");
+export const updateProfile = (name: string, role: string) => put<{ profile: Profile }>("/profile", { name, role });
+export const createAssessment = (aiSystemName: string, tier: 1 | 2) => post<{ assessment: AssessmentRecord }>("/assessments", { aiSystemName, tier });
+export const getActiveAssessment = () => request<{ assessment: AssessmentRecord | null }>("/assessments/active");
+export const getAssessments = () => request<{ assessments: AssessmentRecord[] }>("/assessments");
+export const getAssessment = (id: string) => request<{ assessment: AssessmentRecord }>(`/assessments/${id}`);
+export const getResult = (id: string) => request<FinalizationResponse>(`/assessments/${id}/result`);
+
+export async function saveDomain(assessmentId: string, domainId: string, answers: Answers) {
+  const body = Object.entries(answers).map(([questionId, answer]) => ({
+    questionId: Number(questionId), score: answer.score,
+    evidence: answer.detail?.trim() || answer.note?.trim() || "",
+    attestation: answer.attested ? "confirmed" : "",
+  }));
+  return put<{ completionPercentage: number }>(`/assessments/${assessmentId}/domains/${domainId}/answers`, { answers: body });
 }
 
-/** Open an assessment. tier 1 = free snapshot, tier 2 = evidence + certification. */
-export async function createAssessment(userId: string, tier: 1 | 2): Promise<string> {
-  const aiSystemId = `system-${Date.now()}`;
-  const r = await post<{ id: string }>("/assessments", {
-    userId,
-    aiSystemId,
-    tier: tier === 2 ? "professional" : "free",
-  });
-  return r.id;
-}
+export const finalizeAssessment = (id: string, signatoryName?: string) =>
+  post<FinalizationResponse>(`/assessments/${id}/finalize`, signatoryName ? { signatoryName, acceptedDeclaration: true } : {});
 
-/**
- * Push answers to the server. The server re-derives the critical gate and the
- * evidence check from exactly these rows, so this must run before the result
- * call or the badge will be correctly refused for lack of evidence.
- */
-export async function syncAnswers(assessmentId: string, answers: Answers): Promise<number> {
-  let sent = 0;
-  for (const [qid, a] of Object.entries(answers)) {
-    if (a?.score == null) continue;
-    await post(`/assessments/${assessmentId}/answers`, {
-      questionId: String(qid),
-      score: a.score,
-      evidence: a.detail?.trim() || a.note?.trim() || "",
-      attestation: a.attested ? "confirmed" : "",
-    });
-    sent++;
-  }
-  return sent;
-}
-
-/** Build the payload from the canonical engine. Nothing here recomputes anything. */
-export function buildResultPayload(answers: Answers, ctx: LevelContext) {
-  const local = resolveLevel(answers, ctx);
-  return {
-    overallScore: local.overall,
-    domainScores: domainScores(answers).map((d) => ({
-      id: d.id, name: d.name, weight: d.weight, pct: d.pct,
-      rawAvg: d.rawAvg, answeredCount: d.answeredCount, totalCount: d.totalCount,
-    })),
-    levelContext: { tier: ctx.tier ?? 1, hasEvidence: !!ctx.hasEvidence, hasSignature: !!ctx.hasSignature },
-    // Sent for cross-checking only; the server re-derives both and logs a
-    // warning if the client's version disagrees.
-    criticalGating: gatingStatus(answers),
-    completion: completion(answers),
-    gaps: gapAnalysis(answers).slice(0, 10),
-    selfCertifiedAt: ctx.hasSignature ? new Date().toISOString() : null,
-    frameworks: ["aiact", "gdpr", "oecd", "iso", "nist"],
-  };
-}
-
-/**
- * Submit for the score of record and, if earned, the badge.
- * Throws if the backend is unreachable — callers show the local preview and
- * say no badge was issued.
- */
-export async function submitResult(
-  assessmentId: string,
-  answers: Answers,
-  ctx: LevelContext
-): Promise<ServerResult> {
-  return post<ServerResult>(`/assessments/${assessmentId}/result`, buildResultPayload(answers, ctx));
-}
-
-/** Public badge check — the same endpoint a third party would call. */
 export async function verifyBadge(token: string): Promise<unknown | null> {
-  try {
-    const res = await fetch(`${BASE}/badges/${token}/verify`);
-    if (!res.ok) return null;
-    return await res.json();
-  } catch {
-    return null;
-  }
-}
-
-/** One call for the whole issue step: register -> assessment -> answers -> result. */
-export async function certify(
-  org: string,
-  email: string,
-  answers: Answers,
-  ctx: LevelContext,
-  existing?: { userId: string; assessmentId: string }
-): Promise<ServerResult> {
-  let assessmentId = existing?.assessmentId;
-  if (!assessmentId) {
-    const lead = await registerLead(org || "Unnamed organisation", email || `demo+${Date.now()}@certifai.local`);
-    assessmentId = await createAssessment(lead.userId, ctx.tier ?? 1);
-  }
-  await syncAnswers(assessmentId, answers);
-  return submitResult(assessmentId, answers, ctx);
+  try { return await request(`/badges/${token}/verify`); } catch { return null; }
 }

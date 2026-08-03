@@ -129,7 +129,7 @@ export default function Landing() {
               <div className="price-name">Evidence-Based Certification</div>
               <div className="price-cost"><b>€</b> · per certification</div>
               <ul className="plist">
-                {["Everything in the free tier", "Per-control document upload", "AI evidence review and scoring, in development", "Virtual signature + self-certification", "Earn Aligned / Assured / Advanced", "Verifiable, shareable trust badge"].map((p) => (
+                {["Everything in the free tier", "Per-control evidence references", "AI evidence review and scoring, in development", "Virtual signature + self-certification", "Earn Aligned / Assured / Advanced", "Verifiable, shareable trust badge"].map((p) => (
                   <li key={p}><Sparkle size={15} color="var(--ocean)" /> {p}</li>
                 ))}
               </ul>
