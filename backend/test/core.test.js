@@ -5,6 +5,7 @@ const { QUESTION_IDS } = require('../src/domain/instrument');
 const ScoringService = require('../src/services/ScoringService');
 const TokenService = require('../src/services/TokenService');
 const PasswordService = require('../src/services/PasswordService');
+const { isPasswordValid } = require('../src/utils/passwordPolicy');
 
 const answers = (score, evidence = '') => QUESTION_IDS.map((questionId) => new AssessmentAnswer({
   assessmentId: 'assessment', questionId, score,
@@ -39,6 +40,14 @@ test('password hashes are salted and verifiable', async () => {
   assert.notEqual(first, second);
   assert.equal(await service.verify('password123', first), true);
   assert.equal(await service.verify('wrong-password', first), false);
+});
+
+test('registration password policy requires length, uppercase and number', () => {
+  assert.equal(isPasswordValid('Ereslomasb0'), true);
+  assert.equal(isPasswordValid('Secret1'), true);
+  assert.equal(isPasswordValid('secret1'), false);
+  assert.equal(isPasswordValid('Password'), false);
+  assert.equal(isPasswordValid('Pass1'), false);
 });
 
 test('JWT is signed dynamically and expires after five hours', () => {

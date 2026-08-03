@@ -2,6 +2,7 @@ const { User } = require('../domain/entities');
 const { v4: uuidv4 } = require('uuid');
 const httpError = require('../utils/httpError');
 const logger = require('../config/logger');
+const { isPasswordValid, PASSWORD_POLICY_MESSAGE } = require('../utils/passwordPolicy');
 
 const clean = (value) => String(value || '').trim().replace(/\s+/g, ' ');
 const publicUser = (user, company) => ({
@@ -22,8 +23,11 @@ class AuthService {
     const name = clean(input.name);
     const role = clean(input.role);
     const password = String(input.password || '');
-    if (!companyName || !email || !name || !role || password.length < 8 || password.length > 200 || !email.includes('@')) {
-      throw httpError(400, 'Company, valid email, name, role and an 8-character password are required', 'INVALID_REGISTRATION');
+    if (!companyName || !email || !name || !role || !email.includes('@')) {
+      throw httpError(400, 'Company, valid email, name and role are required', 'INVALID_REGISTRATION');
+    }
+    if (!isPasswordValid(password)) {
+      throw httpError(400, PASSWORD_POLICY_MESSAGE, 'WEAK_PASSWORD');
     }
     if (await this.users.findByEmail(email)) throw httpError(409, 'Email is already registered', 'EMAIL_EXISTS');
     const existingCompany = await this.companies.companyRepository.findByName(companyName);
