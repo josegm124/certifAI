@@ -21,7 +21,7 @@ const fwShort: Record<string, string> = {
 };
 
 export default function Dashboard() {
-  const { org, tier, answers, signed, loadSample, server } = useStore();
+  const { org, tier, answers, signed, seeded, loadSample, server } = useStore();
   const nav = useNavigate();
   const [radarView, setRadarView] = useState<"domains" | "frameworks">("domains");
 
@@ -44,7 +44,7 @@ export default function Dashboard() {
       <main className="wrap">
         <div className="card" style={{ textAlign: "center", padding: 48 }}>
           <h2 className="h2">Your dashboard is waiting.</h2>
-          <p className="lead" style={{ margin: "0 auto 22px" }}>Take the free assessment to bring it to life — or load a sample profile to explore.</p>
+          <p className="lead" style={{ margin: "0 auto 22px" }}>Take the free assessment to bring it to life, or load a sample profile to explore.</p>
           <div style={{ display: "flex", gap: 12, justifyContent: "center", flexWrap: "wrap" }}>
             <Link to="/start" className="btn btn-primary btn-lg">Start assessment</Link>
             <button className="btn btn-ghost btn-lg" onClick={loadSample}>Load sample profile</button>
@@ -65,15 +65,13 @@ export default function Dashboard() {
   const certifications = [
     { key: "snapshot", tag: "Free · Tier 1", name: "AI Governance Readiness Snapshot", level: result.level.id, pct: comp.pct, live: true },
     { key: "aipowered", tag: "Paid · Tier 2", name: "Evidence-Based Certification", level: result.level.id, pct: result.overall, live: true },
-    { key: "aiact", tag: "Coming soon", name: "EU AI Act Conformity Pack", level: "A1" as const, pct: 0, live: false },
-    { key: "iso", tag: "Coming soon", name: "ISO/IEC 42001 Certification", level: "A1" as const, pct: 0, live: false },
   ];
 
   return (
     <main className="wrap wrap-wide">
       <div className="dash-top">
         <div>
-          <div className="eyebrow">Dashboard{org ? ` · ${org}` : ""}</div>
+          <div className="eyebrow">Dashboard{org ? ` · ${org}` : ""}{seeded ? " · sample profile" : ""}</div>
           <h1 className="h1" style={{ fontSize: 32, marginBottom: 4 }}>AI Governance Readiness</h1>
         </div>
         <div style={{ display: "flex", gap: 9, flexWrap: "wrap" }}>
@@ -102,7 +100,7 @@ export default function Dashboard() {
                   : result.cappedFrom
                     ? "Preview · held below score band, see note"
                     : "Local preview · sign & submit to certify"}
-              {" · "}{comp.answered}/{comp.total} controls answered
+              {" · "}{comp.answered}/{comp.total} questions answered
             </div>
             <div className="lvlpanel-blurb">{shownLevel.blurb}</div>
           </div>
@@ -236,10 +234,6 @@ export default function Dashboard() {
           </ul>
         </div>
       </div>
-
-      <p className="disclaimer">
-        A self-assessed, evidence-backed readiness signal. Not a certification, legal advice, or a conformity assessment under the EU AI Act.
-      </p>
     </main>
   );
 }

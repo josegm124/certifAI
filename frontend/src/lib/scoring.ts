@@ -157,7 +157,7 @@ export const LEVELS: Level[] = [
     needsSignature: false,
     needsCleanCriticals: false,
     blurb:
-      "Assessment completed and gaps understood. An internal signal of where you stand — no badge is issued.",
+      "Assessment completed and gaps understood. An internal signal of where you stand, with no badge issued.",
   },
   {
     id: "A2",
@@ -193,7 +193,7 @@ export const LEVELS: Level[] = [
     needsSignature: true,
     needsCleanCriticals: true,
     blurb:
-      "Fully embedded and continuously improved — AI-reviewed and validated across all domains with no failed critical controls. The top trust badge.",
+      "Governance fully embedded and continuously improved, evidenced across all domains and backed by a signed self-certification. The top trust badge.",
   },
 ];
 

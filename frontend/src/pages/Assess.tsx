@@ -42,7 +42,7 @@ export default function Assess() {
       <div className="assess">
         <aside className="assess-side">
           <div className="side-dom">{dom.name}</div>
-          <div className="side-pos">Control {domainPos} of {domainQs.length} in domain · {comp.answered}/{comp.total} total</div>
+          <div className="side-pos">Question {domainPos} of {domainQs.length} in domain · {comp.answered}/{comp.total} total</div>
           <nav className="dnav">
             {DOMAINS.map((d) => {
               const qs = QUESTIONS.filter((x) => x.domain === d.id);
@@ -96,7 +96,7 @@ export default function Assess() {
                 <input type="checkbox" checked={!!a.attested} onChange={(e) => setAnswer(q.id, { attested: e.target.checked })} />
                 <span>We hold documented evidence supporting this score.</span>
               </label>
-              <textarea className="ev-note" placeholder="Name the document, owner, or location of the evidence — this is what Claude reviews in the paid tier."
+              <textarea className="ev-note" placeholder="Name the document, owner, or location of the evidence. This is what the evidence dossier is built from."
                 value={a.detail || ""} onChange={(e) => setAnswer(q.id, { detail: e.target.value })} />
             </div>
           )}

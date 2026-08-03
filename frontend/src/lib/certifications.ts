@@ -45,8 +45,8 @@ export const CERTIFICATIONS: Record<FrameworkKey, Certification> = {
     certifiable: true,
     tagline: "The world's first horizontal, risk-tiered AI law.",
     what: [
-      "The EU AI Act is the first comprehensive, legally binding regulation of artificial intelligence. It classifies AI systems by risk: prohibited practices, high-risk systems, limited-risk systems with transparency duties, and minimal-risk systems. The heaviest obligations fall on high-risk systems — including AI used in recruitment, credit, education, essential services, and biometric identification.",
-      "For high-risk systems the Act requires a documented risk-management system, data and data-governance controls, technical documentation (Annex IV), automatic record-keeping/logging, transparency to deployers, human oversight, and appropriate accuracy, robustness and cybersecurity — demonstrated through a conformity assessment and registration in an EU database before the system goes to market.",
+      "The EU AI Act is the first comprehensive, legally binding regulation of artificial intelligence. It classifies AI systems by risk: prohibited practices, high-risk systems, limited-risk systems with transparency duties, and minimal-risk systems. The heaviest obligations fall on high-risk systems, including AI used in recruitment, credit, education, essential services, and biometric identification.",
+      "For high-risk systems the Act requires a documented risk-management system, data and data-governance controls, technical documentation (Annex IV), automatic record-keeping/logging, transparency to deployers, human oversight, and appropriate accuracy, robustness and cybersecurity. All of this is demonstrated through a conformity assessment and registration in an EU database before the system goes to market.",
     ],
     requires: [
       "Classify each AI system by risk tier and identify high-risk systems under Annex III",
@@ -62,7 +62,7 @@ export const CERTIFICATIONS: Record<FrameworkKey, Certification> = {
     ],
     status:
       "In force. Prohibited-practice bans apply since 2 Feb 2025 and GPAI-model obligations since 2 Aug 2025. High-risk obligations were set for 2 Aug 2026, but the proposed 'AI Omnibus' would defer stand-alone Annex III high-risk duties to 2 Dec 2027 (and product-embedded systems to 2 Aug 2028), subject to formal adoption.",
-    stakes: "Fines up to €35 million or 7% of global annual turnover — higher than GDPR.",
+    stakes: "Fines up to €35 million or 7% of global annual turnover, higher than GDPR.",
     certifaiNote:
       "CertifAI maps your maturity to the Act's control themes so you can see readiness and gaps. It is not the official conformity assessment required by law.",
     source: { label: "EU AI Act implementation timeline", url: "https://artificialintelligenceact.eu/implementation-timeline/" },
@@ -77,7 +77,7 @@ export const CERTIFICATIONS: Record<FrameworkKey, Certification> = {
     certifiable: false,
     tagline: "The data-protection backbone that AI must respect.",
     what: [
-      "The General Data Protection Regulation governs any AI that processes personal data. Every processing activity needs a documented lawful basis under Article 6, and a Data Protection Impact Assessment (DPIA) is mandatory where AI performs systematic, extensive evaluation of individuals — such as profiling that informs decisions with legal or similarly significant effects.",
+      "The General Data Protection Regulation governs any AI that processes personal data. Every processing activity needs a documented lawful basis under Article 6, and a Data Protection Impact Assessment (DPIA) is mandatory where AI performs systematic, extensive evaluation of individuals, such as profiling that informs decisions with legal or similarly significant effects.",
       "Article 22 gives individuals the right not to be subject to decisions based solely on automated processing that significantly affect them. Even where an exception applies (contract, law, or explicit consent), the person retains the right to human intervention, to express their view, and to contest the decision.",
     ],
     requires: [
@@ -96,7 +96,7 @@ export const CERTIFICATIONS: Record<FrameworkKey, Certification> = {
     stakes: "Fines up to €20 million or 4% of global annual turnover.",
     certifaiNote:
       "CertifAI surfaces your data-protection and privacy maturity for AI systems. It complements, but does not replace, formal GDPR compliance work led by your DPO.",
-    source: { label: "GDPR Article 22 — automated decision-making", url: "https://gdprlocal.com/automated-decision-making-gdpr/" },
+    source: { label: "GDPR Article 22: automated decision-making", url: "https://gdprlocal.com/automated-decision-making-gdpr/" },
   },
 
   oecd: {
@@ -109,7 +109,7 @@ export const CERTIFICATIONS: Record<FrameworkKey, Certification> = {
     tagline: "The values foundation most other frameworks build on.",
     what: [
       "The OECD AI Principles, adopted in 2019 and updated in May 2024, are the first intergovernmental standard for trustworthy AI. They set five values-based principles: inclusive growth, sustainable development and well-being; respect for the rule of law, human rights and democratic values (including fairness and privacy); transparency and explainability; robustness, security and safety; and accountability.",
-      "The 2024 update responded to generative AI — strengthening guidance on information integrity, addressing mis- and disinformation, and adding environmental sustainability. Though non-binding, the principles are the conceptual backbone that the EU AI Act, the G7 code, and NIST's framework all echo.",
+      "The 2024 update responded to generative AI by strengthening guidance on information integrity, addressing mis- and disinformation, and adding environmental sustainability. Though non-binding, the principles are the conceptual backbone that the EU AI Act, the G7 code, and NIST's framework all echo.",
     ],
     requires: [
       "Steer AI toward inclusive growth, well-being and sustainability",
@@ -168,8 +168,8 @@ export const CERTIFICATIONS: Record<FrameworkKey, Certification> = {
     certifiable: false,
     tagline: "The operational bridge to EU AI Act obligations for general-purpose models.",
     what: [
-      "Published by the European Commission on 10 July 2025, the General-Purpose AI Code of Practice gives providers of general-purpose AI models a concrete way to meet Articles 53 and 55 of the AI Act. It has three chapters: Transparency and Copyright — which apply to all GPAI providers — and Safety & Security, which applies only to models posing systemic risk (above the 10^25 FLOP threshold).",
-      "Although voluntary, signatories gain a presumption of compliance and reduced administrative burden: EU regulators treat adherence as evidence the corresponding legal obligations are met. It covers model documentation, training-data transparency, copyright policy, and — for the largest models — systemic-risk assessment and mitigation.",
+      "Published by the European Commission on 10 July 2025, the General-Purpose AI Code of Practice gives providers of general-purpose AI models a concrete way to meet Articles 53 and 55 of the AI Act. It has three chapters. Transparency and Copyright apply to all GPAI providers, while Safety & Security applies only to models posing systemic risk (above the 10^25 FLOP threshold).",
+      "Although voluntary, signatories gain a presumption of compliance and reduced administrative burden: EU regulators treat adherence as evidence the corresponding legal obligations are met. It covers model documentation, training-data transparency, and copyright policy, adding systemic-risk assessment and mitigation for the largest models.",
     ],
     requires: [
       "Maintain model documentation and a transparency 'model card'",
@@ -199,7 +199,7 @@ export const CERTIFICATIONS: Record<FrameworkKey, Certification> = {
     tagline: "The world's first certifiable AI management-system standard.",
     what: [
       "ISO/IEC 42001:2023 is the first international standard for an Artificial Intelligence Management System (AIMS). Like ISO 27001 for information security, it is certifiable by an accredited body. It applies to any organisation that develops or uses AI, and covers the full lifecycle from design through deployment, monitoring and decommissioning.",
-      "Its management-system clauses (4–10) address context, leadership, planning, support, operation, performance evaluation and improvement. Annex A adds 38 controls across nine areas — including AI policy, AI impact assessment, the AI system lifecycle, and data governance — that an organisation implements and continually improves.",
+      "Its management-system clauses (4–10) address context, leadership, planning, support, operation, performance evaluation and improvement. Annex A adds 38 controls across nine areas, including AI policy, AI impact assessment, the AI system lifecycle, and data governance. An organisation implements these controls and continually improves them.",
     ],
     requires: [
       "Establish an AI management system with defined scope and policy",
@@ -217,7 +217,7 @@ export const CERTIFICATIONS: Record<FrameworkKey, Certification> = {
       "Published Dec 2023. Certification via accredited bodies runs a Stage 1 + Stage 2 audit, is valid three years with annual surveillance.",
     stakes: "Voluntary certification, but a growing market signal for enterprise and public-sector procurement.",
     certifaiNote:
-      `CertifAI's ${numberWord(TOTAL_DOMAINS)} domains align closely with the AIMS structure — it's a strong readiness pre-check before a formal ISO 42001 audit.`,
+      `CertifAI's ${numberWord(TOTAL_DOMAINS)} domains align closely with the AIMS structure, making it a strong readiness pre-check before a formal ISO 42001 audit.`,
     source: { label: "ISO/IEC 42001 explained", url: "https://www.iso.org/standard/42001" },
   },
 
@@ -230,8 +230,8 @@ export const CERTIFICATIONS: Record<FrameworkKey, Certification> = {
     certifiable: false,
     tagline: "The practical, function-based playbook for AI risk.",
     what: [
-      "The NIST AI Risk Management Framework (AI RMF 1.0) is a voluntary, widely-adopted framework for managing AI risk. Its core has four interconnected functions: Govern — a cross-cutting culture of accountability, policy and oversight; Map — contextualising the system, its stakeholders and potential harms; Measure — assessing and tracking risk with quantitative and qualitative methods; and Manage — prioritising and responding to the risks identified.",
-      "The functions are iterative rather than sequential, and are supported by a companion Playbook and a Generative AI Profile. NIST frames the goal as trustworthy AI — valid, reliable, safe, secure, accountable, transparent, explainable, privacy-enhanced and fair.",
+      "The NIST AI Risk Management Framework (AI RMF 1.0) is a voluntary, widely-adopted framework for managing AI risk. Its core has four interconnected functions. Govern establishes a cross-cutting culture of accountability, policy and oversight; Map contextualises the system, its stakeholders and potential harms; Measure assesses and tracks risk with quantitative and qualitative methods; and Manage prioritises and responds to the risks identified.",
+      "The functions are iterative rather than sequential, and are supported by a companion Playbook and a Generative AI Profile. NIST frames the goal as trustworthy AI, meaning valid, reliable, safe, secure, accountable, transparent, explainable, privacy-enhanced and fair.",
     ],
     requires: [
       "Govern: establish AI risk culture, accountability and policy",

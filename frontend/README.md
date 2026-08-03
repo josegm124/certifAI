@@ -34,7 +34,7 @@ npm test           # scoring parity + 4A ladder tests (vitest)
 |-------|------|
 | `/` | Landing — hero, 4A ladder, domain strip, frameworks, how-it-works, pricing |
 | `/dashboard` | Smart dashboard — maturity matrix, coverage radar, certification cards, guidance rail |
-| `/assess` | Assessment — 32 controls, 0–5 scale, Tier-2 evidence |
+| `/assess` | Assessment: 36 questions, 0–5 scale, Tier-2 evidence |
 | `/results` | Readiness report — score dial, 4A badge, remediation, AI narrative, self-certification |
 | `/dimensions/:dimId` | Personalized dimension deep-dive with AI-generated improvement plan |
 | `/certifications/:certId` | Certification/framework deep-dive: what each framework requires + your mapped sub-score |

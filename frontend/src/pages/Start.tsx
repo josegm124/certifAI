@@ -83,7 +83,7 @@ export default function Start() {
         <p className="lead" style={{ maxWidth: "64ch" }}>
           A structured readiness assessment for organisations deploying AI under the EU AI Act.
           Answer {CANONICAL_SENTENCE}.
-          It takes about 20 minutes, and you will see your maturity by domain and by framework
+          You will see your maturity by domain and by framework
           with a prioritised remediation path.
         </p>
       </motion.div>
@@ -95,7 +95,7 @@ export default function Start() {
 
           <div className="field">
             <label className="lbl" htmlFor="org">Organisation name</label>
-            <input id="org" className="input" value={org} onChange={(e) => setOrg(e.target.value)} placeholder="Northstar Recruitment AI" />
+            <input id="org" className="input" value={org} onChange={(e) => setOrg(e.target.value)} placeholder="Your organisation" />
           </div>
 
           <div className="field">
@@ -155,11 +155,6 @@ export default function Start() {
           />
         </motion.section>
       </div>
-
-      <p className="disclaimer">
-        CertifAI produces a self-assessed, evidence-backed readiness signal. It is not a
-        certification, legal advice, or a conformity assessment under the EU AI Act.
-      </p>
     </main>
   );
 }

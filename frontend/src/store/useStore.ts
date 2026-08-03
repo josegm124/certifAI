@@ -59,7 +59,7 @@ export const useStore = create<CertState>()(
       setIdentity: (userId, assessmentId) => set({ userId, assessmentId }),
       setServer: (server) => set({ server }),
       reset: () =>
-        set({ org: "", email: "", role: "", tier: 1, answers: {}, signed: false, userId: null, assessmentId: null, server: null }),
+        set({ org: "", email: "", role: "", tier: 1, answers: {}, signed: false, seeded: false, userId: null, assessmentId: null, server: null }),
       // signed:false on purpose — the sample should walk the signature and
       // certification step, not skip past the part where the badge is earned.
       loadSample: () =>

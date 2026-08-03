@@ -1,11 +1,11 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { motion, useReducedMotion } from "framer-motion";
-import { DOMAINS, QUESTIONS } from "../lib/data";
+import { DOMAINS, QUESTIONS, MATURITY_LEVELS, MAX_SCORE } from "../lib/data";
 import { barColor } from "../theme";
 import type { Answers } from "../lib/scoring";
 
-const COLS = [1, 2, 3, 4, 5];
+const COLS = MATURITY_LEVELS.filter((l) => l.score > 0).map((l) => l.score);
 
 interface Row {
   id: string;
@@ -30,7 +30,7 @@ function buildRows(answers: Answers): Row[] {
       ? { title: weakest.title, score: answers[weakest.id].score as number }
       : undefined;
     const improve = weak
-      ? `Raise "${weak.title}" (now ${weak.score}/5) with documented evidence.`
+      ? `Raise "${weak.title}" (now ${weak.score}/${MAX_SCORE}) with documented evidence.`
       : "Answer this domain's controls to see guidance.";
     return { id: d.id, name: d.name, level: Math.round(rawAvg), pct, answered: answered.length, weak, improve };
   });
@@ -100,7 +100,7 @@ export default function MaturityMatrix({ answers }: { answers: Answers }) {
                         <div className="mtip-t">{r.name}</div>
                         <div className="mtip-s">
                           {r.answered
-                            ? `Sub-score ${r.pct}% · maturity level ${r.level}/5 · ${r.answered} controls answered`
+                            ? `Sub-score ${r.pct}% · maturity level ${r.level}/${MAX_SCORE} · ${r.answered} questions answered`
                             : "Not yet answered"}
                         </div>
                         {r.weak && (

@@ -241,8 +241,6 @@ export default function Results() {
           <Link to="/upgrade" className="btn btn-accent" style={{ width: "auto" }}>Add evidence →</Link>
         </div>
       )}
-
-      <p className="disclaimer">A self-assessed, evidence-backed readiness signal. Not a certification, legal advice, or a conformity assessment under the EU AI Act.</p>
     </main>
   );
 }
@@ -252,5 +250,5 @@ function buildNarrative(org: string, overall: number, level: string, ds: ReturnT
   const strongest = [...answered].sort((a, b) => b.pct - a.pct)[0];
   const weakest = [...answered].sort((a, b) => a.pct - b.pct)[0];
   const who = org || "The organisation";
-  return `${who} reaches an overall readiness of ${overall}/100, placing it at the ${level} level. Its strongest area is ${strongest?.name ?? "—"} (${strongest?.pct ?? 0}%), while ${weakest?.name ?? "—"} (${weakest?.pct ?? 0}%) is the clearest opportunity to raise the posture. With ${gapCount} open control gap${gapCount === 1 ? "" : "s"} identified, the recommended path is to close the highest-weighted and any critical gaps first, evidencing each control so the practice is demonstrably applied, measured, and reviewed. This is a self-assessed, AI-assisted readiness signal and does not constitute a conformity assessment under the EU AI Act.`;
+  return `${who} reaches an overall readiness of ${overall}/100, placing it at the ${level} level. Its strongest area is ${strongest?.name ?? "—"} (${strongest?.pct ?? 0}%), while ${weakest?.name ?? "—"} (${weakest?.pct ?? 0}%) is the clearest opportunity to raise the posture. With ${gapCount} open control gap${gapCount === 1 ? "" : "s"} identified, the recommended path is to close the highest-weighted and any critical gaps first, evidencing each control so the practice is demonstrably applied, measured, and reviewed. This is a self-assessed, evidence-backed readiness signal and does not constitute a conformity assessment under the EU AI Act.`;
 }

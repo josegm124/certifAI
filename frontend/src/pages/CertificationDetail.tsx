@@ -96,8 +96,8 @@ export default function CertificationDetail() {
           </div>
 
           <h3 className="sec-h">Your controls mapped to this framework</h3>
-          <p className="sec-note">{data.qs.length} of {TOTAL_QUESTIONS} CertifAI controls map to {cert.short}. {data.answered.length} answered.</p>
-          {scored.length === 0 && <p className="sec-note">No mapped controls answered yet. <Link to="/assess">Answer them →</Link></p>}
+          <p className="sec-note">{data.qs.length} of {TOTAL_QUESTIONS} CertifAI questions map to {cert.short}. {data.answered.length} answered.</p>
+          {scored.length === 0 && <p className="sec-note">No mapped questions answered yet. <Link to="/assess">Answer them →</Link></p>}
           {strong.length > 0 && (
             <>
               <div className="cert-tag" style={{ color: C.pine, marginBottom: 6 }}>Strong ({strong.length})</div>
@@ -127,12 +127,12 @@ export default function CertificationDetail() {
 
         <div>
           <div className="ai-box">
-            <div className="ai-tag"><Sparkle size={14} /> AI-generated readiness guidance</div>
+            <div className="ai-tag"><Sparkle size={14} /> Your readiness guidance</div>
             <div className="prose" style={{ fontSize: 14 }}>
               {weak.length > 0 ? (
-                <p>Your readiness against {cert.name} sits at {data.pct}%. To close the gap toward its requirements, prioritise the {weak.length} mapped control{weak.length > 1 ? "s" : ""} scoring at or below Emerging — each maps to an obligation this framework examines.</p>
+                <p>Your readiness against {cert.name} sits at {data.pct}%. To close the gap toward its requirements, prioritise the {weak.length} mapped control{weak.length > 1 ? "s" : ""} scoring at or below Emerging. Each maps to an obligation this framework examines.</p>
               ) : scored.length > 0 ? (
-                <p>Your readiness against {cert.name} is {data.pct}% — a strong alignment. Focus now on evidencing that these controls are measured and reviewed over time, which is what {cert.certifiable ? "an auditor" : "a regulator or client"} will look for.</p>
+                <p>Your readiness against {cert.name} is {data.pct}%, a strong alignment. Focus now on evidencing that these controls are measured and reviewed over time, which is typically what {cert.certifiable ? "an auditor" : "a regulator or client"} looks for.</p>
               ) : (
                 <p>Answer the mapped controls to unlock personalised, data-grounded guidance for {cert.name}.</p>
               )}
@@ -142,13 +142,13 @@ export default function CertificationDetail() {
                 {weak.slice(0, 4).map((x) => (
                   <li key={x.q.id}>
                     <Sparkle size={13} color={C.pine} />
-                    <span><b>{x.q.title}</b> — produce {x.q.evidence.slice(0, 2).join(" and ").toLowerCase()}, assign an owner, and re-score toward Implemented (3+).</span>
+                    <span><b>{x.q.title}</b>: produce {x.q.evidence.slice(0, 2).join(" and ").toLowerCase()}, assign an owner, and re-score toward Implemented (3+).</span>
                   </li>
                 ))}
               </ul>
             )}
             <p className="sec-note" style={{ margin: "12px 0 0", color: C.inkSoft }}>
-              In the paid tier, Claude validates your uploaded evidence against each mapped requirement and substantiates these scores.
+              In the paid tier, your uploaded evidence is attached to each mapped requirement and substantiates these scores. Automated evidence review is in development.
             </p>
           </div>
 
@@ -176,7 +176,7 @@ export default function CertificationDetail() {
       </div>
 
       <p className="disclaimer">
-        Educational mapping only. CertifAI produces a self-assessed, AI-assisted readiness signal against these frameworks — not a certification, legal advice, or an official conformity assessment. Framework details reflect public guidance as of mid-2026 and may change; always verify against the primary source.
+        Educational mapping only. CertifAI produces a self-assessed, evidence-backed readiness signal against these frameworks, not a certification, legal advice, or an official conformity assessment. Framework details reflect public guidance as of mid-2026 and may change; always verify against the primary source.
       </p>
     </main>
   );

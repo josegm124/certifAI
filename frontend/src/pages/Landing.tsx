@@ -10,7 +10,7 @@ import RadarChart, { type RadarPoint } from "../components/RadarChart";
 import { Check, Arrow, Sparkle } from "../components/icons";
 import { useStore } from "../store/useStore";
 import { SAMPLE_ANSWERS } from "../lib/sampleData";
-import { domainScores } from "../lib/scoring";
+import { domainScores, LEVELS } from "../lib/scoring";
 
 const fadeUp = {
   initial: { opacity: 0, y: 20 },
@@ -54,7 +54,7 @@ export default function Landing() {
           <motion.div className="hero-art" initial={{ opacity: 0, scale: 0.94 }} animate={{ opacity: 1, scale: 1 }} transition={{ duration: 0.7, ease: [0.22, 1, 0.36, 1] }}>
             <div className="card">
               <div className="card-h"><span className="card-t">Governance maturity</span><span className="card-sub">sample</span></div>
-              <RadarChart data={preview} benchmark={85} benchmarkLabel="Assured target" linkBase={null} />
+              <RadarChart data={preview} benchmark={LEVELS[2].max} benchmarkLabel="Assured target" linkBase={null} />
             </div>
           </motion.div>
         </section>
@@ -95,7 +95,7 @@ export default function Landing() {
           <h2 className="h2">How it works.</h2>
           <div className="how">
             {[
-              { t: "Assess", d: `Answer ${TOTAL_QUESTIONS} questions on a 0 to ${MAX_SCORE} maturity scale across all ${numberWord(TOTAL_DOMAINS)} domains. Takes about 20 minutes.` },
+              { t: "Assess", d: `Answer ${TOTAL_QUESTIONS} questions on a 0 to ${MAX_SCORE} maturity scale across all ${numberWord(TOTAL_DOMAINS)} domains.` },
               { t: "Add evidence", d: "Attach documents and written detail to each control to build an audit-ready record." },
               { t: "AI review, in development", d: "Automated review of your evidence against each control, with a suggested score and drafted remediation. Not available in this build." },
               { t: "Earn your level", d: "Sign your self-certification and earn Aligned, Assured or Advanced, a badge you can share." },

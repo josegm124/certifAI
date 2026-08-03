@@ -1,7 +1,7 @@
 import { useMemo } from "react";
 import { useParams, Link, useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
-import { DOMAINS, QUESTIONS, FRAMEWORKS } from "../lib/data";
+import { DOMAINS, QUESTIONS, FRAMEWORKS, MATURITY_LEVELS, MAX_SCORE } from "../lib/data";
 import { useStore } from "../store/useStore";
 import { C, barColor } from "../theme";
 import ScoreDial from "../components/ScoreDial";
@@ -26,7 +26,7 @@ export default function DimensionDetail() {
 
   if (!dom || !data) {
     return (
-      <main className="wrap"><div className="card"><h2 className="h2">Dimension not found.</h2><Link to="/dashboard" className="btn btn-ghost">Back to dashboard</Link></div></main>
+      <main className="wrap"><div className="card"><h2 className="h2">Domain not found.</h2><Link to="/dashboard" className="btn btn-ghost">Back to dashboard</Link></div></main>
     );
   }
 
@@ -42,7 +42,7 @@ export default function DimensionDetail() {
       <Link to="/dashboard" className="hdr-link" style={{ display: "inline-flex", marginBottom: 12, paddingLeft: 0 }}>← Dashboard</Link>
       <motion.div className="dd-head" initial={{ opacity: 0, y: 14 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5 }}>
         <div>
-          <div className="eyebrow">Governance dimension · weight {Math.round(dom.weight * 100)}%</div>
+          <div className="eyebrow">Governance domain · weight {Math.round(dom.weight * 100)}%</div>
           <h1 className="h1" style={{ fontSize: 34 }}>{dom.name}</h1>
           <p className="lead" style={{ marginBottom: 0 }}>{dom.blurb}</p>
         </div>
@@ -55,24 +55,24 @@ export default function DimensionDetail() {
 
       <div className="dd-sub">
         <div>
-          <h3 className="sec-h">What this dimension means</h3>
+          <h3 className="sec-h">What this domain means</h3>
           <div className="prose">
             <p>
-              {dom.name} covers {data.qs.length} controls in the CertifAI model. Being compliant here is not about
-              owning a single document — it is about demonstrating that the practice is defined, applied consistently,
-              measured, and reviewed. Under the maturity scale, an organisation moves from ad-hoc awareness (level 1)
-              through consistent implementation (level 3) to a measured, continuously refined capability (level 5).
+              {dom.name} covers {data.qs.length} questions in the CertifAI model. Maturity here is not about
+              owning a single document. It is about demonstrating that the practice is defined, applied consistently,
+              measured, and reviewed. Under the maturity scale, an organisation moves from level 1 ({MATURITY_LEVELS[1].label}) through
+              level 3 ({MATURITY_LEVELS[3].label}) to level {MAX_SCORE} ({MATURITY_LEVELS[5].label}).
             </p>
             <p>
-              For the frameworks this dimension touches — {frameworksUsed.map((f) => FRAMEWORKS[f]).join(", ")} —
+              For the frameworks this domain touches ({frameworksUsed.map((f) => FRAMEWORKS[f]).join(", ")}),
               evidence typically means documented policy, a named owner, and records that show the control operating
-              over time rather than as a one-off. That combination is what an auditor, a regulator, or a client
-              performing due diligence will look for.
+              over time rather than as a one-off. That combination is typically what an auditor, a regulator, or a client
+              performing due diligence looks for.
             </p>
           </div>
 
           <h3 className="sec-h">Your controls</h3>
-          {scored.length === 0 && <p className="sec-note">No controls answered in this dimension yet. <Link to="/assess">Answer them →</Link></p>}
+          {scored.length === 0 && <p className="sec-note">No questions answered in this domain yet. <Link to="/assess">Answer them →</Link></p>}
           {strong.length > 0 && (
             <>
               <div className="cert-tag" style={{ color: C.pine, marginBottom: 6 }}>Strong ({strong.length})</div>
@@ -99,14 +99,14 @@ export default function DimensionDetail() {
 
         <div>
           <div className="ai-box">
-            <div className="ai-tag"><Sparkle size={14} /> AI-generated improvement plan</div>
+            <div className="ai-tag"><Sparkle size={14} /> Your improvement plan</div>
             <div className="prose" style={{ fontSize: 14 }}>
               {weak.length > 0 ? (
                 <p>Your {dom.name} sub-score is {data.pct}%. The fastest way to lift it is to strengthen the {weak.length} control{weak.length > 1 ? "s" : ""} scoring at or below Emerging. For each, produce the evidence below and move the practice from ad-hoc to consistently applied.</p>
               ) : scored.length > 0 ? (
-                <p>Your {dom.name} sub-score is {data.pct}% — a strong position. To reach the top of the maturity scale, focus on measurement and review: show that controls are monitored, reported to leadership, and refined over time.</p>
+                <p>Your {dom.name} sub-score is {data.pct}%, a strong position. To reach the top of the maturity scale, focus on measurement and review: show that controls are monitored, reported to leadership, and refined over time.</p>
               ) : (
-                <p>Answer this dimension's controls to unlock a personalised, data-grounded improvement plan.</p>
+                <p>Answer this domain's questions to unlock a personalised, data-grounded improvement plan.</p>
               )}
             </div>
             {weak.length > 0 && (
@@ -114,13 +114,13 @@ export default function DimensionDetail() {
                 {weak.slice(0, 4).map((x) => (
                   <li key={x.q.id}>
                     <Sparkle size={13} color={C.pine} />
-                    <span><b>{x.q.title}</b> — assemble {x.q.evidence.slice(0, 2).join(" and ").toLowerCase()}, assign a named owner, then re-score toward Implemented (3+).</span>
+                    <span><b>{x.q.title}</b>: assemble {x.q.evidence.slice(0, 2).join(" and ").toLowerCase()}, assign a named owner, then re-score toward Implemented (3+).</span>
                   </li>
                 ))}
               </ul>
             )}
             <p className="sec-note" style={{ margin: "12px 0 0", color: C.inkSoft }}>
-              In the paid tier, Claude reviews your uploaded evidence against each control and validates these scores.
+              In the paid tier, your uploaded evidence is attached to each control and substantiates these scores. Automated evidence review is in development.
             </p>
           </div>
           <button className="btn btn-primary" style={{ width: "100%", marginTop: 14 }} onClick={() => nav("/assess")}>
@@ -128,8 +128,6 @@ export default function DimensionDetail() {
           </button>
         </div>
       </div>
-
-      <p className="disclaimer">Self-assessed, AI-assisted readiness signal. Not a certification or a conformity assessment under the EU AI Act.</p>
     </main>
   );
 }
