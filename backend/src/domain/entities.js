@@ -50,13 +50,17 @@ class User {
     id = uuidv4(),
     companyId,
     email,
-    role = null,
+    passwordHash,
+    name,
+    role,
     createdAt = new Date(),
     updatedAt = new Date()
   } = {}) {
     this.id = id;
     this.companyId = companyId;
     this.email = email;
+    this.passwordHash = passwordHash;
+    this.name = name;
     this.role = role;
     this.createdAt = createdAt;
     this.updatedAt = updatedAt;
@@ -86,12 +90,13 @@ class Assessment {
     id = uuidv4(),
     userId,
     aiSystemId,
-    tier = TIERS.FREE,
+    tier = 1,
+    status = 'draft',
     completionPercentage = 0,
     overallScore = 0,
     badgeTier = BADGE_TIERS.AWARE,
     criticalGatingActive = false,
-    selfCertified = false,
+    signatoryName = null,
     selfCertifiedAt = null,
     completedAt = null,
     createdAt = new Date(),
@@ -101,11 +106,12 @@ class Assessment {
     this.userId = userId;
     this.aiSystemId = aiSystemId;
     this.tier = tier;
+    this.status = status;
     this.completionPercentage = completionPercentage;
     this.overallScore = overallScore;
     this.badgeTier = badgeTier;
     this.criticalGatingActive = criticalGatingActive;
-    this.selfCertified = selfCertified;
+    this.signatoryName = signatoryName;
     this.selfCertifiedAt = selfCertifiedAt;
     this.completedAt = completedAt;
     this.createdAt = createdAt;
@@ -113,7 +119,7 @@ class Assessment {
   }
 
   isComplete() {
-    return this.completionPercentage === 100;
+    return this.status === 'finalized';
   }
 }
 

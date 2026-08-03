@@ -1,4 +1,4 @@
-const { Company, TIERS } = require('../domain/entities');
+const { Company } = require('../domain/entities');
 const { v4: uuidv4 } = require('uuid');
 const logger = require('../config/logger');
 
@@ -8,12 +8,13 @@ class CompanyService {
   }
 
   async findOrCreateByName(name) {
-    let company = await this.companyRepository.findByName(name);
+    const normalizedName = String(name || '').trim().replace(/\s+/g, ' ');
+    let company = await this.companyRepository.findByName(normalizedName);
     if (company) return company;
 
-    company = new Company({ id: uuidv4(), name, tier: TIERS.FREE });
+    company = new Company({ id: uuidv4(), name: normalizedName });
     await this.companyRepository.create(company);
-    logger.info({ companyId: company.id, name }, 'Company created');
+    logger.info({ companyId: company.id, name: normalizedName }, 'Company created');
     return company;
   }
 

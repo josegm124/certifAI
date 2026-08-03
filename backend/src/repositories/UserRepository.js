@@ -8,13 +8,15 @@ class UserRepository extends BaseRepository {
 
   async create(user) {
     const sql = `
-      INSERT INTO users (id, company_id, email, role, created_at, updated_at)
-      VALUES (?, ?, ?, ?, ?, ?)
+      INSERT INTO users (id, company_id, email, password_hash, name, role, created_at, updated_at)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?)
     `;
     await this.run(sql, [
       user.id,
       user.companyId,
       user.email,
+      user.passwordHash,
+      user.name,
       user.role,
       user.createdAt,
       user.updatedAt
@@ -25,10 +27,11 @@ class UserRepository extends BaseRepository {
   async update(user) {
     const sql = `
       UPDATE users
-      SET role = ?, updated_at = ?
+      SET name = ?, role = ?, updated_at = ?
       WHERE id = ?
     `;
     await this.run(sql, [
+      user.name,
       user.role,
       new Date(),
       user.id
@@ -62,6 +65,8 @@ class UserRepository extends BaseRepository {
       id: row.id,
       companyId: row.company_id,
       email: row.email,
+      passwordHash: row.password_hash,
+      name: row.name,
       role: row.role,
       createdAt: new Date(row.created_at),
       updatedAt: new Date(row.updated_at)

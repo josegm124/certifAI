@@ -16,11 +16,14 @@ const AuditLogRepository = require('./repositories/AuditLogRepository');
 
 // Services
 const CompanyService = require('./services/CompanyService');
-const UserService = require('./services/UserService');
 const AssessmentService = require('./services/AssessmentService');
-const AssessmentResultService = require('./services/AssessmentResultService');
 const BadgeService = require('./services/BadgeService');
-const SubscriptionService = require('./services/SubscriptionService');
+const PasswordService = require('./services/PasswordService');
+const TokenService = require('./services/TokenService');
+const AuthService = require('./services/AuthService');
+const DomainAnswerService = require('./services/DomainAnswerService');
+const ScoringService = require('./services/ScoringService');
+const AssessmentFinalizationService = require('./services/AssessmentFinalizationService');
 
 // Routes
 const { createRoutes } = require('./routes/api');
@@ -69,33 +72,30 @@ const startServer = async () => {
 
     // Instantiate services
     const companyService = new CompanyService(companyRepository);
-    const userService = new UserService(userRepository, companyService);
     const assessmentService = new AssessmentService(
       assessmentRepository,
       answerRepository,
-      aiSystemRepository,
-      auditLogRepository
+      aiSystemRepository
     );
-    const resultService = new AssessmentResultService(answerRepository);
     const badgeService = new BadgeService(badgeRepository, assessmentRepository);
-    const subscriptionService = new SubscriptionService(
-      {
-        create: () => {},
-        findByCompany: async () => null,
-        update: () => {}
-      },
-      companyRepository
+    const passwordService = new PasswordService();
+    const tokenService = new TokenService();
+    const authService = new AuthService(userRepository, companyService, passwordService);
+    const domainAnswerService = new DomainAnswerService(assessmentService, answerRepository, assessmentRepository);
+    const scoringService = new ScoringService();
+    const finalizationService = new AssessmentFinalizationService(
+      assessmentService, assessmentRepository, answerRepository, scoringService, badgeService
     );
 
     // Create routes with dependency injection
     const routes = createRoutes({
-      companyService,
-      userService,
+      authService,
+      tokenService,
+      userRepository,
       assessmentService,
-      resultService,
+      domainAnswerService,
+      finalizationService,
       badgeService,
-      subscriptionService,
-      auditLogRepository
     });
 
     app.use('/api', routes);

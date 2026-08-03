@@ -6,7 +6,7 @@ const logger = require('./logger');
 const dbPath = path.join(__dirname, '../../db/certifai.db');
 const uploadsDir = path.join(__dirname, '../../uploads');
 const isDev = process.env.NODE_ENV === 'development';
-const resetOnStart = process.env.RESET_DB_ON_START !== 'false'; // Default: true in dev
+const resetOnStart = process.env.RESET_DB_ON_START === 'true'; // Explicit opt-in only
 
 let db = null;
 

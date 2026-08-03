@@ -10,6 +10,8 @@ class BadgeService {
 
   // Crear badge después de assessment completo
   async issueBadge(assessmentId, companyId, tier, overallScore, frameworks = []) {
+    const existing = await this.badgeRepository.findByAssessment(assessmentId);
+    if (existing) return existing;
     const expiresAt = new Date();
     expiresAt.setFullYear(expiresAt.getFullYear() + 1); // 12 meses
 
@@ -26,6 +28,7 @@ class BadgeService {
     });
 
     await this.badgeRepository.create(badge);
+    logger.audit.info({ event: 'badge.issued', badgeId: badge.id, assessmentId, companyId, tier, score: overallScore });
     logger.info(
       { badgeId: badge.id, tier, companyId },
       'Badge issued'

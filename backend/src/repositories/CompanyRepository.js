@@ -8,15 +8,12 @@ class CompanyRepository extends BaseRepository {
 
   async create(company) {
     const sql = `
-      INSERT INTO companies (id, name, tier, subscription_id, subscription_expires_at, created_at, updated_at)
-      VALUES (?, ?, ?, ?, ?, ?, ?)
+      INSERT INTO companies (id, name, created_at, updated_at)
+      VALUES (?, ?, ?, ?)
     `;
     await this.run(sql, [
       company.id,
       company.name,
-      company.tier,
-      company.subscriptionId,
-      company.subscriptionExpiresAt,
       company.createdAt,
       company.updatedAt
     ]);
@@ -26,14 +23,11 @@ class CompanyRepository extends BaseRepository {
   async update(company) {
     const sql = `
       UPDATE companies
-      SET name = ?, tier = ?, subscription_id = ?, subscription_expires_at = ?, updated_at = ?
+      SET name = ?, updated_at = ?
       WHERE id = ?
     `;
     await this.run(sql, [
       company.name,
-      company.tier,
-      company.subscriptionId,
-      company.subscriptionExpiresAt,
       new Date(),
       company.id
     ]);
@@ -64,9 +58,6 @@ class CompanyRepository extends BaseRepository {
     return new Company({
       id: row.id,
       name: row.name,
-      tier: row.tier,
-      subscriptionId: row.subscription_id,
-      subscriptionExpiresAt: row.subscription_expires_at,
       createdAt: new Date(row.created_at),
       updatedAt: new Date(row.updated_at)
     });

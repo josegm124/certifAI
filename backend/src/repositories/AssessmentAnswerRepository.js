@@ -8,9 +8,14 @@ class AssessmentAnswerRepository extends BaseRepository {
 
   async create(answer) {
     const sql = `
-      INSERT OR REPLACE INTO assessment_answers
+      INSERT INTO assessment_answers
       (id, assessment_id, question_id, score, evidence, attestation, created_at, updated_at)
       VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+      ON CONFLICT(assessment_id, question_id) DO UPDATE SET
+        score = excluded.score,
+        evidence = excluded.evidence,
+        attestation = excluded.attestation,
+        updated_at = excluded.updated_at
     `;
     await this.run(sql, [
       answer.id,
@@ -23,6 +28,18 @@ class AssessmentAnswerRepository extends BaseRepository {
       answer.updatedAt
     ]);
     return answer;
+  }
+
+  async upsertMany(answers) {
+    await this.run('BEGIN IMMEDIATE');
+    try {
+      for (const answer of answers) await this.create(answer);
+      await this.run('COMMIT');
+    } catch (error) {
+      await this.run('ROLLBACK');
+      throw error;
+    }
+    return answers;
   }
 
   async findByAssessment(assessmentId) {

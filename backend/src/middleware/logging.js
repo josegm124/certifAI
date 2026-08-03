@@ -4,14 +4,19 @@ const requestLogger = (req, res, next) => {
   const start = Date.now();
 
   res.on('finish', () => {
-    const duration = Date.now() - start;
-    logger.info({
+    const durationMs = Date.now() - start;
+    const details = {
+      event: 'http.request',
       method: req.method,
       path: req.path,
       status: res.statusCode,
-      duration: `${duration}ms`,
+      durationMs,
+      userId: req.auth?.sub || null,
+      companyId: req.auth?.companyId || null,
       ip: req.ip
-    }, `${req.method} ${req.path}`);
+    };
+    logger.info(details, `${req.method} ${req.path}`);
+    logger.metric.info(details);
   });
 
   next();
@@ -30,6 +35,7 @@ const errorHandler = (err, req, res, next) => {
 
   res.status(status).json({
     error: message,
+    code: err.code || 'REQUEST_FAILED',
     status,
     timestamp: new Date().toISOString()
   });
