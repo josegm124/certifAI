@@ -1,85 +1,62 @@
-# Backend Completado – Arquitectura & Resumen
+# CertifAI - Arquitectura del MVP
 
-## Arquitectura Implementada
+## Componentes
 
-Clean Architecture + SOLID + DI (Dependency Injection)
-
-Controllers → Services → Repositories → SQLite
-
-Patrones:
-- Repository Pattern – Data abstraction (SQLite ↔ Postgres fácil después)
-- Service Layer – Toda lógica de negocio aquí (ScoringService, BadgeService, etc.)
-- Dependency Injection – Services reciben dependencias, no crean
-- Factory Pattern – Badge creation con metadata
-- Observer-ready – Audit logs en todo mutation
-
-SOLID Principles:
-- SRP – Cada servicio = 1 responsabilidad (no mixed concerns)
-- OCP – Extensible (agregar frameworks sin modificar scoring)
-- LSP – Repositories consistentes
-- ISP – Services pequeños, no god objects
-- DIP – Depend on abstractions (repositories), no concrete classes
-
-# Stack Final
-
-Frontend: React 18 + Vite + CertifAI_MVP.jsx (original file intacto)
-Backend: Express.js + SQLite + Pino logger
-Database: SQLite (file-based, 0 setup) con schema + indexes
-
----
-# INICIO (Getting Started)
-
-## Prerequisitos
-- **Node.js 18+** y **npm** (verifica con `node -v` y `npm -v`)
-- No requiere instalar ninguna base de datos: SQLite es file-based y se crea sola.
-
-## 1. Clonar el repo
-```bash
-git clone <repo-url>
-cd certifAI_MVP
+```text
+React 18 + TypeScript + Vite
+            |
+            | HTTP/JSON
+            v
+Express routes -> Services -> Repositories -> SQLite
 ```
 
-## 2. Backend (Terminal 1)
+- `frontend/` es la aplicacion activa.
+- `legacy-frontend/` conserva el MVP anterior como referencia.
+- `backend/` contiene la API, servicios, repositorios y SQLite.
+- No existe autenticacion. La verificacion de badges es publica por diseno; JWT y roles quedan en el roadmap.
+- No hay llamadas a modelos de IA. Los resultados y recomendaciones son deterministas.
+
+## Instrumento y scoring
+
+- 36 preguntas en 9 dominios.
+- Cada respuesta usa una escala de 0 a 5.
+- El resultado general y los resultados por dominio usan una escala de 0 a 100.
+- Los niveles son Aware (0-40), Aligned (41-65), Assured (66-85) y Advanced (86-100).
+- El frontend calcula el preview con `frontend/src/lib/scoring.ts`.
+- `POST /api/assessments/:id/result` valida el payload, vuelve a comprobar finalizacion, evidencia y controles criticos desde las respuestas guardadas, decide el nivel y puede emitir el badge.
+- Limitacion conocida: el backend valida, pero no recalcula, el `overallScore` enviado por el frontend. No se debe presentar como scoring completamente server-side.
+
+## Flujo principal
+
+1. `POST /api/companies` registra o recupera la empresa y el lead.
+2. `POST /api/assessments` crea el assessment.
+3. `POST /api/assessments/:id/answers` guarda cada respuesta.
+4. `POST /api/assessments/:id/result` guarda el resultado y emite el badge cuando corresponde.
+5. `GET /api/badges/:token/verify` devuelve la verificacion publica en JSON.
+6. `GET /verify/:token` muestra la pagina publica del badge.
+
+El endpoint retirado `POST /api/assessments/:id/compute-score` ya no forma parte de la API.
+
+## Reglas para emitir un badge
+
+- El assessment debe tener 100% de finalizacion.
+- Tier 1/free queda limitado a Aware y no obtiene badge.
+- Q17, Q18 o Q26 con score menor o igual a 1 limita el resultado a Aware.
+- Aligned o superior requiere evidencia guardada.
+- Assured y Advanced requieren autocertificacion firmada.
+- Aware es una senal interna, no una credencial publica.
+
+## Ejecucion local
+
 ```bash
-cd backend
-cp .env.example .env      # Windows PowerShell: copy .env.example .env
-npm install
-npm start
+npm run install:all
+npm run dev:all
 ```
-→ Corre en http://localhost:3001
-El backend crea la base de datos SQLite y el schema automáticamente al arrancar.
-En modo dev (`.env` por defecto) resetea la DB en cada arranque — como Spring create-drop.
 
-## 3. Frontend (Terminal 2)
-```bash
-cd certifAI_MVP        # raíz del proyecto (no la carpeta backend)
-npm install
-npm run dev
-```
-→ Abre en http://localhost:5173
+- Aplicacion: `http://localhost:5173`
+- API: `http://localhost:3001/api`
+- Verificacion publica: `http://localhost:3001/verify/<token>`
 
-> **Nota:** arranca primero el backend. El frontend en :5173 llama a la API en :3001.
+## Persistencia y auditoria
 
-User Flow (Lo que ves)
-
-1. Intro: Ingresas nombre org + email → tier 1 (free) o tier 2 (professional)
-2. Assessment: Respondes 32 preguntas (one-by-one)
-  - Tier 2 muestra evidencia + attestation campos
-  - Sidebar muestra dominios (8) para navegar
-3. Results: Ves
-  - Score por dominio (%)
-  - Score overall (0-5, ponderado)
-  - Badge tier (Aware/Aligned/Assured) con gating logic
-  - Gap analysis (top 10 items to fix, priorizados)
-  - Framework coverage rings (7 frameworks)
-  - JSON export/import buttons
-
-# El frontend llama estos endpoints:
-
-1. POST /api/organizations           → crear org
-2. POST /api/assessments             → crear assessment
-3. POST /api/assessments/:id/answers → guardar respuestas (loop)
-4. POST /api/assessments/:id/compute-score → calcular scores + gaps
-5. POST /api/assessments/:id/badges  → emitir badge (si tier 2 + 100%)
-6. GET  /api/badges/:token/verify    → link público para compartir badge
-claude --resume 0d3c5b9b-5f30-4dc1-a6e1-79fa4dd8d92d
+SQLite guarda empresas, leads, assessments, respuestas, badges y eventos de auditoria. Las operaciones principales como registro, creacion de assessment, emision de badge, cambio de tier e importacion generan eventos. No todas las mutaciones estan auditadas; guardar respuestas y actualizar resultados no crean actualmente un evento de auditoria.

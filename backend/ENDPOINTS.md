@@ -1,303 +1,174 @@
 # CertifAI API Endpoints
 
-## Base URL
-```
-http://localhost:3001/api
-```
+Base URL: `http://localhost:3001/api`
 
----
+There is no authentication in the MVP. IDs are not authorization credentials.
 
-## Organizations
+## Companies and leads
 
-### Create Organization
-```
-POST /organizations
+### Register or reuse a company and lead
+
+```http
+POST /companies
 Content-Type: application/json
 
 {
   "name": "Test Corp AI",
-  "email": "test@certifai.local"
-}
-
-Response:
-{
-  "id": "org-123...",
-  "name": "Test Corp AI",
-  "email": "test@certifai.local",
-  "tier": "free",
-  "createdAt": "2026-07-08T19:30:00Z"
+  "email": "test@example.com",
+  "role": "Compliance / Risk"
 }
 ```
 
-### Get Organization
-```
-GET /organizations/:id
+Response: `{ userId, companyId, name, email, role, tier, createdAt }`
 
-Response: { id, name, email, tier, subscriptionId, subscriptionExpiresAt, ... }
-```
+### Fetch records
 
----
+```text
+GET /companies/:id
+GET /users/:id
+```
 
 ## Assessments
 
-### Create Assessment
-```
+### Create assessment
+
+```http
 POST /assessments
 Content-Type: application/json
 
 {
-  "organizationId": "org-123...",
-  "aiSystemId": "system-1234567890",
-  "tier": "free" | "professional"
-}
-
-Response:
-{
-  "id": "assess-456...",
-  "organizationId": "org-123...",
-  "aiSystemId": "system-1234567890",
-  "tier": "free",
-  "completionPercentage": 0,
-  "overallScore": 0,
-  "badgeTier": "aware",
-  "createdAt": "2026-07-08T19:30:00Z"
+  "userId": "<userId>",
+  "aiSystemId": "system-1",
+  "tier": "free"
 }
 ```
 
-### Get Assessment
-```
+Valid tiers in storage are `free`, `starter`, `professional` and `enterprise`. The frontend maps its Tier 1 choice to `free` and Tier 2 to `professional`.
+
+### Read assessments
+
+```text
 GET /assessments/:id
-
-Response: { id, organizationId, aiSystemId, tier, completionPercentage, overallScore, badgeTier, ... }
+GET /users/:userId/assessments
 ```
 
-### List Assessments by Org
-```
-GET /organizations/:orgId/assessments
+### Record an answer
 
-Response: [ { assessment_1 }, { assessment_2 }, ... ]
-```
-
----
-
-## Answers
-
-### Record Answer
-```
+```http
 POST /assessments/:assessmentId/answers
 Content-Type: application/json
 
 {
   "questionId": "1",
   "score": 3,
-  "evidence": "We have documented AI policies",
-  "attestation": "Verified in Q4 audit"
-}
-
-Response:
-{
-  "id": "answer-789...",
-  "assessmentId": "assess-456...",
-  "questionId": "1",
-  "score": 3,
-  "evidence": "...",
-  "attestation": "...",
-  "createdAt": "2026-07-08T19:30:00Z"
+  "evidence": "Documented policy",
+  "attestation": "confirmed"
 }
 ```
 
----
+Scores use the 0-5 answer scale.
 
-## Scoring
+## Result and badge issuance
 
-### Compute Scores
-```
-POST /assessments/:assessmentId/compute-score
+### Submit result
+
+```http
+POST /assessments/:assessmentId/result
 Content-Type: application/json
 
 {
-  "questionMapping": {
-    "1": { "domain": "strategy", "description": "AI Strategy" },
-    "2": { "domain": "strategy", "description": "Leadership Commitment" },
-    ...
+  "overallScore": 72,
+  "domainScores": [
+    { "id": "strategy", "pct": 70 },
+    { "id": "revenue", "pct": 65 },
+    { "id": "governance", "pct": 75 },
+    { "id": "risk", "pct": 68 },
+    { "id": "data", "pct": 74 },
+    { "id": "human", "pct": 70 },
+    { "id": "trust", "pct": 76 },
+    { "id": "workforce", "pct": 73 },
+    { "id": "improve", "pct": 77 }
+  ],
+  "levelContext": {
+    "tier": 2,
+    "hasEvidence": true,
+    "hasSignature": true
+  },
+  "criticalGating": { "capped": false, "failedIds": [] },
+  "gaps": [],
+  "selfCertifiedAt": "2026-08-03T12:00:00.000Z",
+  "frameworks": ["aiact", "gdpr", "oecd", "iso", "nist"]
+}
+```
+
+The backend validates the payload, derives completion, evidence and critical-control gating from stored answers, resolves the level, stores the result and issues an eligible badge at 100% completion.
+
+Response includes:
+
+```json
+{
+  "overallScore": 72,
+  "level": "A3",
+  "levelName": "Assured",
+  "badgeTier": "assured",
+  "badgeEligible": true,
+  "criticalGating": { "capped": false, "failedIds": [] },
+  "completion": { "answered": 36, "total": 36, "percentage": 100 },
+  "badge": {
+    "id": "<badgeId>",
+    "tier": "assured",
+    "score": 72,
+    "verificationToken": "<token>",
+    "verifyUrl": "http://localhost:3001/verify/<token>"
   }
 }
-
-Response:
-{
-  "domainScores": {
-    "strategy": { "average": 3.5, "percentage": 70, "answeredCount": 5 },
-    "governance": { "average": 3.0, "percentage": 60, "answeredCount": 4 },
-    ...
-  },
-  "overallScore": 3.2,
-  "badgeTier": "aligned",
-  "criticalGating": false,
-  "completion": {
-    "answered": 32,
-    "total": 32,
-    "percentage": 100
-  },
-  "gaps": [
-    {
-      "questionId": "5",
-      "question": "AI Business Objectives",
-      "domain": "Strategy & Leadership",
-      "currentScore": 2,
-      "gapSize": 3,
-      "priority": 0.65,
-      "isCritical": false
-    },
-    ...
-  ]
-}
 ```
 
----
+Known limitation: `overallScore` and `domainScores` are calculated by the frontend and bounds-checked, not recomputed, by the backend. Eligibility gates are re-derived server-side.
 
-## Badges
+The retired `POST /assessments/:assessmentId/compute-score` endpoint does not exist.
 
-### Issue Badge
-```
+### Direct badge route
+
+```http
 POST /assessments/:assessmentId/badges
 Content-Type: application/json
 
 {
-  "organizationId": "org-123...",
-  "tier": "aligned",
-  "overallScore": 3.2,
   "frameworks": ["aiact", "gdpr", "oecd", "iso", "nist"]
 }
-
-Response:
-{
-  "id": "badge-abc...",
-  "assessmentId": "assess-456...",
-  "organizationId": "org-123...",
-  "tier": "aligned",
-  "score": 3.2,
-  "issuedAt": "2026-07-08T19:30:00Z",
-  "expiresAt": "2027-07-08T19:30:00Z",
-  "verificationToken": "abc123def456ghi789",
-  "frameworksIncluded": ["aiact", "gdpr", "oecd", "iso", "nist"]
-}
 ```
 
-### Verify Badge (Public)
-```
-GET /badges/:verificationToken/verify
+This hardened compatibility route ignores caller-supplied tier and score. It requires a stored, complete, badge-bearing result and derives the company from the assessment owner. The normal frontend flow uses `/result`, which already issues the badge.
 
-Response: { id, tier, score, issuedAt, expiresAt, verificationToken, ... }
-(NO authentication required - public endpoint)
-```
+### Verify and list badges
 
-### List Org Badges
+```text
+GET /badges/:token/verify
+GET /companies/:companyId/badges
+GET /verify/:token                 (outside the /api prefix; HTML)
+GET /verify/:token/badge.svg       (outside the /api prefix; image)
 ```
-GET /organizations/:orgId/badges
-
-Response: [ { badge_1 }, { badge_2 }, ... ]
-```
-
----
 
 ## Subscriptions
 
-### Get Subscription
-```
-GET /organizations/:orgId/subscription
-
-Response:
-{
-  "subscription": {
-    "id": "sub-123...",
-    "organizationId": "org-123...",
-    "tier": "professional",
-    "priceEur": 1490,
-    "expiresAt": "2027-07-08T19:30:00Z",
-    "status": "active"
-  },
-  "features": {
-    "assessments": null,
-    "frameworks": 7,
-    "systems": 3,
-    "annualReasessment": true,
-    "badge": true
-  }
-}
+```text
+GET  /companies/:companyId/subscription
+POST /companies/:companyId/upgrade-tier
 ```
 
-### Upgrade Tier
-```
-POST /organizations/:orgId/upgrade-tier
-Content-Type: application/json
+The upgrade UI does not call the upgrade endpoint because subscription persistence is incomplete in the MVP.
 
-{
-  "newTier": "professional"
-}
+## Export and import
 
-Response: { subscription object }
+```text
+GET  /assessments/:assessmentId/export
+POST /users/:userId/import-assessment
 ```
 
----
+## Analytics and health
 
-## Analytics
-
-### Badges Renewing Soon
-```
+```text
 GET /analytics/badges-renewing?days=60
-
-Response:
-{
-  "count": 5,
-  "daysThreshold": 60,
-  "badges": [ { badge_1 }, { badge_2 }, ... ]
-}
-```
-
----
-
-## Health
-
-### Server Health
-```
 GET /health
-
-Response:
-{
-  "status": "ok",
-  "timestamp": "2026-07-08T19:30:00Z"
-}
-```
-
----
-
-## Summary: Happy Path
-
-```
-1. POST /organizations
-   → Get organizationId
-
-2. POST /assessments
-   → Get assessmentId (tier=free)
-
-3. POST /assessments/:id/answers (loop x 32)
-   → Save each answer
-
-4. POST /assessments/:id/compute-score
-   → Get scores, gaps, completion
-
-5. [UPGRADE] POST /assessments (new, tier=professional)
-   → Get new assessmentId
-
-6. POST /assessments/:id/answers (loop x 32)
-   → Copy answers to new assessment
-
-7. POST /assessments/:id/compute-score
-   → Recompute scores (now professional)
-
-8. POST /assessments/:id/badges
-   → Issue badge (if tier=professional + 100% complete)
-
-9. GET /badges/:token/verify
-   → Public verification (share with anyone)
 ```

@@ -1,191 +1,107 @@
 # CertifAI Backend API
 
-Backend Express.js + SQLite para CertifAI - AI Governance Readiness Assessment MVP.
+Express and SQLite backend for the CertifAI AI-governance readiness MVP.
 
-## Quick Start
+## Run
 
 ```bash
-# Install dependencies (already done)
 npm install
-
-# Run the server
 npm start
-
-# Server runs on http://localhost:3001
 ```
 
-## Architecture
+The API runs at `http://localhost:3001/api`. The public verification page is served from `http://localhost:3001/verify/:token`.
 
-**Clean Architecture (3 Layers) + Dependency Injection + SOLID**
+## Structure
 
-```
+```text
 src/
-├── config/              Database & Logger setup
-├── domain/              Entities & constants
-├── repositories/        Data access layer (SQLite)
-├── services/            Business logic layer
-├── controllers/         HTTP handlers
-├── middleware/          Logging, error handling
-├── routes/              API endpoints
-└── index.js             Express app entry point
+|-- config/          database and logger
+|-- domain/          entities and constants
+|-- repositories/    SQLite access
+|-- services/        business services
+|-- middleware/      request logging and error handling
+|-- routes/          API and public verification routes
+`-- index.js         composition root
 ```
 
-### Key Design Patterns
+The six services are:
 
-- **Repository Pattern**: Abstraction over data access (SQLite)
-- **Service Layer**: All business logic (scoring, badges, subscriptions)
-- **Factory Pattern**: Badge creation with metadata
-- **Dependency Injection**: Services receive dependencies, not instantiate them
-- **SOLID Principles**:
-  - Single Responsibility: Each service owns one domain (Scoring, Badge, etc.)
-  - Open/Closed: Easy to extend frameworks without modifying scoring logic
-  - Liskov Substitution: Repositories implement consistent interface
-  - Interface Segregation: Services are small, focused
-  - Dependency Inversion: Services depend on abstractions (repositories)
+- `AssessmentResultService`
+- `AssessmentService`
+- `BadgeService`
+- `CompanyService`
+- `SubscriptionService`
+- `UserService`
 
-### Logging
+`ScoringService` and `POST /assessments/:id/compute-score` were retired. The frontend owns the single scoring engine used for the live preview. `AssessmentResultService` bounds-checks that score and re-derives completion, evidence and critical-control eligibility from stored answers before resolving a level and issuing a badge. This is not fully server-side scoring.
 
-- **Structured logging** via Pino (JSON format in production)
-- **Pretty console output** in development
-- **Audit trail** via AuditLog table (all mutations tracked)
+## Current endpoints
 
-## Core Services
+```text
+POST /api/companies
+GET  /api/companies/:id
+GET  /api/users/:id
 
-### ScoringService
-- `computeDomainScores()` - Calculate per-domain scores
-- `computeOverallScore()` - Weighted average across domains
-- `resolveBadgeTier()` - Tier (aware/aligned/assured) + gating logic
-- `checkCriticalGating()` - Block top tiers if any critical ≤1
-- `computeGapAnalysis()` - Prioritized remediation items
-- `computeCompletion()` - % answered tracking
+POST /api/assessments
+GET  /api/assessments/:id
+GET  /api/users/:userId/assessments
+POST /api/assessments/:id/answers
+POST /api/assessments/:id/result
 
-### BadgeService
-- `issueBadge()` - Create badge with 12-month expiry
-- `getActiveBadge()` - Fetch non-expired badge
-- `verifyBadge()` - Verify by token (public endpoint)
-- `renewBadge()` - Extend 12 months
-- `findRenewingSoon()` - Find badges expiring within N days
-- `getBadgeMetadata()` - Tier → label/icon/color
+POST /api/assessments/:id/badges
+GET  /api/badges/:token/verify
+GET  /api/companies/:companyId/badges
 
-### AssessmentService
-- `createAssessment()` - Start new assessment
-- `recordAnswer()` - Save/update answer (0-5 + evidence/attestation)
-- `updateAssessmentMetrics()` - Store computed scores
-- `exportAssessment()` - JSON export
-- `importAssessment()` - JSON import
+GET  /api/companies/:companyId/subscription
+POST /api/companies/:companyId/upgrade-tier
 
-### SubscriptionService
-- `createSubscription()` - Tier registration
-- `upgradeTier()` - Tier change
-- `renewSubscription()` - Extend expiry
-- `getTierFeatures()` - Tier → capabilities map
+GET  /api/assessments/:id/export
+POST /api/users/:userId/import-assessment
 
-### OrganizationService
-- `createOrganization()` - Onboard new org
-- `getOrganization()` - Fetch org data
-- `updateOrganization()` - Modify org
+GET  /api/analytics/badges-renewing
+GET  /api/health
 
-## API Endpoints
-
-### Organizations
-- `POST /api/organizations` - Create org
-- `GET /api/organizations/:id` - Get org
-
-### Assessments
-- `POST /api/assessments` - Start assessment
-- `GET /api/assessments/:id` - Get assessment
-- `GET /api/organizations/:orgId/assessments` - List org assessments
-- `POST /api/assessments/:id/answers` - Record answer
-- `POST /api/assessments/:id/compute-score` - Compute all scores & gaps
-
-### Badges
-- `POST /api/assessments/:id/badges` - Issue badge
-- `GET /api/badges/:token/verify` - Public badge verification
-- `GET /api/organizations/:orgId/badges` - List active org badges
-
-### Subscriptions
-- `GET /api/organizations/:orgId/subscription` - Get subscription + features
-- `POST /api/organizations/:orgId/upgrade-tier` - Upgrade tier
-
-### Export/Import
-- `GET /api/assessments/:id/export` - Download as JSON
-- `POST /api/organizations/:orgId/import-assessment` - Upload JSON
-
-### Analytics
-- `GET /api/analytics/badges-renewing?days=60` - Badges expiring soon
-- `GET /api/health` - Server health check
-
-## Database Schema
-
-**Core tables:**
-- `organizations` - Customer accounts
-- `ai_systems` - AI systems per org
-- `assessments` - Assessment instances
-- `assessment_answers` - Q&A data (0-5 scores + evidence)
-- `domain_scores` - Cached per-domain calculations
-- `badges` - Issued badges with verification tokens
-- `subscriptions` - Tier tracking + expiry
-- `audit_logs` - All mutations logged
-
-**Indexes on:** assessment lookups, badge expiry, subscription expiry for batch renewal jobs.
-
-## Integration with Frontend
-
-1. **Frontend creates org:**
-   ```
-   POST /api/organizations { name, email }
-   → organizationId
-   ```
-
-2. **Frontend starts assessment:**
-   ```
-   POST /api/assessments { organizationId, aiSystemId, tier }
-   → assessmentId
-   ```
-
-3. **Frontend records answers as user progresses:**
-   ```
-   POST /api/assessments/:id/answers { questionId, score, evidence?, attestation? }
-   ```
-
-4. **Frontend requests scoring when complete:**
-   ```
-   POST /api/assessments/:id/compute-score { questionMapping }
-   → { domainScores, overallScore, badgeTier, completion, gaps }
-   ```
-
-5. **Backend issues badge automatically (if tier 2 & 100% complete):**
-   ```
-   POST /api/assessments/:id/badges { organizationId, tier, overallScore, frameworks }
-   → badge with verificationToken
-   ```
-
-6. **Public badge share link:**
-   ```
-   GET /api/badges/:verificationToken/verify
-   → badge metadata (no auth required)
-   ```
-
-## Environment Variables
-
-```
-PORT=3001                    # API port
-LOG_LEVEL=info              # Logging level (debug, info, warn, error)
-NODE_ENV=development        # Environment
+GET  /verify/:token
+GET  /verify/:token/badge.svg
 ```
 
-## Notes
+See `ENDPOINTS.md` for request and response examples.
 
-- **No authentication yet** - Next iteration: JWT or session management
-- **No email service yet** - Badge renewal notifications ready, needs SMTP
-- **Frameworks hardcoded** - Map custom frameworks by extending DOMAINS constant
-- **SQLite for MVP** - Easy deployment, no server needed. Scale to PostgreSQL later.
-- **CORS configured** for frontend at localhost:5173
+## Badge rules
 
-## Next Steps (Post-MVP)
+- The canonical result scale is 0-100; individual answers use 0-5.
+- The instrument contains 36 questions across 9 domains.
+- Aware is an internal readiness signal and is not a credential.
+- Stored evidence is required for a badge-bearing level.
+- Assured and Advanced require self-certification.
+- Q17, Q18 and Q26 at score 0 or 1 cap the result at Aware.
+- Free/Tier 1 does not receive a badge in the normal frontend flow.
+- Public verification accepts only valid, unexpired Aligned, Assured and Advanced badges with a valid 0-100 score.
 
-1. Add auth (JWT + user roles)
-2. Email service (renewal reminders, badge notifications)
-3. PDF dossier generation (LLM-assisted mapping)
-4. Analytics dashboard (completion funnels, NPS, LTV/CAC)
-5. White-label API (Enterprise tier)
+## Persistence and auditing
+
+SQLite stores companies, users/leads, AI systems, assessments, answers, badges, subscriptions and audit events. Audit events are created for selected operations such as lead registration, assessment creation, badge issuance, tier upgrade and import. Answer writes and result metric updates are not currently audit-logged, so the project must not claim that every mutation is audited.
+
+## Known MVP limitations
+
+- No authentication, login, JWT or role-based access control.
+- No AI/model integration.
+- The official score originates in the frontend and is not recomputed by the backend.
+- Badge frameworks are caller-supplied.
+- Subscription persistence and checkout are incomplete; checkout remains intentionally inactive.
+- SQLite is intended for the local MVP.
+
+## Validation
+
+From the repository root:
+
+```bash
+npm test
+npm run build
+```
+
+For a backend happy-path check, start the server and run:
+
+```powershell
+.\TEST_HAPPY_PATH.ps1
+```

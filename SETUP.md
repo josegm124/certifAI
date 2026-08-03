@@ -1,258 +1,136 @@
-# CertifAI MVP – Setup & Launch
+# CertifAI MVP - Setup and Launch
 
-Complete full-stack setup for frontend (React/Vite) + backend (Express/SQLite).
+## Requirements
 
-## Prerequisites
-- Node.js 18+ installed
-- npm installed
+- Node.js 18 or newer
+- npm
+- No external database: the backend uses SQLite
 
-## Quick Start (2 terminals)
+## Install and run
 
-### Terminal 1: Frontend
+From the repository root:
+
 ```bash
-cd C:\Users\jose.guerrero_isol\Desktop\certifAI
-npm install
-npm run dev
+npm run install:all
+npm run dev:all
 ```
-→ Opens on **http://localhost:5173**
 
-### Terminal 2: Backend
+The launcher starts the backend first and then the frontend:
+
+- Frontend: `http://localhost:5173`
+- Backend API: `http://localhost:3001/api`
+- Health check: `http://localhost:3001/api/health`
+
+The two-terminal workflow also remains available:
+
 ```bash
-cd C:\Users\jose.guerrero_isol\Desktop\certifAI\backend
-npm install
-npm start
+npm run dev:backend
+npm run dev:frontend
 ```
-→ Runs on **http://localhost:3001**
 
----
+## Current MVP scope
 
-## What's Working (MVP Scope)
+### Frontend
 
-### Frontend (React)
-✅ Assessment questionnaire (32 controls, 8 domains)
-✅ Domain navigation sidebar
-✅ Scoring display (domain %, overall %)
-✅ Badge tiers (Aware/Aligned/Assured) with gating logic
-✅ Gap analysis (prioritized remediation)
-✅ Framework coverage visualization
-✅ Tier 1 (free) & Tier 2 (evidence+badge) flows
-✅ JSON export/import for persistence
+- React 18, TypeScript and Vite
+- Intake with organisation, work email, role and tier
+- 36 questions across 9 domains
+- 0-5 answer scale and 0-100 result scale
+- Four levels: Aware, Aligned, Assured and Advanced
+- Framework coverage across 7 frameworks
+- Evidence notes and self-certification flow for Tier 2
+- Local preview when the backend is unavailable
 
-### Backend (Express + SQLite)
-✅ Organization management (create, fetch)
-✅ Assessment CRUD + answer recording
-✅ Scoring engine (domain scores, overall, gating, gaps)
-✅ Badge issuance with 12-month expiry + verification token
-✅ Subscription tier tracking
-✅ Public badge verification endpoint (no auth required)
-✅ Export/import for data portability
-✅ Audit logging of all mutations
-✅ Structured logging (Pino)
-✅ Health check endpoint
-✅ CORS configured for frontend
+### Backend
 
----
+- Express and SQLite
+- Company and lead registration
+- Assessment and answer persistence
+- Result eligibility checks and badge issuance
+- Public JSON and HTML badge verification
+- Export/import, structured logging and selected audit events
 
-## API Flow (For Testing)
+Known limitations: there is no authentication or AI integration, checkout is intentionally inactive, subscriptions are not fully persisted, and the backend accepts the frontend-computed overall score after bounds validation rather than recalculating it.
 
-### 1. Create Organization
-```
-POST http://localhost:3001/api/organizations
+## API flow used by the frontend
+
+### 1. Register company and lead
+
+```http
+POST /api/companies
+Content-Type: application/json
+
 {
   "name": "Acme AI Corp",
-  "email": "demo@acme.com"
+  "email": "demo@acme.com",
+  "role": "Compliance / Risk"
 }
 ```
-→ Returns: `{ id, name, email, tier, createdAt, ... }`
 
-### 2. Create Assessment
-```
-POST http://localhost:3001/api/assessments
+The response includes `userId` and `companyId`.
+
+### 2. Create assessment
+
+```http
+POST /api/assessments
+Content-Type: application/json
+
 {
-  "organizationId": "<from step 1>",
+  "userId": "<userId>",
   "aiSystemId": "system-1",
   "tier": "professional"
 }
 ```
-→ Returns: `{ id, organizationId, aiSystemId, ... }`
 
-### 3. Record Answer
-```
-POST http://localhost:3001/api/assessments/<assessmentId>/answers
+### 3. Record answers
+
+```http
+POST /api/assessments/<assessmentId>/answers
+Content-Type: application/json
+
 {
-  "questionId": "q1",
+  "questionId": "1",
   "score": 3,
-  "evidence": "We have an AI governance committee",
-  "attestation": "Documented in Q4 audit"
+  "evidence": "AI governance policy",
+  "attestation": "confirmed"
 }
 ```
 
-### 4. Compute Scores
-```
-POST http://localhost:3001/api/assessments/<assessmentId>/compute-score
-{
-  "questionMapping": {
-    "q1": { "domain": "governance", "description": "AI Governance..." },
-    "q2": { "domain": "governance", "description": "..." },
-    ...
-  }
-}
-```
-→ Returns: `{ domainScores, overallScore, badgeTier, criticalGating, completion, gaps }`
+Repeat for the 36 questions.
 
-### 5. Issue Badge (if tier 2 + 100% complete)
-```
-POST http://localhost:3001/api/assessments/<assessmentId>/badges
-{
-  "organizationId": "<from step 1>",
-  "tier": "aligned",
-  "overallScore": 3.5,
-  "frameworks": ["EU AI Act", "GDPR", "OECD", "ISO/IEC 42001", "NIST AI RMF"]
-}
-```
-→ Returns: `{ id, verificationToken, expiresAt, ... }`
+### 4. Submit result
 
-### 6. Verify Badge (Public)
-```
-GET http://localhost:3001/api/badges/<verificationToken>/verify
-```
-→ Returns badge metadata + expiry status (no auth needed)
+The application builds the payload with `frontend/src/lib/api.ts` and sends:
 
----
-
-## Project Structure
-
-```
-certifAI_MVP/
-├── README.md                    # Project overview
-├── SETUP.md                     # This file
-├── CLAUDE.md                    # (Deleted – not in production)
-├── index.html                   # Vite entry point
-├── vite.config.js               # Vite config
-├── package.json                 # Frontend dependencies
-├── CertifAI_MVP.jsx             # Entire React app (32Qs, scoring, UI)
-├── src/
-│   └── main.jsx                 # React mount point
-├── dist/                        # Production build (after npm run build)
-└── backend/                     # Express.js API
-    ├── README.md                # Backend architecture & endpoints
-    ├── package.json             # Backend dependencies
-    ├── .env                     # Configuration (PORT=3001, LOG_LEVEL=info)
-    ├── .env.example             # Template
-    ├── .gitignore               # Ignore node_modules, *.db
-    ├── db/
-    │   ├── schema.sql           # SQLite tables + indexes
-    │   └── certifai.db          # Database file (auto-created)
-    └── src/
-        ├── index.js             # Express server + DI setup
-        ├── config/              # Database, logger
-        ├── domain/              # Entities, constants
-        ├── repositories/        # Data access (Base + specific repos)
-        ├── services/            # Business logic (Scoring, Badge, etc.)
-        ├── controllers/         # HTTP handlers
-        ├── middleware/          # Logging, error handling
-        ├── routes/              # API endpoints
-        └── utils/               # Validators, helpers
+```http
+POST /api/assessments/<assessmentId>/result
 ```
 
----
+`/result` is the only normal frontend path that records the result and issues a badge. The retired `/compute-score` endpoint does not exist.
 
-## Architecture Highlights
+### 5. Verify badge
 
-### Frontend (CertifAI_MVP.jsx)
-- **Single file component** (no splits, preserving original design)
-- **Pure scoring functions** (no API calls during assessment)
-- **State-driven transitions:** intro → assess → results
-- **Props-only communication** (no Redux/Context)
-- **JSON export/import** for persistence
+```http
+GET /api/badges/<verificationToken>/verify
+```
 
-### Backend (Express)
-- **Clean Architecture:** Controllers → Services → Repositories → Database
-- **SOLID principles:** Each service has one responsibility, easily extended
-- **Dependency Injection:** Services receive dependencies, not instantiate
-- **Repository Pattern:** SQLite swappable for PostgreSQL later
-- **Structured logging:** Pino (JSON prod, pretty console dev)
-- **Audit trail:** All mutations logged with action, org, IP, timestamp
+The public HTML page is:
 
----
+```text
+http://localhost:3001/verify/<verificationToken>
+```
 
-## Database (SQLite)
+## Validation commands
 
-Auto-created at `backend/db/certifai.db` on first server run.
-
-**Key tables:**
-- `organizations` – customer accounts
-- `assessments` – assessment instances + metrics
-- `assessment_answers` – Q&A data (0-5 scores + evidence)
-- `badges` – issued badges (12-month expiry, verification token)
-- `subscriptions` – tier + expiry tracking
-- `audit_logs` – all mutations (ORG_CREATED, ASSESSMENT_CREATED, etc.)
-
-**Indexes** on assessment lookups, badge expiry, subscription expiry for batch jobs.
-
----
-
-## Development Notes
-
-### Frontend Customization
-- Open `CertifAI_MVP.jsx`
-- Modify `QUESTIONS` array to add/edit controls
-- Modify `DOMAINS` to adjust domain weights
-- Modify theme `C` object for colors
-- All scoring logic is in pure functions (no API deps)
-
-### Backend Customization
-- Services are loosely coupled via repositories
-- Add new service for new domain logic (follows SRP)
-- Add new route to expose new endpoint
-- Audit logging automatic on all mutations via middleware
-
-### Adding Features (Post-MVP)
-1. **Auth:** Add JWT middleware, user roles, org permissions
-2. **Email:** Batch renewal reminder job + SMTP service
-3. **PDF Dossier:** LLM-assisted answer-to-framework mapping
-4. **Dashboard:** Analytics on completion, conversion, NPS
-5. **White-label:** Enterprise tier custom branding
-
----
-
-## Troubleshooting
-
-**Backend fails to start:**
-- Ensure port 3001 is free: `netstat -ano | findstr :3001`
-- Check logs for database path errors
-- Delete `backend/db/certifai.db` and restart (recreates schema)
-
-**CORS errors:**
-- Frontend already configured for localhost:5173
-- Backend CORS allows both 5173 (dev) and 3000 (fallback)
-
-**Database locked:**
-- Kill node process: `taskkill /PID <pid> /F`
-- Restart server
-
----
-
-## Deployment (Next Phase)
-
-**Frontend:**
 ```bash
+npm test
 npm run build
-# Output: dist/
-# Deploy to Vercel, Netlify, or any static host
 ```
 
-**Backend:**
-- Dockerfile included (next iteration)
-- Railway, Fly.io, Heroku-compatible
-- Swap SQLite for PostgreSQL in production
+The current automated unit suite covers frontend scoring. The backend JavaScript can additionally be syntax-checked with `node --check`; the PowerShell happy-path scripts require a running backend.
 
----
+## Environment
 
-## Feedback & Next Steps
+Copy `backend/.env.example` to `backend/.env` when environment overrides are needed. Important values include `PORT`, `NODE_ENV`, `RESET_DB_ON_START`, `PUBLIC_BASE_URL` and `APP_URL`.
 
-- ✅ **MVP ready** for academic presentation (business + flow + design focused)
-- 🔄 **Feedback welcome** on scoring logic, badge rules, framework coverage
-- 📋 **Post-MVP roadmap:** Auth, email, PDF dossier, analytics, white-label
-
-**Questions?** Check `/backend/README.md` for detailed API docs.
+When `NODE_ENV=development`, the database resets on startup unless `RESET_DB_ON_START=false`.
