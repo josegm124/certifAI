@@ -1,62 +1,54 @@
-# CertifAI - Arquitectura del MVP
+# Architecture
 
-## Componentes
+CertifAI is a local modular monolith: React/Vite is the presentation layer,
+Express contains application services, and repositories isolate SQLite.
 
 ```text
-React 18 + TypeScript + Vite
-            |
-            | HTTP/JSON
-            v
-Express routes -> Services -> Repositories -> SQLite
+React UI
+  -> HttpOnly JWT cookie
+  -> thin Express routes
+  -> Auth / Assessment / DomainAnswer / Finalization / Scoring services
+  -> repositories
+  -> SQLite
 ```
 
-- `frontend/` es la aplicacion activa.
-- `legacy-frontend/` conserva el MVP anterior como referencia.
-- `backend/` contiene la API, servicios, repositorios y SQLite.
-- No existe autenticacion. La verificacion de badges es publica por diseno; JWT y roles quedan en el roadmap.
-- No hay llamadas a modelos de IA. Los resultados y recomendaciones son deterministas.
+The composition root is `backend/src/index.js`. Services receive repositories
+through constructors; routes do not contain scoring or persistence rules.
 
-## Instrumento y scoring
+## Authority boundaries
 
-- 36 preguntas en 9 dominios.
-- Cada respuesta usa una escala de 0 a 5.
-- El resultado general y los resultados por dominio usan una escala de 0 a 100.
-- Los niveles son Aware (0-40), Aligned (41-65), Assured (66-85) y Advanced (86-100).
-- El frontend calcula el preview con `frontend/src/lib/scoring.ts`.
-- `POST /api/assessments/:id/result` valida el payload, vuelve a comprobar finalizacion, evidencia y controles criticos desde las respuestas guardadas, decide el nivel y puede emitir el badge.
-- Limitacion conocida: el backend valida, pero no recalcula, el `overallScore` enviado por el frontend. No se debe presentar como scoring completamente server-side.
+- The browser captures answers and displays backend data.
+- The account identity comes only from a verified five-hour JWT cookie.
+- The backend verifies assessment ownership and immutable tier.
+- `instrument.js` defines the 9 domains, 36 question IDs and critical controls.
+- `ScoringService` calculates the official domain and overall scores.
+- `AssessmentFinalizationService` is the only badge-issuance path.
 
-## Flujo principal
+## Persistence sequence
 
-1. `POST /api/companies` registra o recupera la empresa y el lead.
-2. `POST /api/assessments` crea el assessment.
-3. `POST /api/assessments/:id/answers` guarda cada respuesta.
-4. `POST /api/assessments/:id/result` guarda el resultado y emite el badge cuando corresponde.
-5. `GET /api/badges/:token/verify` devuelve la verificacion publica en JSON.
-6. `GET /verify/:token` muestra la pagina publica del badge.
+The assessment has `draft` and `finalized` states. A partial unique SQLite
+index permits only one draft per user. Each completed domain is PUT as one
+transactional, idempotent batch. The browser removes that domain from its
+local pending cache only after a successful response.
 
-El endpoint retirado `POST /api/assessments/:id/compute-score` ya no forma parte de la API.
+Finalization requires all 36 canonical rows. Tier 2 additionally requires a
+named signatory and accepted declaration. Badge issuance is idempotent through
+a unique `assessment_id`; retrying finalization can repair a badge write that
+failed after the assessment was closed.
 
-## Reglas para emitir un badge
+## Operational records
 
-- El assessment debe tener 100% de finalizacion.
-- Tier 1/free queda limitado a Aware y no obtiene badge.
-- Q17, Q18 o Q26 con score menor o igual a 1 limita el resultado a Aware.
-- Aligned o superior requiere evidencia guardada.
-- Assured y Advanced requieren autocertificacion firmada.
-- Aware es una senal interna, no una credencial publica.
+The backend writes dated newline-delimited JSON files to `backend/logs/`:
 
-## Ejecucion local
+- `application-YYYY-MM-DD.log` for server activity and errors;
+- `audit-YYYY-MM-DD.log` for account, assessment, domain and badge events;
+- `metrics-YYYY-MM-DD.log` for HTTP duration/status and important workflow timings.
 
-```bash
-npm run install:all
-npm run dev:all
-```
+Passwords, answer content and evidence text are not written to these logs.
 
-- Aplicacion: `http://localhost:5173`
-- API: `http://localhost:3001/api`
-- Verificacion publica: `http://localhost:3001/verify/<token>`
+## MVP choices
 
-## Persistencia y auditoria
-
-SQLite guarda empresas, leads, assessments, respuestas, badges y eventos de auditoria. Las operaciones principales como registro, creacion de assessment, emision de badge, cambio de tier e importacion generan eventos. No todas las mutaciones estan auditadas; guardar respuestas y actualizar resultados no crean actualmente un evento de auditoria.
+One company equals one account/email. Evidence is currently a text reference
+or attestation, not a binary upload. SQLite and a single Node process are
+appropriate for the local final-course MVP; repositories keep a later database
+replacement contained.

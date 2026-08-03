@@ -1,105 +1,61 @@
 # CertifAI
 
-AI governance maturity assessment. A 36-question self-assessment across 9 governance
-domains, mapped to 7 regulatory frameworks and scored on a 0 to 5 maturity scale.
+Local MVP for a 36-question AI-governance assessment across 9 domains.
 
-## Layout
-
-```
-frontend/         React 18 + TypeScript + Vite   → http://localhost:5173
-backend/          Express 5 + SQLite             → http://localhost:3001
-legacy-frontend/  the earlier single-file JSX build, kept for reference
-ARCHITECTURE.md   backend architecture notes (Clean Architecture / SOLID / DI)
-```
-
-## Getting in
-/start is the intake gate. It captures organisation, work email and role, and
-shows both tier options, before the assessment is reachable. /assess and
-/results are guarded behind it.
-
-## Start it (one terminal)
+## Run
 
 ```bash
 npm run dev:all
 ```
 
-Starts the backend, waits until it is accepting connections, then starts the
-frontend. Both stream into the one window, prefixed `[backend]` and `[frontend]`.
-Ctrl+C stops both. They remain two separate servers on their own ports. This
-only supervises them.
+Frontend: `http://localhost:5173`
 
-## Start it (two terminals)
+API: `http://localhost:3001/api`
 
-```bash
-npm --prefix backend run dev
-```
+The first visit creates an account at `/register`. One organisation has one
+account and one unique email in this MVP. The session is a five-hour signed JWT
+stored in an HttpOnly, SameSite=Strict cookie.
 
-```bash
-npm --prefix frontend run dev
-```
+## Assessment flow
 
-First time only:
+1. Register or log in.
+2. Enter the real AI-system name and select Tier 1 or Tier 2.
+3. Complete the 9 domains. Each complete domain is persisted through one
+   idempotent request; navigation is blocked if that save fails.
+4. Finalize. The backend loads the 36 canonical answers and calculates the
+   official score, critical-control gate and level.
+5. Tier 2 requires a named self-certification and can issue an Aligned, Assured
+   or Advanced public badge. Tier 1 never issues a badge.
 
-```bash
-npm run install:all
-```
+Only unsynchronised answers from the current domain remain in localStorage.
+After login, the active assessment and its saved answers are recovered from
+SQLite with `GET /api/assessments/active`.
 
-The backend creates and seeds its SQLite database on start. `backend/.env` sets
-`RESET_DB_ON_START=true` by default, so **data is wiped on every restart**. Set it
-to `false` to keep records between runs.
+## Persistence
 
-## Tests
+`backend/.env` uses `RESET_DB_ON_START=false`, so accounts and assessments
+survive restarts. Set it to `true` only when deliberately creating disposable
+test data. The pre-feature SQLite data was reset once because this version has
+a new authenticated schema.
 
-```bash
-npm --prefix frontend run test
-```
-
-Covers the scoring engine and the 4A ladder.
-
-## How scoring and badges are split
-
-There is one scoring engine, in `frontend/src/lib/scoring.ts`, reading the canonical
-instrument from `frontend/src/lib/data.ts`. It produces the score you see on screen
-immediately, as a **preview**.
-
-The **badge is issued by the backend, not the browser.** When a tier-2 user signs the
-self-certification, the frontend posts its score plus the level context to
-`POST /api/assessments/:id/result`. The server then, from its own stored answers:
-
-- re-derives the critical-control gate (Q17, Q18, Q26 at or below 1 → capped to Aware)
-- re-derives whether any evidence actually exists
-- resolves the level itself, applying the tier, evidence and signature requirements
-- issues the badge only if the level it resolved is badge-bearing and the assessment is complete
-
-A client asserting `hasSignature` or `hasEvidence` over an empty answer table gets no
-badge. If the backend is unreachable the app still works, shows the local preview, and
-issues **no** badge, and it says so rather than implying a credential exists.
-
-Badges carry a 12-month expiry and a verification token. Anyone can check one without
-logging in:
+## Validation
 
 ```bash
-curl http://localhost:3001/api/badges/<token>/verify
+npm test
+npm run build
 ```
 
-`http://localhost:3001/verify/<token>` serves the public HTML page with OpenGraph tags
-for link previews.
+Public badge verification remains available without login:
 
-## Known limitations, stated plainly
+```text
+GET /api/badges/:token/verify
+GET /verify/:token
+```
 
-- The submitted score is not tamper-proof. The gates above mean an inflated score alone
-  cannot mint a badge, but moving the scoring module server-side is the production fix.
-  It is written with no DOM or React dependency so it can be lifted across unchanged.
-- The self-certification is an attestation, not a verified signature.
-- The badges route reads only the tier and score the server stored, derives the
-  company from the assessment owner, and refuses when no result exists or the
-  stored tier is Aware. A caller cannot ask for a tier it did not earn.
-- Older docs (`ARCHITECTURE.md`, `HAPPY_PATH.md`, `SETUP.md`, `TESTING.md`,
-  `backend/ENDPOINTS.md`, `backend/README.md`) still describe the retired
-  `compute-score` endpoint and need updating.
-- The AI narrative and improvement plans are produced deterministically from the user's
-  own answers, as stand-ins for live model calls.
-- Pricing presents four tiers as the commercial model; the build implements the free and
-  evidence flows. `/upgrade` displays the plans and their prices, with no transaction
-  behind them: checkout is deliberately inert rather than appearing to work while
-  persisting nothing.
+Approved Tier 2 results include a **Print certification** action. Runtime logs
+are written as dated JSONL files under `backend/logs/`: application activity,
+audit events and request/performance metrics are kept in separate files.
+
+The self-certification is an attestation, not a third-party conformity
+assessment. Evidence in this MVP is a checkbox plus a text reference; binary
+file upload is a future feature.

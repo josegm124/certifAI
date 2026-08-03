@@ -121,8 +121,8 @@ try {
   await waitForPort(BACKEND_PORT, READY_TIMEOUT_MS);
   process.stdout.write(`${CYAN}[backend]${RESET} listening on ${BACKEND_PORT} - starting frontend\n`);
 } catch (err) {
-  // Don't strand the developer: say what happened and bring the frontend up
-  // anyway. The app is built to run with the backend down.
+  // Keep the frontend available so it can show its blocked/authentication
+  // state clearly, even though assessment work requires the backend.
   process.stdout.write(`${CYAN}[backend]${RESET} ${err.message}; starting frontend anyway\n`);
 }
 

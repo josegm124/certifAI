@@ -1,174 +1,44 @@
-# CertifAI API Endpoints
+# API examples
 
-Base URL: `http://localhost:3001/api`
-
-There is no authentication in the MVP. IDs are not authorization credentials.
-
-## Companies and leads
-
-### Register or reuse a company and lead
+All protected examples require the `certifai_session` cookie returned by login
+or registration.
 
 ```http
-POST /companies
+POST /api/auth/register
 Content-Type: application/json
 
-{
-  "name": "Test Corp AI",
-  "email": "test@example.com",
-  "role": "Compliance / Risk"
-}
+{"companyName":"Google","name":"Lalo","email":"lalo@google.com","role":"Risk","password":"password123"}
 ```
-
-Response: `{ userId, companyId, name, email, role, tier, createdAt }`
-
-### Fetch records
-
-```text
-GET /companies/:id
-GET /users/:id
-```
-
-## Assessments
-
-### Create assessment
 
 ```http
-POST /assessments
+POST /api/assessments
 Content-Type: application/json
 
-{
-  "userId": "<userId>",
-  "aiSystemId": "system-1",
-  "tier": "free"
-}
+{"aiSystemName":"Customer Support Assistant","tier":2}
 ```
-
-Valid tiers in storage are `free`, `starter`, `professional` and `enterprise`. The frontend maps its Tier 1 choice to `free` and Tier 2 to `professional`.
-
-### Read assessments
-
-```text
-GET /assessments/:id
-GET /users/:userId/assessments
-```
-
-### Record an answer
 
 ```http
-POST /assessments/:assessmentId/answers
+PUT /api/assessments/:id/domains/strategy/answers
 Content-Type: application/json
 
-{
-  "questionId": "1",
-  "score": 3,
-  "evidence": "Documented policy",
-  "attestation": "confirmed"
-}
+{"answers":[
+  {"questionId":1,"score":4,"evidence":"Policy register","attestation":"confirmed"},
+  {"questionId":2,"score":3,"evidence":"","attestation":""},
+  {"questionId":3,"score":3,"evidence":"","attestation":""},
+  {"questionId":4,"score":4,"evidence":"","attestation":""},
+  {"questionId":5,"score":3,"evidence":"","attestation":""}
+]}
 ```
 
-Scores use the 0-5 answer scale.
-
-## Result and badge issuance
-
-### Submit result
+Each domain request must contain every canonical question from that domain and
+no others. Repeating the same PUT safely updates that domain.
 
 ```http
-POST /assessments/:assessmentId/result
+POST /api/assessments/:id/finalize
 Content-Type: application/json
 
-{
-  "overallScore": 72,
-  "domainScores": [
-    { "id": "strategy", "pct": 70 },
-    { "id": "revenue", "pct": 65 },
-    { "id": "governance", "pct": 75 },
-    { "id": "risk", "pct": 68 },
-    { "id": "data", "pct": 74 },
-    { "id": "human", "pct": 70 },
-    { "id": "trust", "pct": 76 },
-    { "id": "workforce", "pct": 73 },
-    { "id": "improve", "pct": 77 }
-  ],
-  "levelContext": {
-    "tier": 2,
-    "hasEvidence": true,
-    "hasSignature": true
-  },
-  "criticalGating": { "capped": false, "failedIds": [] },
-  "gaps": [],
-  "selfCertifiedAt": "2026-08-03T12:00:00.000Z",
-  "frameworks": ["aiact", "gdpr", "oecd", "iso", "nist"]
-}
+{"signatoryName":"Lalo Guerrero","acceptedDeclaration":true}
 ```
 
-The backend validates the payload, derives completion, evidence and critical-control gating from stored answers, resolves the level, stores the result and issues an eligible badge at 100% completion.
-
-Response includes:
-
-```json
-{
-  "overallScore": 72,
-  "level": "A3",
-  "levelName": "Assured",
-  "badgeTier": "assured",
-  "badgeEligible": true,
-  "criticalGating": { "capped": false, "failedIds": [] },
-  "completion": { "answered": 36, "total": 36, "percentage": 100 },
-  "badge": {
-    "id": "<badgeId>",
-    "tier": "assured",
-    "score": 72,
-    "verificationToken": "<token>",
-    "verifyUrl": "http://localhost:3001/verify/<token>"
-  }
-}
-```
-
-Known limitation: `overallScore` and `domainScores` are calculated by the frontend and bounds-checked, not recomputed, by the backend. Eligibility gates are re-derived server-side.
-
-The retired `POST /assessments/:assessmentId/compute-score` endpoint does not exist.
-
-### Direct badge route
-
-```http
-POST /assessments/:assessmentId/badges
-Content-Type: application/json
-
-{
-  "frameworks": ["aiact", "gdpr", "oecd", "iso", "nist"]
-}
-```
-
-This hardened compatibility route ignores caller-supplied tier and score. It requires a stored, complete, badge-bearing result and derives the company from the assessment owner. The normal frontend flow uses `/result`, which already issues the badge.
-
-### Verify and list badges
-
-```text
-GET /badges/:token/verify
-GET /companies/:companyId/badges
-GET /verify/:token                 (outside the /api prefix; HTML)
-GET /verify/:token/badge.svg       (outside the /api prefix; image)
-```
-
-## Subscriptions
-
-```text
-GET  /companies/:companyId/subscription
-POST /companies/:companyId/upgrade-tier
-```
-
-The upgrade UI does not call the upgrade endpoint because subscription persistence is incomplete in the MVP.
-
-## Export and import
-
-```text
-GET  /assessments/:assessmentId/export
-POST /users/:userId/import-assessment
-```
-
-## Analytics and health
-
-```text
-GET /analytics/badges-renewing?days=60
-GET /health
-```
+Tier 1 sends an empty object. Finalization rejects anything other than the 36
+persisted canonical answers and computes the official result on the server.
