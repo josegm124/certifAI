@@ -123,7 +123,10 @@ class BadgeService {
       }
     };
 
-    return metadata[tier] || metadata[BADGE_TIERS.AWARE];
+    // Unknown tiers are invalid. Falling back to Aware made malformed stored
+    // data look like a legitimate readiness result on public verification
+    // surfaces.
+    return metadata[tier] || null;
   }
 }
 

@@ -32,26 +32,26 @@ const createVerifyRoutes = ({ badgeService, companyService }) => {
   const fmtDate = (d) =>
     new Date(d).toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' });
 
-  /* Badge scores arrive on two scales, because two routes issue them:
-       /assessments/:id/result       -> 0-100 (the frontend engine's scale)
-       /assessments/:id/compute-score -> 0-5  (the legacy backend engine)
-     Blindly multiplying by 20 rendered a 69/100 badge as "1380%" on the public
-     share preview. Badges are only ever issued at Aligned or above, which is
-     >= 41 on the 0-100 scale, so anything <= 5 is unambiguously the old scale. */
-  const toPercent = (score) => {
-    const n = Number(score) || 0;
-    return Math.round(n <= 5 ? n * 20 : n);
-  };
+  // /result stores badge scores on the canonical 0-100 scale. Do not guess a
+  // second scale from the value: silently reinterpreting small scores can turn
+  // malformed or legacy data into a different public claim.
+  const displayScore = (score) => Math.round(Number(score));
 
   const loadBadge = async (token) => {
     const badge = await badgeService.verifyBadge(token);
     if (!badge) return null;
+    const meta = badgeService.getBadgeMetadata(badge.tier);
+    const score = Number(badge.score);
+    // Aware is an internal readiness signal, not a credential. Unknown tiers
+    // and invalid scores must not reach a page headed "Verified credential".
+    if (!meta || badge.tier === 'aware' || !Number.isFinite(score) || score < 0 || score > 100) {
+      return null;
+    }
     let orgName = 'This organisation';
     try {
       const company = await companyService.getCompany(badge.companyId);
       if (company && company.name) orgName = company.name;
     } catch (_) { /* company lookup is best-effort for the preview */ }
-    const meta = badgeService.getBadgeMetadata(badge.tier);
     return { badge, orgName, meta };
   };
 
@@ -73,11 +73,11 @@ const createVerifyRoutes = ({ badgeService, companyService }) => {
 
       const { badge, orgName, meta } = data;
       const tierLabel = meta.label;
-      const scorePct = toPercent(badge.score);
+      const scorePct = displayScore(badge.score);
       const imageUrl = `${origin}/verify/${encodeURIComponent(badge.verificationToken)}/badge.svg`;
       const pageUrl = `${origin}/verify/${encodeURIComponent(badge.verificationToken)}`;
       const title = `${orgName} — CertifAI ${tierLabel} Badge`;
-      const description = `Verified AI Governance Readiness: ${tierLabel} tier (${scorePct}%). Issued ${fmtDate(badge.issuedAt)}, valid until ${fmtDate(badge.expiresAt)}. Independently verifiable.`;
+      const description = `Verified AI Governance Readiness: ${tierLabel} tier (${scorePct}%). Issued ${fmtDate(badge.issuedAt)}, valid until ${fmtDate(badge.expiresAt)}. Publicly verifiable.`;
       const frameworks = Array.isArray(badge.frameworksIncluded) ? badge.frameworksIncluded : [];
 
       res.type('html').send(`<!doctype html>
@@ -134,7 +134,7 @@ const createVerifyRoutes = ({ badgeService, companyService }) => {
     <div class="body">
       <span class="tier">${escapeHtml(meta.icon)} ${escapeHtml(tierLabel)}</span>
       <h1>${escapeHtml(orgName)}</h1>
-      <p class="sub">AI Governance Readiness — independently verifiable badge</p>
+      <p class="sub">AI Governance Readiness — publicly verifiable badge</p>
       <div class="grid">
         <div class="kv"><div class="k">Readiness score</div><div class="v">${scorePct}%</div></div>
         <div class="kv"><div class="k">Tier</div><div class="v">${escapeHtml(tierLabel)}</div></div>
@@ -161,7 +161,7 @@ const createVerifyRoutes = ({ badgeService, companyService }) => {
       const data = await loadBadge(req.params.token);
       if (!data) return res.status(404).send('Not found');
       const { badge, orgName, meta } = data;
-      const scorePct = toPercent(badge.score);
+      const scorePct = displayScore(badge.score);
       const accent = meta.color;
       const esc = (s) => escapeHtml(s);
       const org = orgName.length > 34 ? orgName.slice(0, 33) + '…' : orgName;
