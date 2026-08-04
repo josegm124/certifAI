@@ -24,8 +24,11 @@ class TokenService {
     const parts = String(token || '').split('.');
     if (parts.length !== 3) throw httpError(401, 'Authentication required', 'UNAUTHENTICATED');
     const content = `${parts[0]}.${parts[1]}`;
-    const expected = crypto.createHmac('sha256', this.secret).update(content).digest();
-    const supplied = Buffer.from(parts[2], 'base64url');
+    // Compare the canonical Base64URL text, not only its decoded bytes.
+    // Different final characters can otherwise decode to the same digest when
+    // their unused trailing bits differ, making a modified token look valid.
+    const expected = Buffer.from(crypto.createHmac('sha256', this.secret).update(content).digest('base64url'));
+    const supplied = Buffer.from(parts[2]);
     if (supplied.length !== expected.length || !crypto.timingSafeEqual(supplied, expected)) {
       throw httpError(401, 'Invalid session', 'INVALID_SESSION');
     }
