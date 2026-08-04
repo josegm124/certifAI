@@ -1,3 +1,4 @@
+import { useEffect, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import {
@@ -11,6 +12,7 @@ import { Check, Arrow, Sparkle } from "../components/icons";
 import { useStore } from "../store/useStore";
 import { SAMPLE_ANSWERS } from "../lib/sampleData";
 import { domainScores, LEVELS } from "../lib/scoring";
+import { getCertificateCatalog, type CertificateCatalog } from "../lib/api";
 
 const fadeUp = {
   initial: { opacity: 0, y: 20 },
@@ -22,6 +24,16 @@ const fadeUp = {
 export default function Landing() {
   const nav = useNavigate();
   const loadSample = useStore((s) => s.loadSample);
+  const [catalog, setCatalog] = useState<CertificateCatalog | null>(null);
+  const [catalogError, setCatalogError] = useState(false);
+
+  useEffect(() => {
+    let active = true;
+    getCertificateCatalog()
+      .then((response) => { if (active) setCatalog(response); })
+      .catch(() => { if (active) setCatalogError(true); });
+    return () => { active = false; };
+  }, []);
 
   // DOMAIN_SHORT is owned by data.ts — the local copy here was missing
   // "revenue", so the radar drew nine axes with only eight labelled.
@@ -112,30 +124,28 @@ export default function Landing() {
         {/* pricing */}
         <motion.section {...fadeUp} style={{ marginTop: 40 }}>
           <h2 className="h2">Start free. Earn your certificate when you're ready.</h2>
+          <p className="sec-note">Complete the free assessment first. Your result sets the highest certificate level available to you; paying more never raises your assessed level. No payment is processed in this demo.</p>
           <div className="pricing">
-            <div className="price">
-              <div className="price-tag">Free · Tier 1</div>
-              <div className="price-name">Readiness Snapshot</div>
-              <div className="price-cost"><b>€0</b> · self-scored</div>
-              <ul className="plist">
-                {[`All ${TOTAL_QUESTIONS} questions, self-scored`, "Maturity by domain + framework", "Interactive dashboard & deep-dives", "Prioritised gap profile", "Your Aware baseline, for internal use"].map((p) => (
-                  <li key={p}><Check /> {p}</li>
-                ))}
-              </ul>
-              <Link to="/start" className="btn btn-primary" style={{ width: "100%" }}>Start free assessment</Link>
-            </div>
-            <div className="price price-accent">
-              <div className="price-tag">Tier 2 · Free during demo</div>
-              <div className="price-name">Evidence-Based Certificate</div>
-              <div className="price-cost">from <b>€490</b> per certificate, per year</div>
-              <p className="sec-note">No payment is processed in this demo. Planned annual prices: Aligned €490, Assured €1,190, Advanced €2,490.</p>
-              <ul className="plist">
-                {["Everything in the free tier", "Per-control evidence references", "Virtual signature + self-certification", "AI-assisted evidence review, in development", "Earn Aligned / Assured / Advanced", "Shareable trust badge with a public verification page"].map((p) => (
-                  <li key={p}><Sparkle size={15} color="var(--ocean)" /> {p}</li>
-                ))}
-              </ul>
-              <Link to="/start" className="btn btn-accent" style={{ width: "100%" }}>Begin evidence review</Link>
-            </div>
+            {!catalog && !catalogError && <div className="price"><div className="price-name">Loading certificate catalog…</div></div>}
+            {catalogError && <div className="price"><div className="price-name">Certificate catalog unavailable</div><p className="sec-note">The backend catalog must be available before prices can be shown.</p></div>}
+            {catalog?.products.map((product) => {
+              const amount = product.price
+                ? new Intl.NumberFormat("en-IE", { style: "currency", currency: product.price.currency, maximumFractionDigits: 0 }).format(product.price.amountMinor / 100)
+                : "Unavailable";
+              const period = product.price?.billingPeriod === "year" ? "per certificate, per year" : "one time";
+              return (
+                <div className={`price ${product.productType === "certificate" ? "price-accent" : ""}`} key={product.id}>
+                  <div className="price-tag">{product.level ? `${product.level.code} · ${product.level.name}` : "Free assessment"}</div>
+                  <div className="price-name">{product.name}</div>
+                  <div className="price-cost"><b>{amount}</b> · {period}</div>
+                  <p className="sec-note">{product.description}</p>
+                  <ul className="plist">
+                    {product.features.map((feature) => <li key={feature}>{product.productType === "certificate" ? <Sparkle size={15} color="var(--ocean)" /> : <Check />} {feature}</li>)}
+                  </ul>
+                  <Link to="/start" className={`btn ${product.productType === "certificate" ? "btn-accent" : "btn-primary"}`} style={{ width: "100%" }}>{product.ctaLabel}</Link>
+                </div>
+              );
+            })}
           </div>
         </motion.section>
       </div>

@@ -13,6 +13,7 @@ const AssessmentAnswerRepository = require('./repositories/AssessmentAnswerRepos
 const AiSystemRepository = require('./repositories/AiSystemRepository');
 const BadgeRepository = require('./repositories/BadgeRepository');
 const AuditLogRepository = require('./repositories/AuditLogRepository');
+const CertificateCatalogRepository = require('./repositories/CertificateCatalogRepository');
 
 // Services
 const CompanyService = require('./services/CompanyService');
@@ -25,6 +26,7 @@ const DomainAnswerService = require('./services/DomainAnswerService');
 const ScoringService = require('./services/ScoringService');
 const AssessmentFinalizationService = require('./services/AssessmentFinalizationService');
 const AssessmentDashboardService = require('./services/AssessmentDashboardService');
+const CertificateCatalogService = require('./services/CertificateCatalogService');
 
 // Routes
 const { createRoutes } = require('./routes/api');
@@ -70,6 +72,7 @@ const startServer = async () => {
     const aiSystemRepository = new AiSystemRepository(db);
     const badgeRepository = new BadgeRepository(db);
     const auditLogRepository = new AuditLogRepository(db);
+    const certificateCatalogRepository = new CertificateCatalogRepository(db);
 
     // Instantiate services
     const companyService = new CompanyService(companyRepository);
@@ -90,6 +93,7 @@ const startServer = async () => {
     const finalizationService = new AssessmentFinalizationService(
       assessmentService, assessmentRepository, answerRepository, scoringService, badgeService
     );
+    const certificateCatalogService = new CertificateCatalogService(certificateCatalogRepository);
 
     // Create routes with dependency injection
     const routes = createRoutes({
@@ -101,6 +105,7 @@ const startServer = async () => {
       domainAnswerService,
       finalizationService,
       badgeService,
+      certificateCatalogService,
     });
 
     app.use('/api', routes);

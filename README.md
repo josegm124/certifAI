@@ -24,8 +24,10 @@ stored in an HttpOnly, SameSite=Strict cookie.
    idempotent request; navigation is blocked if that save fails.
 4. Finalize. The backend loads the 36 canonical answers and calculates the
    official score, critical-control gate and level.
-5. Tier 2 requires a named self-certification and can issue an Aligned, Assured
-   or Advanced public badge. Tier 1 never issues a badge.
+5. Tier 1 displays the score band and eligible badge image as a preview, then
+   offers certificate products at or below that level. It never issues a public
+   badge or certificate. Tier 2 retains the demo issuance workflow and requires
+   the current simple evidence check plus a named self-certification.
 
 Only unsynchronised answers from the current domain remain in localStorage.
 After login, the active assessment and its saved answers are recovered from
@@ -62,8 +64,8 @@ file upload is a future feature.
 
 ## Demo pricing
 
-The current Tier 2 prices are display copy in `frontend/src/pages/Landing.tsx`:
-Aligned EUR 490, Assured EUR 1,190 and Advanced EUR 2,490 per certificate for
-twelve months. There is no payment or billing integration in this demo. A real
-billing implementation should define product ids and prices in the backend and
-provide them to the frontend through an API or shared configuration.
+Certificate levels, products, display features and active prices are stored in
+SQLite and exposed through `GET /api/catalog/certificates`. The frontend does
+not contain monetary amounts. Current annual catalog prices are Aligned EUR
+490, Assured EUR 1,190 and Advanced EUR 2,490. No billing, order or payment
+processing is implemented in the demo.

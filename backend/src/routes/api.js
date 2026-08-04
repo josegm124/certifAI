@@ -11,11 +11,16 @@ const cookieOptions = () => ({
   path: '/',
 });
 
-const createRoutes = ({ authService, tokenService, userRepository, assessmentService, assessmentDashboardService, domainAnswerService, finalizationService, badgeService }) => {
+const createRoutes = ({ authService, tokenService, userRepository, assessmentService, assessmentDashboardService, domainAnswerService, finalizationService, badgeService, certificateCatalogService }) => {
   const router = express.Router();
   const authenticate = createAuthMiddleware(tokenService);
 
   router.get('/health', (_req, res) => res.json({ status: 'ok', timestamp: new Date().toISOString() }));
+
+  router.get('/catalog/certificates', async (_req, res, next) => {
+    try { res.json(await certificateCatalogService.getPublicCatalog()); }
+    catch (error) { next(error); }
+  });
 
   router.post('/auth/register', async (req, res, next) => {
     try {

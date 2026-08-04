@@ -4,6 +4,14 @@ All protected examples require the `certifai_session` cookie returned by login
 or registration.
 
 ```http
+GET /api/catalog/certificates
+```
+
+This public endpoint returns the active readiness assessment and certificate
+products from SQLite, including their related level, current price and display
+features. Money is returned in minor units; for example, EUR 490 is `49000`.
+
+```http
 POST /api/auth/register
 Content-Type: application/json
 

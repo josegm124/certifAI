@@ -76,6 +76,40 @@ export interface FinalizationResponse {
 
 export type AssessmentDashboardResponse = FinalizationResponse;
 
+export interface CertificateCatalogLevel {
+  id: "aware" | "aligned" | "assured" | "advanced";
+  code: "A1" | "A2" | "A3" | "A4";
+  name: string;
+  description: string;
+  scoreMin: number;
+  scoreMax: number;
+  rank: number;
+  badgeEligible: boolean;
+}
+
+export interface CertificateCatalogProduct {
+  id: string;
+  code: string;
+  productType: "assessment" | "certificate";
+  name: string;
+  description: string;
+  ctaLabel: string;
+  displayOrder: number;
+  level: CertificateCatalogLevel | null;
+  price: {
+    id: string;
+    amountMinor: number;
+    currency: string;
+    billingPeriod: "one_time" | "year";
+  } | null;
+  features: string[];
+}
+
+export interface CertificateCatalog {
+  levels: CertificateCatalogLevel[];
+  products: CertificateCatalogProduct[];
+}
+
 export class ApiError extends Error {
   constructor(public status: number, message: string, public code?: string) { super(message); }
 }
@@ -102,6 +136,7 @@ export const register = (input: { companyName: string; email: string; password: 
 export const login = (email: string, password: string) => post<{ profile: Profile }>("/auth/login", { email, password });
 export const logout = () => post<void>("/auth/logout");
 export const getMe = () => request<{ profile: Profile }>("/auth/me");
+export const getCertificateCatalog = () => request<CertificateCatalog>("/catalog/certificates");
 export const updateProfile = (name: string, role: string) => put<{ profile: Profile }>("/profile", { name, role });
 export const createAssessment = (aiSystemName: string, tier: 1 | 2) => post<{ assessment: AssessmentRecord }>("/assessments", { aiSystemName, tier });
 export const getActiveAssessment = () => request<{ assessment: AssessmentRecord | null }>("/assessments/active");
