@@ -147,7 +147,7 @@ export default function CertificationDetail() {
               </ul>
             )}
             <p className="sec-note" style={{ margin: "12px 0 0", color: C.inkSoft }}>
-              In the paid tier, your uploaded evidence is attached to each mapped requirement and substantiates these scores. Automated evidence review is in development.
+              In the paid tier, the evidence references you add are stored with the mapped controls and support your self-assessment. Automated evidence review is in development.
             </p>
           </div>
 

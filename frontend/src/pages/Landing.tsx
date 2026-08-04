@@ -96,7 +96,7 @@ export default function Landing() {
           <div className="how">
             {[
               { t: "Assess", d: `Answer ${TOTAL_QUESTIONS} questions on a 0 to ${MAX_SCORE} maturity scale across all ${numberWord(TOTAL_DOMAINS)} domains.` },
-              { t: "Add evidence", d: "Attach documents and written detail to each control to build an audit-ready record." },
+              { t: "Add evidence", d: "Record an attestation and a written evidence reference for each control to build a traceable assessment record." },
               { t: "AI review, in development", d: "Automated review of your evidence against each control, with drafted remediation. Not available in this build." },
               { t: "Earn your level", d: "Sign your self-certification and earn Aligned, Assured or Advanced, a badge you can share." },
             ].map((s, i) => (
@@ -125,10 +125,10 @@ export default function Landing() {
               <Link to="/start" className="btn btn-primary" style={{ width: "100%" }}>Start free assessment</Link>
             </div>
             <div className="price price-accent">
-              <div className="price-tag">Paid · Tier 2</div>
+              <div className="price-tag">Tier 2 · Free during demo</div>
               <div className="price-name">Evidence-Based Certificate</div>
               <div className="price-cost">from <b>€490</b> per certificate, per year</div>
-              <p className="sec-note">The level is earned from your score and evidence. Aligned €490, Assured €1,190, Advanced €2,490, each valid for twelve months.</p>
+              <p className="sec-note">No payment is processed in this demo. Planned annual prices: Aligned €490, Assured €1,190, Advanced €2,490.</p>
               <ul className="plist">
                 {["Everything in the free tier", "Per-control evidence references", "Virtual signature + self-certification", "AI-assisted evidence review, in development", "Earn Aligned / Assured / Advanced", "Shareable trust badge with a public verification page"].map((p) => (
                   <li key={p}><Sparkle size={15} color="var(--ocean)" /> {p}</li>

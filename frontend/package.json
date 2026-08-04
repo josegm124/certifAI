@@ -3,7 +3,7 @@
   "private": true,
   "version": "2.0.0",
   "type": "module",
-  "description": "CertifAI v2 \u2014 AI Governance Readiness certification platform (frontend showpiece)",
+  "description": "CertifAI v2 \u2014 AI Governance Readiness assessment and certificate frontend",
   "scripts": {
     "dev": "vite",
     "build": "tsc --noEmit && vite build",

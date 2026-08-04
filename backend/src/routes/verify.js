@@ -138,13 +138,13 @@ const createVerifyRoutes = ({ badgeService, companyService }) => {
       <p class="sub">AI Governance Readiness certificate, issued by CertifAI</p>
       <div class="grid">
         <div class="kv"><div class="k">Readiness score</div><div class="v">${scorePct}%</div></div>
-        <div class="kv"><div class="k">Tier</div><div class="v">${escapeHtml(tierLabel)}</div></div>
+        <div class="kv"><div class="k">Level</div><div class="v">${escapeHtml(tierLabel)}</div></div>
         <div class="kv"><div class="k">Issued</div><div class="v">${fmtDate(badge.issuedAt)}</div></div>
         <div class="kv"><div class="k">Valid until</div><div class="v">${fmtDate(badge.expiresAt)}</div></div>
       </div>
       ${frameworks.length ? `<div class="kv"><div class="k">Frameworks assessed</div><div class="fw">${frameworks.map(f => `<span class="chip">${escapeHtml(f)}</span>`).join('')}</div></div>` : ''}
       <div class="tok">Verification token: ${escapeHtml(badge.verificationToken)}</div>
-      <p class="disclaimer">Based on a self-assessment completed by the organisation, with supporting evidence recorded against each control. Not a conformity assessment under the EU AI Act.</p>
+      <p class="disclaimer">Based on a self-assessment completed by the organisation, with an evidence attestation or reference recorded in the assessment. Not a conformity assessment under the EU AI Act.</p>
     </div>
   </div>
 </body>
@@ -183,6 +183,7 @@ const createVerifyRoutes = ({ badgeService, companyService }) => {
   <text x="80" y="500" fill="#93a4c0" font-family="Inter,Arial,sans-serif" font-size="34" font-weight="600">Readiness score</text>
   <text x="80" y="560" fill="#e6edf7" font-family="Inter,Arial,sans-serif" font-size="60" font-weight="700">${scorePct}%</text>
   <text x="1120" y="560" text-anchor="end" fill="#22c55e" font-family="Inter,Arial,sans-serif" font-size="30" font-weight="600">✓ Valid certificate</text>
+  <text x="1120" y="604" text-anchor="end" fill="#93a4c0" font-family="Inter,Arial,sans-serif" font-size="20">Self-assessment with evidence attestation or reference | Not an EU AI Act conformity assessment</text>
 </svg>`;
 
       res.type('image/svg+xml').set('Cache-Control', 'public, max-age=300').send(svg);

@@ -16,7 +16,7 @@ but the official score, level, critical gate and badge shown after finalization
 come from the backend response.
 
 When finalization produces a public badge, the result page displays **Print
-certification** and applies a print layout that removes navigation controls.
+certificate** and applies a print layout that removes navigation controls.
 
 ```bash
 npm run dev

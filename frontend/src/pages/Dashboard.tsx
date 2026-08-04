@@ -303,7 +303,7 @@ export default function Dashboard() {
                     ? `Verification token ${dashboard.badge.verificationToken.slice(0, 8)}…`
                     : record.status === "draft" ? "Complete and sign the assessment to request a badge." : "The final result did not meet the badge gates."}
               </div>
-              <div className="case-meta">Evidence is recorded against each control and checked before a certificate is issued. Automated review is in development.</div>
+              <div className="case-meta">The current release stores evidence references and requires stored evidence before a certificate can be issued. Automated review is in development.</div>
             </div>
           </div>
 

@@ -169,7 +169,7 @@ export const LEVELS: Level[] = [
     needsSignature: false,
     needsCleanCriticals: false,
     blurb:
-      "Structured evidence across core domains with remediation underway. Your first displayable trust badge.",
+      "A stored evidence attestation or reference supports the result, with remediation underway. Your first displayable trust badge.",
   },
   {
     id: "A3",
@@ -181,7 +181,7 @@ export const LEVELS: Level[] = [
     needsSignature: true,
     needsCleanCriticals: false,
     blurb:
-      "A strong governance posture backed by audit-ready evidence and a signed self-certification. A shareable trust badge.",
+      "A strong governance score with stored evidence and a signed self-certification. A shareable trust badge.",
   },
   {
     id: "A4",
@@ -193,7 +193,7 @@ export const LEVELS: Level[] = [
     needsSignature: true,
     needsCleanCriticals: true,
     blurb:
-      "Governance fully embedded and continuously improved, evidenced across all domains and backed by a signed self-certification. The top trust badge.",
+      "A high governance score with stored evidence, clean critical controls and a signed self-certification. The top trust badge.",
   },
 ];
 
@@ -202,7 +202,7 @@ export function levelById(id: LevelId): Level {
 }
 
 export interface LevelContext {
-  /** 1 = free snapshot, 2 = evidence + AI certification */
+  /** 1 = free readiness assessment, 2 = evidence-based certificate */
   tier?: 1 | 2;
   hasEvidence?: boolean;
   hasSignature?: boolean;

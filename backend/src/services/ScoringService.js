@@ -8,9 +8,9 @@ const {
 
 const LEVELS = [
   { id: 'A1', tier: 'aware', name: 'Aware', min: 0, max: 40, badge: false, needsEvidence: false, needsSignature: false, blurb: 'Assessment progress and gaps are understood. This is an internal readiness signal; no badge is issued.' },
-  { id: 'A2', tier: 'aligned', name: 'Aligned', min: 41, max: 65, badge: true, needsEvidence: true, needsSignature: false, blurb: 'Structured evidence exists across core domains and remediation is underway.' },
-  { id: 'A3', tier: 'assured', name: 'Assured', min: 66, max: 85, badge: true, needsEvidence: true, needsSignature: true, blurb: 'A strong governance posture backed by stored evidence and signed self-certification.' },
-  { id: 'A4', tier: 'advanced', name: 'Advanced', min: 86, max: 100, badge: true, needsEvidence: true, needsSignature: true, blurb: 'Governance is embedded, evidenced across all domains and continuously improved.' },
+  { id: 'A2', tier: 'aligned', name: 'Aligned', min: 41, max: 65, badge: true, needsEvidence: true, needsSignature: false, blurb: 'A stored evidence attestation or reference supports the result, and remediation is underway.' },
+  { id: 'A3', tier: 'assured', name: 'Assured', min: 66, max: 85, badge: true, needsEvidence: true, needsSignature: true, blurb: 'A strong governance score with stored evidence and a signed self-certification.' },
+  { id: 'A4', tier: 'advanced', name: 'Advanced', min: 86, max: 100, badge: true, needsEvidence: true, needsSignature: true, blurb: 'A high governance score with stored evidence, clean critical controls and a signed self-certification.' },
 ];
 
 class ScoringService {

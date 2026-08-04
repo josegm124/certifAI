@@ -120,7 +120,7 @@ export default function DimensionDetail() {
               </ul>
             )}
             <p className="sec-note" style={{ margin: "12px 0 0", color: C.inkSoft }}>
-              In the paid tier, your uploaded evidence is attached to each control and substantiates these scores. Automated evidence review is in development.
+              In the paid tier, the evidence references you add are stored with the controls and support your self-assessment. Automated evidence review is in development.
             </p>
           </div>
           <button className="btn btn-primary" style={{ width: "100%", marginTop: 14 }} onClick={() => nav("/assess")}>

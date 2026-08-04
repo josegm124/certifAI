@@ -52,10 +52,18 @@ GET /api/badges/:token/verify
 GET /verify/:token
 ```
 
-Approved Tier 2 results include a **Print certification** action. Runtime logs
+Approved Tier 2 results include a **Print certificate** action. Runtime logs
 are written as dated JSONL files under `backend/logs/`: application activity,
 audit events and request/performance metrics are kept in separate files.
 
 The self-certification is an attestation, not a third-party conformity
 assessment. Evidence in this MVP is a checkbox plus a text reference; binary
 file upload is a future feature.
+
+## Demo pricing
+
+The current Tier 2 prices are display copy in `frontend/src/pages/Landing.tsx`:
+Aligned EUR 490, Assured EUR 1,190 and Advanced EUR 2,490 per certificate for
+twelve months. There is no payment or billing integration in this demo. A real
+billing implementation should define product ids and prices in the backend and
+provide them to the frontend through an API or shared configuration.
