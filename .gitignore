@@ -1,7 +1,7 @@
 node_modules/
 dist/
 *.local
-
+/.claude/*
 # Env files. frontend/src/lib/api.ts reads VITE_API_URL, so a frontend .env is
 # now plausible — and only backend/.gitignore covered .env before this.
 # Note: VITE_-prefixed vars are compiled into the client bundle and are readable

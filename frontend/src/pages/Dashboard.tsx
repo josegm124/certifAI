@@ -13,6 +13,7 @@ import MaturityMatrix, { type MaturityMatrixRow } from "../components/MaturityMa
 import RadarChart, { type RadarPoint } from "../components/RadarChart";
 import ScoreDial from "../components/ScoreDial";
 import LevelBadge, { LEVEL_COLOR } from "../components/Badges";
+import CertificateOptions from "../components/CertificateOptions";
 import { Arrow, ShieldAlert } from "../components/icons";
 
 const caseDate = (item: AssessmentRecord) => new Intl.DateTimeFormat("en-GB", {
@@ -219,7 +220,9 @@ export default function Dashboard() {
                 <div className="lvlpanel-state">
                   {record.status === "draft"
                     ? "Backend progress preview · not certified"
-                    : dashboard.badge
+                    : record.tier === 1
+                      ? "Readiness result · badge preview only"
+                      : dashboard.badge
                       ? "Issued by CertifAI"
                       : "Score of record · no badge issued"}
                   {" · "}{result.completion.percentage}% complete
@@ -237,6 +240,10 @@ export default function Dashboard() {
                 {result.criticalGating.failedIds.length > 0 && ` Failed critical controls: ${result.criticalGating.failedIds.map((id) => `Q${id}`).join(", ")}.`}
               </div>
             </div>
+          )}
+
+          {record.status === "finalized" && record.tier === 1 && (
+            <CertificateOptions assessmentId={record.id} levelId={result.level.id} />
           )}
 
           <div className="dash-grid">
@@ -286,10 +293,10 @@ export default function Dashboard() {
               </button>
             </div>
 
-            <div className={`cert ${record.tier === 1 ? "cert-locked" : ""}`}>
+            <div className={`cert ${record.tier === 1 && result.level.id === "A1" ? "cert-locked" : ""}`}>
               <div>
                 <div className="cert-tag">Tier 2 · evidence-based certificate</div>
-                <div className="cert-name">{record.tier === 1 ? "Not included in this case" : dashboard.badge ? `${dashboard.badge.tier} badge issued` : "Certificate requirements"}</div>
+                <div className="cert-name">{record.tier === 1 ? result.level.id === "A1" ? "No certificate available" : `${result.level.name} certificate preview` : dashboard.badge ? `${dashboard.badge.tier} badge issued` : "Certificate requirements"}</div>
               </div>
               <div className="cert-lvl">
                 <LevelBadge level={result.level.id} size={30} />
@@ -298,12 +305,12 @@ export default function Dashboard() {
               </div>
               <div className="case-meta">
                 {record.tier === 1
-                  ? "This assessment was created as Tier 1."
+                  ? result.level.id === "A1" ? "Improve the dashboard gaps and take a new assessment later." : `This score supports certificates up to ${result.level.name}. Preview only; nothing has been issued.`
                   : dashboard.badge
                     ? `Verification token ${dashboard.badge.verificationToken.slice(0, 8)}…`
                     : record.status === "draft" ? "Complete and sign the assessment to request a badge." : "The final result did not meet the badge gates."}
               </div>
-              <div className="case-meta">The current release stores evidence references and requires stored evidence before a certificate can be issued. Automated review is in development.</div>
+              {record.tier === 2 && <div className="case-meta">The current release stores evidence references and requires stored evidence before a certificate can be issued. Automated review is in development.</div>}
             </div>
           </div>
 

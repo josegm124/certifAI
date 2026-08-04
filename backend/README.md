@@ -35,9 +35,10 @@ one `draft` assessment per user. The domain PUT validates the exact canonical
 question set and upserts all answers in one transaction. Finalization loads all
 36 stored answers; the client cannot submit an official score or badge tier.
 
-Critical Q17, Q18 or Q26 at 0 or 1 caps the result at Aware. Tier 1 never emits
-a badge. Tier 2 uses the currently agreed MVP evidence rule: at least one stored
-evidence reference or attestation. Aware is never a public credential.
+Critical Q17, Q18 or Q26 at 0 or 1 caps the result at Aware. Tier 1 reports its
+actual score band for certificate eligibility but never emits a badge. Tier 2
+uses the currently agreed MVP evidence rule: at least one stored evidence
+reference or attestation. Aware is never a public credential.
 
 ## Public routes
 

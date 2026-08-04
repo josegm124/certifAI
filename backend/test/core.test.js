@@ -5,6 +5,7 @@ const { QUESTION_IDS, DASHBOARD_FRAMEWORKS, QUESTION_METADATA } = require('../sr
 const ScoringService = require('../src/services/ScoringService');
 const TokenService = require('../src/services/TokenService');
 const PasswordService = require('../src/services/PasswordService');
+const AssessmentFinalizationService = require('../src/services/AssessmentFinalizationService');
 const { isPasswordValid } = require('../src/utils/passwordPolicy');
 
 const answers = (score, evidence = '') => QUESTION_IDS.map((questionId) => new AssessmentAnswer({
@@ -27,10 +28,41 @@ test('a failed critical control always caps the server result at A1', () => {
   assert.deepEqual(result.criticalGating.failedIds, [17]);
 });
 
-test('Tier 1 cannot earn a badge even with a perfect score', () => {
+test('Tier 1 reports its score band without applying certificate evidence gates', () => {
   const result = new ScoringService().calculate(answers(5, 'policy register'), 1, false);
-  assert.equal(result.level.id, 'A1');
-  assert.equal(result.level.badge, false);
+  assert.equal(result.overallScore, 100);
+  assert.equal(result.level.id, 'A4');
+  assert.equal(result.cappedFrom, null);
+});
+
+test('Tier 1 score-band preview never causes server-side badge issuance', async () => {
+  const assessment = {
+    id: 'assessment', userId: 'user-1', tier: 1, status: 'draft',
+    badgeTier: null, criticalGatingActive: false,
+  };
+  let badgeIssueCalls = 0;
+  const assessmentService = {
+    requireOwned: async () => assessment,
+    detail: async (stored) => stored,
+  };
+  const assessmentRepository = { update: async () => assessment };
+  const answerRepository = { findByAssessment: async () => answers(5, 'policy register') };
+  const badgeService = {
+    issueBadge: async () => { badgeIssueCalls += 1; return {}; },
+  };
+  const service = new AssessmentFinalizationService(
+    assessmentService,
+    assessmentRepository,
+    answerRepository,
+    new ScoringService(),
+    badgeService
+  );
+
+  const finalized = await service.finalize({ id: 'user-1', companyId: 'company-1' }, assessment.id, {});
+
+  assert.equal(finalized.result.level.id, 'A4');
+  assert.equal(finalized.badge, null);
+  assert.equal(badgeIssueCalls, 0);
 });
 
 test('dashboard analytics safely score partial stored progress on the backend', () => {

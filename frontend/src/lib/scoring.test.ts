@@ -96,14 +96,14 @@ describe("scoring parity with the MVP", () => {
 });
 
 describe("4A ladder", () => {
-  it("Tier 1 never issues a badge even at a high score", () => {
+  it("Tier 1 reports the score band without certificate evidence gates", () => {
     const a: Answers = {};
     QUESTIONS.forEach((q) => (a[q.id] = { score: 4 }));
     const r = resolveLevel(a, { tier: 1 });
     expect(r.overall).toBe(80);
-    expect(r.level.id).toBe("A1");
-    expect(r.level.badge).toBe(false);
-    expect(r.cappedFrom).toBe("A3");
+    expect(r.level.id).toBe("A3");
+    expect(r.level.badge).toBe(true);
+    expect(r.cappedFrom).toBeNull();
   });
 
   it("critical-control gate caps to Aware regardless of score", () => {

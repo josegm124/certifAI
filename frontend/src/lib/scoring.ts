@@ -169,7 +169,7 @@ export const LEVELS: Level[] = [
     needsSignature: false,
     needsCleanCriticals: false,
     blurb:
-      "A stored evidence attestation or reference supports the result, with remediation underway. Your first displayable trust badge.",
+      "The readiness score is in the Aligned band. An Aligned certificate is available after its issuance requirements are completed.",
   },
   {
     id: "A3",
@@ -181,7 +181,7 @@ export const LEVELS: Level[] = [
     needsSignature: true,
     needsCleanCriticals: false,
     blurb:
-      "A strong governance score with stored evidence and a signed self-certification. A shareable trust badge.",
+      "The readiness score is in the Assured band. Assured or Aligned may be selected for the certificate workflow.",
   },
   {
     id: "A4",
@@ -193,7 +193,7 @@ export const LEVELS: Level[] = [
     needsSignature: true,
     needsCleanCriticals: true,
     blurb:
-      "A high governance score with stored evidence, clean critical controls and a signed self-certification. The top trust badge.",
+      "The readiness score is in the Advanced band. Advanced or a lower available level may be selected for the certificate workflow.",
   },
 ];
 
@@ -245,16 +245,13 @@ export function resolveLevel(answers: Answers, ctx: LevelContext = {}): LevelRes
     }
   };
 
-  // Tier 1 (free snapshot) can never earn a displayable badge.
-  if (tier === 1 && level.badge) {
-    capTo("A1", "The free assessment yields an Aware readiness signal only. Upgrade to the evidence-based certificate to earn a badge.");
-  }
-  // Displayable levels require evidence.
-  if (level.needsEvidence && !ctx.hasEvidence) {
+  // Tier 1 reports the score band as certificate eligibility. Evidence and
+  // signature gates apply only to the Tier 2 issuance workflow.
+  if (tier === 2 && level.needsEvidence && !ctx.hasEvidence) {
     capTo("A1", "Structured evidence is required before a badge can be earned.");
   }
   // A3+ requires a signed self-certification.
-  if (level.needsSignature && !ctx.hasSignature) {
+  if (tier === 2 && level.needsSignature && !ctx.hasSignature) {
     capTo("A2", "A signed self-certification is required for Assured and above.");
   }
   // A4 requires no failed critical controls (subset of the gate below).
