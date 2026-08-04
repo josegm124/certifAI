@@ -220,7 +220,7 @@ export default function Dashboard() {
                   {record.status === "draft"
                     ? "Backend progress preview · not certified"
                     : dashboard.badge
-                      ? "Issued by CertifAI · verifiable badge"
+                      ? "Issued by CertifAI"
                       : "Score of record · no badge issued"}
                   {" · "}{result.completion.percentage}% complete
                 </div>
@@ -269,7 +269,7 @@ export default function Dashboard() {
             </motion.div>
           </div>
 
-          <h3 className="sec-h">Certification status</h3>
+          <h3 className="sec-h">Certificate status</h3>
           <div className="certs">
             <div className="cert">
               <div>
@@ -288,8 +288,8 @@ export default function Dashboard() {
 
             <div className={`cert ${record.tier === 1 ? "cert-locked" : ""}`}>
               <div>
-                <div className="cert-tag">Tier 2 · evidence-based certification</div>
-                <div className="cert-name">{record.tier === 1 ? "Not included in this case" : dashboard.badge ? `${dashboard.badge.tier} badge issued` : "Certification requirements"}</div>
+                <div className="cert-tag">Tier 2 · evidence-based certificate</div>
+                <div className="cert-name">{record.tier === 1 ? "Not included in this case" : dashboard.badge ? `${dashboard.badge.tier} badge issued` : "Certificate requirements"}</div>
               </div>
               <div className="cert-lvl">
                 <LevelBadge level={result.level.id} size={30} />
@@ -303,6 +303,7 @@ export default function Dashboard() {
                     ? `Verification token ${dashboard.badge.verificationToken.slice(0, 8)}…`
                     : record.status === "draft" ? "Complete and sign the assessment to request a badge." : "The final result did not meet the badge gates."}
               </div>
+              <div className="case-meta">Evidence is recorded against each control and checked before a certificate is issued. Automated review is in development.</div>
             </div>
           </div>
 
@@ -347,7 +348,7 @@ export default function Dashboard() {
                 {result.nextLevel
                   ? result.nextLevel.pointsNeeded > 0
                     ? `Close the highest-priority gaps below to reach ${result.nextLevel.min}. `
-                    : `The score threshold is met; all certification gates must also pass. `
+                    : `The score threshold is met; all certificate gates must also pass. `
                   : "Keep the stored evidence and controls current."}
                 {result.nextLevel?.needsEvidence && !result.hasEvidence ? "Stored evidence is required. " : ""}
                 {result.nextLevel?.needsSignature && !record.signatoryName ? "A signed self-certification is also required." : ""}

@@ -64,8 +64,8 @@ const createVerifyRoutes = ({ badgeService, companyService }) => {
       if (!data) {
         return res.status(404).type('html').send(`<!doctype html><html lang="en"><head>
 <meta charset="utf-8"/><meta name="viewport" content="width=device-width, initial-scale=1"/>
-<title>Badge not found — CertifAI</title>
-<meta property="og:title" content="CertifAI badge — not valid"/>
+<title>Badge not found: CertifAI</title>
+<meta property="og:title" content="CertifAI badge, not valid"/>
 <meta property="og:description" content="This verification link is invalid or the badge has expired."/>
 <style>body{font-family:Inter,system-ui,sans-serif;background:#0f172a;color:#e2e8f0;display:grid;place-items:center;min-height:100vh;margin:0}.c{text-align:center;padding:2rem}</style>
 </head><body><div class="c"><h1>Badge not found</h1><p>This verification link is invalid or the badge has expired.</p></div></body></html>`);
@@ -76,8 +76,8 @@ const createVerifyRoutes = ({ badgeService, companyService }) => {
       const scorePct = displayScore(badge.score);
       const imageUrl = `${origin}/verify/${encodeURIComponent(badge.verificationToken)}/badge.svg`;
       const pageUrl = `${origin}/verify/${encodeURIComponent(badge.verificationToken)}`;
-      const title = `${orgName} — CertifAI ${tierLabel} Badge`;
-      const description = `Verified AI Governance Readiness: ${tierLabel} tier (${scorePct}%). Issued ${fmtDate(badge.issuedAt)}, valid until ${fmtDate(badge.expiresAt)}. Publicly verifiable.`;
+      const title = `${orgName}: CertifAI ${tierLabel} Badge`;
+      const description = `AI Governance Readiness certificate: ${tierLabel} level (${scorePct}%). Issued ${fmtDate(badge.issuedAt)}, valid until ${fmtDate(badge.expiresAt)}. Verify at CertifAI.`;
       const frameworks = Array.isArray(badge.frameworksIncluded) ? badge.frameworksIncluded : [];
 
       res.type('html').send(`<!doctype html>
@@ -123,18 +123,19 @@ const createVerifyRoutes = ({ badgeService, companyService }) => {
   .fw{display:flex;flex-wrap:wrap;gap:.4rem;margin-top:.25rem}
   .chip{font-size:.72rem;background:var(--bg);border:1px solid var(--line);color:var(--mute);padding:.25rem .55rem;border-radius:6px}
   .tok{font-size:.72rem;color:var(--mute);word-break:break-all;margin-top:1.25rem;padding-top:1rem;border-top:1px solid var(--line)}
+  .disclaimer{font-size:.72rem;line-height:1.6;color:var(--mute);margin-top:.85rem}
 </style>
 </head>
 <body>
   <div class="card">
     <div class="top">
       <span class="brand">CertifAI</span>
-      <span class="verified">✓ Verified credential</span>
+      <span class="verified">✓ Valid certificate</span>
     </div>
     <div class="body">
       <span class="tier">${escapeHtml(meta.icon)} ${escapeHtml(tierLabel)}</span>
       <h1>${escapeHtml(orgName)}</h1>
-      <p class="sub">AI Governance Readiness — publicly verifiable badge</p>
+      <p class="sub">AI Governance Readiness certificate, issued by CertifAI</p>
       <div class="grid">
         <div class="kv"><div class="k">Readiness score</div><div class="v">${scorePct}%</div></div>
         <div class="kv"><div class="k">Tier</div><div class="v">${escapeHtml(tierLabel)}</div></div>
@@ -143,6 +144,7 @@ const createVerifyRoutes = ({ badgeService, companyService }) => {
       </div>
       ${frameworks.length ? `<div class="kv"><div class="k">Frameworks assessed</div><div class="fw">${frameworks.map(f => `<span class="chip">${escapeHtml(f)}</span>`).join('')}</div></div>` : ''}
       <div class="tok">Verification token: ${escapeHtml(badge.verificationToken)}</div>
+      <p class="disclaimer">Based on a self-assessment completed by the organisation, with supporting evidence recorded against each control. Not a conformity assessment under the EU AI Act.</p>
     </div>
   </div>
 </body>
@@ -180,7 +182,7 @@ const createVerifyRoutes = ({ badgeService, companyService }) => {
   <text x="130" y="357" fill="${accent}" font-family="Inter,Arial,sans-serif" font-size="46" font-weight="700">${esc(meta.icon)} ${esc(meta.label)}</text>
   <text x="80" y="500" fill="#93a4c0" font-family="Inter,Arial,sans-serif" font-size="34" font-weight="600">Readiness score</text>
   <text x="80" y="560" fill="#e6edf7" font-family="Inter,Arial,sans-serif" font-size="60" font-weight="700">${scorePct}%</text>
-  <text x="1120" y="560" text-anchor="end" fill="#22c55e" font-family="Inter,Arial,sans-serif" font-size="30" font-weight="600">✓ Verified credential</text>
+  <text x="1120" y="560" text-anchor="end" fill="#22c55e" font-family="Inter,Arial,sans-serif" font-size="30" font-weight="600">✓ Valid certificate</text>
 </svg>`;
 
       res.type('image/svg+xml').set('Cache-Control', 'public, max-age=300').send(svg);

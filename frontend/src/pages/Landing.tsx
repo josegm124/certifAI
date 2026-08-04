@@ -63,7 +63,7 @@ export default function Landing() {
         <motion.section {...fadeUp} style={{ marginTop: 34 }}>
           <div className="eyebrow">The 4A ladder</div>
           <h2 className="h2">Four levels of earned trust.</h2>
-          <p className="sec-note">Each level is earned per certification from your score, evidence and self-certification, with critical controls gating the top.</p>
+          <p className="sec-note">Each level is earned per certificate from your score, evidence and self-certification, with critical controls gating the top.</p>
           <LadderVis />
         </motion.section>
 
@@ -97,7 +97,7 @@ export default function Landing() {
             {[
               { t: "Assess", d: `Answer ${TOTAL_QUESTIONS} questions on a 0 to ${MAX_SCORE} maturity scale across all ${numberWord(TOTAL_DOMAINS)} domains.` },
               { t: "Add evidence", d: "Attach documents and written detail to each control to build an audit-ready record." },
-              { t: "AI review, in development", d: "Automated review of your evidence against each control, with a suggested score and drafted remediation. Not available in this build." },
+              { t: "AI review, in development", d: "Automated review of your evidence against each control, with drafted remediation. Not available in this build." },
               { t: "Earn your level", d: "Sign your self-certification and earn Aligned, Assured or Advanced, a badge you can share." },
             ].map((s, i) => (
               <div key={s.t} className="how-step">
@@ -111,7 +111,7 @@ export default function Landing() {
 
         {/* pricing */}
         <motion.section {...fadeUp} style={{ marginTop: 40 }}>
-          <h2 className="h2">Start free. Certify when you're ready.</h2>
+          <h2 className="h2">Start free. Earn your certificate when you're ready.</h2>
           <div className="pricing">
             <div className="price">
               <div className="price-tag">Free · Tier 1</div>
@@ -126,14 +126,15 @@ export default function Landing() {
             </div>
             <div className="price price-accent">
               <div className="price-tag">Paid · Tier 2</div>
-              <div className="price-name">Evidence-Based Certification</div>
-              <div className="price-cost"><b>€</b> · per certification</div>
+              <div className="price-name">Evidence-Based Certificate</div>
+              <div className="price-cost">from <b>€490</b> per certificate, per year</div>
+              <p className="sec-note">The level is earned from your score and evidence. Aligned €490, Assured €1,190, Advanced €2,490, each valid for twelve months.</p>
               <ul className="plist">
-                {["Everything in the free tier", "Per-control evidence references", "AI evidence review and scoring, in development", "Virtual signature + self-certification", "Earn Aligned / Assured / Advanced", "Verifiable, shareable trust badge"].map((p) => (
+                {["Everything in the free tier", "Per-control evidence references", "Virtual signature + self-certification", "AI-assisted evidence review, in development", "Earn Aligned / Assured / Advanced", "Shareable trust badge with a public verification page"].map((p) => (
                   <li key={p}><Sparkle size={15} color="var(--ocean)" /> {p}</li>
                 ))}
               </ul>
-              <Link to="/start" className="btn btn-accent" style={{ width: "100%" }}>Begin certification</Link>
+              <Link to="/start" className="btn btn-accent" style={{ width: "100%" }}>Begin evidence review</Link>
             </div>
           </div>
         </motion.section>

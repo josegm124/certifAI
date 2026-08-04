@@ -37,7 +37,7 @@ export default function CertificationDetail() {
 
   if (!cert || !data) {
     return (
-      <main className="wrap"><div className="card"><h2 className="h2">Certification not found.</h2><Link to="/dashboard" className="btn btn-ghost">Back to dashboard</Link></div></main>
+      <main className="wrap"><div className="card"><h2 className="h2">Framework not found.</h2><Link to="/dashboard" className="btn btn-ghost">Back to dashboard</Link></div></main>
     );
   }
 
@@ -61,7 +61,6 @@ export default function CertificationDetail() {
         <div>
           <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 8 }}>
             <span className="fwchip" style={{ borderColor: tcol, color: tcol, fontWeight: 700 }}>{cert.type}</span>
-            {cert.certifiable && <span className="fwchip" style={{ borderColor: C.pine, color: C.pine }}>Certifiable</span>}
             {cert.binding && <span className="fwchip" style={{ borderColor: C.red, color: C.red }}>Legally binding</span>}
           </div>
           <h1 className="h1" style={{ fontSize: 34 }}>{cert.name}</h1>

@@ -247,7 +247,7 @@ export function resolveLevel(answers: Answers, ctx: LevelContext = {}): LevelRes
 
   // Tier 1 (free snapshot) can never earn a displayable badge.
   if (tier === 1 && level.badge) {
-    capTo("A1", "The free snapshot yields an internal Aware signal only. Upgrade to the AI-powered certification to earn a badge.");
+    capTo("A1", "The free assessment yields an Aware readiness signal only. Upgrade to the evidence-based certificate to earn a badge.");
   }
   // Displayable levels require evidence.
   if (level.needsEvidence && !ctx.hasEvidence) {
