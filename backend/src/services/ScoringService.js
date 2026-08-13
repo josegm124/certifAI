@@ -1,170 +1,114 @@
-const logger = require('../config/logger');
+const {
+  DOMAINS,
+  QUESTION_IDS,
+  CRITICAL_IDS,
+  DASHBOARD_FRAMEWORKS,
+  QUESTION_METADATA,
+} = require('../domain/instrument');
 
-// Domain ids/weights/critical ids must mirror DOMAINS/QUESTIONS in CertifAI_MVP.jsx exactly —
-// they are the source of truth for the 36-question canonical model (Marika's June
-// instrument, 9 domains). Keep both in sync when questions change. Revenue weight
-// (0.06) is provisional pending Georges's confirmation (brief section 6).
-const DOMAINS = {
-  'strategy': { name: 'Strategy & Leadership', weight: 0.09 },
-  'revenue': { name: 'Revenue & Value Generation through AI', weight: 0.06 },
-  'governance': { name: 'Governance & Oversight', weight: 0.13 },
-  'risk': { name: 'Risk & Compliance', weight: 0.19 },
-  'data': { name: 'Data & Model Governance', weight: 0.17 },
-  'human': { name: 'Human Oversight & Accountability', weight: 0.12 },
-  'trust': { name: 'Trust, Transparency & Fairness', weight: 0.12 },
-  'workforce': { name: 'Workforce & Capability', weight: 0.08 },
-  'improve': { name: 'Continuous Improvement', weight: 0.04 }
-};
-
-// Critical controls: Q17 (EU AI Act Readiness), Q18 (High-Risk AI Identification), Q26 (Human Accountability)
-const CRITICAL_QUESTION_IDS = ['17', '18', '26'];
+const LEVELS = [
+  { id: 'A1', tier: 'aware', name: 'Aware', min: 0, max: 40, badge: false, needsEvidence: false, needsSignature: false, blurb: 'Assessment progress and gaps are understood. This is an internal readiness signal; no badge is issued.' },
+  { id: 'A2', tier: 'aligned', name: 'Aligned', min: 41, max: 65, badge: true, needsEvidence: true, needsSignature: false, blurb: 'The readiness score is in the Aligned band. An Aligned certificate is available after its issuance requirements are completed.' },
+  { id: 'A3', tier: 'assured', name: 'Assured', min: 66, max: 85, badge: true, needsEvidence: true, needsSignature: true, blurb: 'The readiness score is in the Assured band. Assured or Aligned may be selected for the certificate workflow.' },
+  { id: 'A4', tier: 'advanced', name: 'Advanced', min: 86, max: 100, badge: true, needsEvidence: true, needsSignature: true, blurb: 'The readiness score is in the Advanced band. Advanced or a lower available level may be selected for the certificate workflow.' },
+];
 
 class ScoringService {
-  constructor(answerRepository) {
-    this.answerRepository = answerRepository;
-  }
-
-  // Calcula scores por dominio
-  async computeDomainScores(assessmentId, questionMapping) {
-    const answers = await this.answerRepository.findByAssessment(assessmentId);
-    const domainScores = {};
-
-    // Agrupar respuestas por dominio
-    for (const answer of answers) {
-      if (!answer.isAnswered()) continue;
-
-      const question = questionMapping[answer.questionId];
-      if (!question) continue;
-
-      const domain = question.domain;
-      if (!domainScores[domain]) {
-        domainScores[domain] = { scores: [], count: 0 };
-      }
-      domainScores[domain].scores.push(answer.score);
-      domainScores[domain].count++;
-    }
-
-    // Calcular promedio por dominio
-    const result = {};
-    for (const [domain, data] of Object.entries(domainScores)) {
-      const average = data.scores.reduce((a, b) => a + b, 0) / data.scores.length;
-      const percentage = (average / 5) * 100;
-      result[domain] = {
-        average,
-        percentage: Math.round(percentage),
-        answeredCount: data.count
+  analyze(answers, tier, hasSignature) {
+    const byId = new Map(answers
+      .filter((answer) => QUESTION_IDS.includes(Number(answer.questionId)) && Number.isFinite(Number(answer.score)))
+      .map((answer) => [Number(answer.questionId), answer]));
+    const domainScores = DOMAINS.map((domain) => {
+      const answered = domain.questionIds.filter((id) => byId.has(id));
+      const sum = answered.reduce((total, id) => total + Number(byId.get(id).score), 0);
+      const rawAvg = answered.length ? sum / answered.length : 0;
+      const weakestQuestionId = answered.reduce((weakest, id) => (
+        weakest === null || Number(byId.get(id).score) < Number(byId.get(weakest).score) ? id : weakest
+      ), null);
+      return {
+        id: domain.id,
+        name: domain.name,
+        short: domain.short,
+        weight: domain.weight,
+        pct: answered.length ? Math.round((sum / (answered.length * 5)) * 100) : 0,
+        rawAvg,
+        maturityLevel: Math.round(rawAvg),
+        answeredCount: answered.length,
+        totalCount: domain.questionIds.length,
+        weakestQuestionId,
+        weakestQuestionTitle: weakestQuestionId === null ? null : QUESTION_METADATA[weakestQuestionId].title,
+        weakestScore: weakestQuestionId === null ? null : Number(byId.get(weakestQuestionId).score),
       };
-    }
-
-    logger.debug({ assessmentId, domainScores: result }, 'Domain scores computed');
-    return result;
-  }
-
-  // Calcula score overall ponderado
-  computeOverallScore(domainScores) {
-    let totalWeight = 0;
-    let weightedSum = 0;
-
-    for (const [domain, data] of Object.entries(domainScores)) {
-      if (!data.average) continue; // Solo dominios respondidos
-
-      const weight = DOMAINS[domain]?.weight || 0;
-      weightedSum += (data.average / 5) * weight;
-      totalWeight += weight;
-    }
-
-    // Normalizar por peso total respondido
-    const overallScore = totalWeight > 0 ? (weightedSum / totalWeight) * 5 : 0;
-    logger.debug({ overallScore }, 'Overall score computed');
-    return Math.round(overallScore * 100) / 100;
-  }
-
-  // Resuelve badge tier con lógica de gating.
-  // Thresholds mirror frontend BADGE_TIERS (0-40 aware, 41-65 aligned, 66-85
-  // assured, 86-100 advanced), applied to overallScore converted from its 0-5
-  // scale to a 0-100 percentage. Still pending Georges's final sign-off
-  // (brief section 6) — this is the only non-overlapping set on the table.
-  resolveBadgeTier(overallScore, isCriticalGating) {
-    const percentage = (overallScore / 5) * 100;
-    let tier = 'aware'; // Default
+    });
+    const answeredWeight = domainScores.reduce((sum, domain) => sum + (domain.answeredCount ? domain.weight : 0), 0);
+    const overallScore = answeredWeight
+      ? Math.round(domainScores.reduce((sum, domain) => sum + (domain.answeredCount ? domain.pct * domain.weight : 0), 0) / answeredWeight)
+      : 0;
+    const failedIds = CRITICAL_IDS.filter((id) => byId.has(id) && Number(byId.get(id).score) <= 1);
+    const hasEvidence = answers.some((answer) => String(answer.evidence || '').trim() || String(answer.attestation || '').trim());
+    const rawLevel = LEVELS.find((level) => overallScore >= level.min && overallScore <= level.max) || LEVELS[0];
+    let level = rawLevel;
     let cappedFrom = null;
-
-    if (percentage >= 86) {
-      tier = 'advanced';
-    } else if (percentage >= 66) {
-      tier = 'assured';
-    } else if (percentage >= 41) {
-      tier = 'aligned';
-    }
-
-    // Gating: si hay critical control ≤1, capping a "aware"
-    if (isCriticalGating && tier !== 'aware') {
-      cappedFrom = tier;
-      tier = 'aware';
-    }
-
-    return { tier, cappedFrom };
-  }
-
-  // Chequea si hay critical controls ≤1
-  async checkCriticalGating(assessmentId, questionMapping) {
-    const answers = await this.answerRepository.findByAssessment(assessmentId);
-
-    for (const answer of answers) {
-      if (CRITICAL_QUESTION_IDS.includes(answer.questionId)) {
-        if (answer.score <= 1) {
-          logger.warn({ assessmentId, questionId: answer.questionId }, 'Critical gating triggered');
-          return true;
-        }
-      }
-    }
-
-    return false;
-  }
-
-  // Gap analysis - prioridades de mejora
-  async computeGapAnalysis(assessmentId, domainScores, questionMapping) {
-    const answers = await this.answerRepository.findByAssessment(assessmentId);
-    const gaps = [];
-
-    for (const answer of answers) {
-      if (!answer.isAnswered()) continue;
-
-      const question = questionMapping[answer.questionId];
-      if (!question) continue;
-
-      const gap = 5 - answer.score;
-      const domainWeight = DOMAINS[question.domain]?.weight || 0.1;
-      const isCritical = CRITICAL_QUESTION_IDS.includes(answer.questionId);
-      const priority = gap * domainWeight * (isCritical ? 2.2 : 1);
-
-      if (gap > 0) {
-        gaps.push({
-          questionId: answer.questionId,
-          question: question.description,
-          domain: question.domain,
-          currentScore: answer.score,
-          gapSize: gap,
-          priority: Math.round(priority * 100) / 100,
-          isCritical
-        });
-      }
-    }
-
-    gaps.sort((a, b) => b.priority - a.priority);
-    logger.debug({ assessmentId, gapCount: gaps.length }, 'Gap analysis computed');
-    return gaps;
-  }
-
-  // Calcula % de completitud
-  async computeCompletion(assessmentId, totalQuestions) {
-    const answered = await this.answerRepository.countAnswered(assessmentId);
-    const percentage = totalQuestions > 0 ? (answered / totalQuestions) * 100 : 0;
-    return {
-      answered,
-      total: totalQuestions,
-      percentage: Math.round(percentage)
+    let cappedReason = null;
+    const capTo = (target, reason) => {
+      if (level.id === target.id) return;
+      cappedFrom = cappedFrom || level.id;
+      level = target;
+      cappedReason = reason;
     };
+    // Tier 1 reports the score band as certificate eligibility, but never
+    // issues a badge. Evidence/signature gates apply only inside Tier 2.
+    if (tier === 2 && level.needsEvidence && !hasEvidence) capTo(LEVELS[0], 'Stored evidence is required for a badge.');
+    if (tier === 2 && level.needsSignature && !hasSignature) capTo(LEVELS[1], 'A signed self-certification is required for Assured and Advanced.');
+    if (failedIds.length) capTo(LEVELS[0], `Critical controls ${failedIds.map((id) => `Q${id}`).join(', ')} failed.`);
+
+    const frameworkCoverage = DASHBOARD_FRAMEWORKS.map((framework) => {
+      const questionIds = QUESTION_IDS.filter((id) => QUESTION_METADATA[id].frameworks.includes(framework.id));
+      const answered = questionIds.filter((id) => byId.has(id));
+      const sum = answered.reduce((total, id) => total + Number(byId.get(id).score), 0);
+      return {
+        ...framework,
+        pct: answered.length ? Math.round((sum / (answered.length * 5)) * 100) : 0,
+        answeredCount: answered.length,
+        totalCount: questionIds.length,
+      };
+    });
+
+    const domainById = new Map(DOMAINS.map((domain) => [domain.id, domain]));
+    const gaps = QUESTION_IDS
+      .filter((id) => byId.has(id) && Number(byId.get(id).score) < 5)
+      .map((id) => {
+        const metadata = QUESTION_METADATA[id];
+        const score = Number(byId.get(id).score);
+        const critical = CRITICAL_IDS.includes(id);
+        const gapSize = 5 - score;
+        return {
+          id,
+          title: metadata.title,
+          domainId: metadata.domainId,
+          domainName: domainById.get(metadata.domainId).name,
+          score,
+          critical,
+          gapSize,
+          priority: gapSize * domainById.get(metadata.domainId).weight * (critical ? 2.2 : 1),
+        };
+      })
+      .sort((left, right) => right.priority - left.priority);
+
+    const currentIndex = LEVELS.findIndex((candidate) => candidate.id === level.id);
+    const next = LEVELS[currentIndex + 1] || null;
+    const nextLevel = next ? { ...next, pointsNeeded: Math.max(0, next.min - overallScore) } : null;
+
+    return {
+      overallScore, domainScores, frameworkCoverage, gaps,
+      level, rawLevel, cappedFrom, cappedReason, nextLevel, hasEvidence,
+      criticalGating: { capped: failedIds.length > 0, failedIds },
+      completion: { answered: byId.size, total: QUESTION_IDS.length, percentage: Math.round((byId.size / QUESTION_IDS.length) * 100) },
+    };
+  }
+
+  calculate(answers, tier, hasSignature) {
+    return this.analyze(answers, tier, hasSignature);
   }
 }
 

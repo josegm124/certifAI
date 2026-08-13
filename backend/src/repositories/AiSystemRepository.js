@@ -44,6 +44,14 @@ class AiSystemRepository extends BaseRepository {
     return rows.map(row => this._mapToEntity(row));
   }
 
+  async findByCompanyAndName(companyId, name) {
+    const row = await this.get(
+      'SELECT * FROM ai_systems WHERE company_id = ? AND name = ? COLLATE NOCASE',
+      [companyId, name]
+    );
+    return row ? this._mapToEntity(row) : null;
+  }
+
   async findById(id) {
     const row = await super.findById(id);
     return row ? this._mapToEntity(row) : null;

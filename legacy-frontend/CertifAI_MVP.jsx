@@ -21,16 +21,18 @@ const MATURITY_LEVELS = [
 // Revenue & Value Generation weight (0.06) is provisional pending Georges's
 // confirmation (brief section 6); the other 8 domains are scaled by 0.94 to
 // keep the total at 1.00. Mirror any change here in backend/src/services/ScoringService.js.
+// Blurbs ported from the merge package (merge/frontend/src/lib/data.ts) — they
+// are the plain-language definition of each domain and were missing here.
 const DOMAINS = [
-  { id: "strategy", name: "Strategy & Leadership", weight: 0.09 },
-  { id: "revenue", name: "Revenue & Value Generation through AI", weight: 0.06 },
-  { id: "governance", name: "Governance & Oversight", weight: 0.13 },
-  { id: "risk", name: "Risk & Compliance", weight: 0.19 },
-  { id: "data", name: "Data & Model Governance", weight: 0.17 },
-  { id: "human", name: "Human Oversight & Accountability", weight: 0.12 },
-  { id: "trust", name: "Trust, Transparency & Fairness", weight: 0.12 },
-  { id: "workforce", name: "Workforce & Capability", weight: 0.08 },
-  { id: "improve", name: "Continuous Improvement", weight: 0.04 },
+  { id: "strategy", name: "Strategy & Leadership", weight: 0.09, blurb: "Whether AI is steered from the top with a documented vision, executive accountability, and funded objectives." },
+  { id: "revenue", name: "Revenue & Value Generation through AI", weight: 0.06, blurb: "Whether the organisation can measure and monetise the value AI creates, from attributed revenue through to realised return on investment." },
+  { id: "governance", name: "Governance & Oversight", weight: 0.13, blurb: "The policies, inventories, and approval gates that keep every AI system visible and controlled." },
+  { id: "risk", name: "Risk & Compliance", weight: 0.19, blurb: "How systematically AI risk is found, assessed, and mapped to EU AI Act obligations, including high-risk classification." },
+  { id: "data", name: "Data & Model Governance", weight: 0.17, blurb: "Data suitability, quality, provenance, privacy safeguards, and the ability to prove model behaviour to auditors." },
+  { id: "human", name: "Human Oversight & Accountability", weight: 0.12, blurb: "Named ownership of AI outputs and the human review that keeps decisions accountable." },
+  { id: "trust", name: "Trust, Transparency & Fairness", weight: 0.12, blurb: "Bias assessment, disclosure of AI use, and the ability to explain how systems reach decisions." },
+  { id: "workforce", name: "Workforce & Capability", weight: 0.08, blurb: "AI literacy, governance training, and readiness to manage the workforce implications of AI." },
+  { id: "improve", name: "Continuous Improvement", weight: 0.04, blurb: "A structured loop for reviewing and continuously strengthening AI governance over time." },
 ];
 
 const FRAMEWORKS = {
@@ -94,6 +96,20 @@ const BADGE_TIERS = [
   { id: "advanced", name: "Advanced", min: 86, max: 100, blurb: "Signed self-certification on top of Assured evidence, with no failed critical controls. Highest trust tier, renewed annually." },
 ];
 const CRITICAL_IDS = QUESTIONS.filter((q) => q.critical).map((q) => q.id);
+
+/* Guard rails ported from the merge package (merge/frontend/src/lib/data.ts).
+   Cheap invariants so a bad edit to the instrument fails loudly at load time
+   rather than silently skewing every score. */
+const TOTAL_QUESTIONS = QUESTIONS.length; // 36
+const TOTAL_DOMAINS = DOMAINS.length;     // 9
+
+const WEIGHT_SUM = DOMAINS.reduce((a, d) => a + d.weight, 0);
+if (Math.abs(WEIGHT_SUM - 1) > 0.0001) {
+  throw new Error(`CertifAI domain weights must sum to 1.00, got ${WEIGHT_SUM.toFixed(4)}. Check DOMAINS.`);
+}
+if (TOTAL_QUESTIONS !== 36 || TOTAL_DOMAINS !== 9) {
+  throw new Error(`CertifAI instrument must be 36 questions across 9 domains, got ${TOTAL_QUESTIONS}/${TOTAL_DOMAINS}.`);
+}
 
 /* ---------- SCORING ---------- */
 function domainScores(answers) {
@@ -279,7 +295,12 @@ export default function App() {
         });
         if (res.ok) {
           const data = await res.json();
-          setScoring(data);
+          // SCALE BOUNDARY. compute-score returns overallScore on a 0-5 scale;
+          // everything in this file (BADGE_TIERS cutoffs, ScoreDial, the local
+          // fallback below, the badge payload) works in 0-100. Normalise here,
+          // once, so both paths produce the same number. Before this, a backend
+          // result displayed as 80% while the offline fallback displayed 1600%.
+          setScoring({ ...data, overallScore: Math.round((data.overallScore / 5) * 100) });
           setIsLoading(false);
           return data;
         }
@@ -874,7 +895,7 @@ function Results({ org, tier, answers, scoring, badge, selfCertified, onBack, on
       )}
 
       <div className="res-hero">
-        <ScoreDial pct={Math.round((displayScoring.overallScore / 5) * 100)} tier={{ id: displayScoring.badgeTier }} />
+        <ScoreDial pct={Math.round(displayScoring.overallScore)} tier={{ id: displayScoring.badgeTier }} />
         <div className="res-hero-body">
           <BadgePanel org={org} tier={{ id: displayScoring.badgeTier, name: displayScoring.badgeTier.charAt(0).toUpperCase() + displayScoring.badgeTier.slice(1) }} earned={badgeEarned} tierMode={tier} cappedFrom={cappedFrom} gate={gate} badge={badge} selfCertified={selfCertified} />
         </div>
