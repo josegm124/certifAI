@@ -10,6 +10,11 @@ const resetOnStart = process.env.RESET_DB_ON_START === 'true'; // Explicit opt-i
 
 let db = null;
 
+const isCurrentSchema = (tableNames, assessmentColumns) =>
+  assessmentColumns.some((column) => column.name === 'adoption_stage') &&
+  tableNames.has('critical_controls') &&
+  tableNames.has('evidence_dossiers');
+
 // Clean up uploads directory
 const cleanUploads = () => {
   if (!fs.existsSync(uploadsDir)) return;
@@ -62,17 +67,40 @@ const initializeDatabase = async () => {
 
 const runSchema = async () => {
   const schema = fs.readFileSync(path.join(__dirname, '../../db/schema.sql'), 'utf8');
-  return new Promise((resolve, reject) => {
-    db.exec(schema, (err) => {
-      if (err) {
-        logger.error({ err }, 'Failed to run schema');
-        reject(err);
-      } else {
-        logger.info('[DEV] Schema initialized - all tables empty');
-        resolve();
-      }
-    });
+  const all = (sql) => new Promise((resolve, reject) => {
+    db.all(sql, (err, rows) => (err ? reject(err) : resolve(rows || [])));
   });
+
+  const tables = await all("SELECT name FROM sqlite_master WHERE type = 'table'");
+  const tableNames = new Set(tables.map((row) => row.name));
+
+  if (tableNames.has('assessments')) {
+    const assessmentColumns = await all('PRAGMA table_info(assessments)');
+    if (isCurrentSchema(tableNames, assessmentColumns)) {
+      logger.info('Database schema already initialized');
+      return;
+    }
+
+    const error = new Error(
+      'Legacy database schema detected. This release has no data migration; ' +
+      'set NODE_ENV=development and RESET_DB_ON_START=true for one start, then disable reset again.'
+    );
+    error.code = 'LEGACY_DATABASE_RESET_REQUIRED';
+    throw error;
+  }
+
+  if (tableNames.size > 0) {
+    const error = new Error(
+      'Partially initialized database detected. Delete backend/db/certifai.db or run one development start with RESET_DB_ON_START=true.'
+    );
+    error.code = 'PARTIAL_DATABASE_RESET_REQUIRED';
+    throw error;
+  }
+
+  await new Promise((resolve, reject) => {
+    db.exec(schema, (err) => (err ? reject(err) : resolve()));
+  });
+  logger.info('Database schema initialized');
 };
 
 const getDb = () => db;
@@ -80,5 +108,6 @@ const getDb = () => db;
 module.exports = {
   initializeDatabase,
   runSchema,
-  getDb
+  getDb,
+  isCurrentSchema,
 };
