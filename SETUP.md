@@ -38,3 +38,6 @@ npm run build
 
 The active frontend is `frontend/`. `legacy-frontend/` is historical and is not
 started by `npm run dev:all`.
+Aligned: €349
+- Assured: €649
+- Advanced: €1190
