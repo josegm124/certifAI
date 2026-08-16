@@ -1,71 +1,56 @@
 # CertifAI
 
-Local MVP for a 36-question AI-governance assessment across 9 domains.
+Local MVP for a 36-question AI-governance readiness assessment across nine
+domains.
 
-## Run
+## Quick start
 
 ```bash
+npm run install:all
 npm run dev:all
 ```
 
-Frontend: `http://localhost:5173`
+- Frontend: `http://localhost:5173`
+- API: `http://localhost:3001/api`
 
-API: `http://localhost:3001/api`
+See `SETUP.md` for configuration and `TESTING.md` for verification.
 
-The first visit creates an account at `/register`. One organisation has one
-account and one unique email in this MVP. The session is a five-hour signed JWT
-stored in an HttpOnly, SameSite=Strict cookie.
-
-## Assessment flow
+## Current workflow
 
 1. Register or log in.
-2. Enter the real AI-system name and select Tier 1 or Tier 2.
-3. Complete the 9 domains. Each complete domain is persisted through one
-   idempotent request; navigation is blocked if that save fails.
-4. Finalize. The backend loads the 36 canonical answers and calculates the
-   official score, critical-control gate and level.
-5. Tier 1 displays the score band and eligible badge image as a preview, then
-   offers certificate products at or below that level. It never issues a public
-   badge or certificate. Tier 2 retains the demo issuance workflow and requires
-   the current simple evidence check plus a named self-certification.
+2. Name the AI system in scope and start a readiness assessment.
+3. Save all nine domains. Answers are persisted in SQLite.
+4. Finalize the assessment. The backend stores the real score, result band,
+   domain analytics and exactly nine immutable red-flag evaluations.
+5. If no red flag failed, choose any certificate product at or below the
+   stored result band.
+6. Complete the nine-reference evidence dossier, optionally attach private
+   supporting files, sign the declaration and issue the certificate.
+7. Public verification exposes the organisation, certificate, score and
+   adoption stage, but never evidence references or attachments.
 
-Only unsynchronised answers from the current domain remain in localStorage.
-After login, the active assessment and its saved answers are recovered from
-SQLite with `GET /api/assessments/active`.
+Red flags affect certificate eligibility only; they never cap or alter the
+readiness score or result band. The provisional adoption stage is currently 2.
 
-## Persistence
+## Certificate catalog
 
-`backend/.env` uses `RESET_DB_ON_START=false`, so accounts and assessments
-survive restarts. Set it to `true` only when deliberately creating disposable
-test data. The pre-feature SQLite data was reset once because this version has
-a new authenticated schema.
+The backend owns product and pricing data:
 
-## Validation
+- Readiness Assessment: free
+- Aligned Certificate: EUR 490/year
+- Assured Certificate: EUR 1,190/year
+- Advanced Certificate: EUR 2,490/year
 
-```bash
-npm test
-npm run build
-```
+Payment processing and automated evidence review are not implemented. Any
+automated review shown in product copy is marked “In development”.
 
-Public badge verification remains available without login:
+## Project layout
 
-```text
-GET /api/badges/:token/verify
-GET /verify/:token
-```
+- `frontend/`: React, TypeScript and Vite
+- `backend/`: Express services, repositories and SQLite schema
+- `backend/uploads/evidence/`: ignored private attachment storage
+- `scripts/dev-all.mjs`: coordinated local development launcher
+- `legacy-frontend/`: retained historical frontend, not the active app
 
-Approved Tier 2 results include a **Print certificate** action. Runtime logs
-are written as dated JSONL files under `backend/logs/`: application activity,
-audit events and request/performance metrics are kept in separate files.
-
-The self-certification is an attestation, not a third-party conformity
-assessment. Evidence in this MVP is a checkbox plus a text reference; binary
-file upload is a future feature.
-
-## Demo pricing
-
-Certificate levels, products, display features and active prices are stored in
-SQLite and exposed through `GET /api/catalog/certificates`. The frontend does
-not contain monetary amounts. Current annual catalog prices are Aligned EUR
-490, Assured EUR 1,190 and Advanced EUR 2,490. No billing, order or payment
-processing is implemented in the demo.
+No secrets, red-flag thresholds or critical-control identifiers belong in the
+frontend bundle.

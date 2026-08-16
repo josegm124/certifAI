@@ -1,54 +1,53 @@
 # Architecture
 
-CertifAI is a local modular monolith: React/Vite is the presentation layer,
-Express contains application services, and repositories isolate SQLite.
+CertifAI is a local modular monolith. React/Vite is the presentation layer,
+Express coordinates application services, repositories isolate SQLite, and
+private evidence files live under `backend/uploads/evidence/`.
 
 ```text
 React UI
   -> HttpOnly JWT cookie
   -> thin Express routes
-  -> Auth / Assessment / DomainAnswer / Finalization / Scoring services
+  -> assessment / scoring / red-flag / eligibility services
+  -> remediation / dossier / issuance services
   -> repositories
-  -> SQLite
+  -> SQLite + private attachment storage
 ```
 
-The composition root is `backend/src/index.js`. Services receive repositories
-through constructors; routes do not contain scoring or persistence rules.
+The composition root is `backend/src/index.js`.
 
 ## Authority boundaries
 
-- The browser captures answers and displays backend data.
-- The account identity comes only from a verified five-hour JWT cookie.
-- The backend verifies assessment ownership and immutable tier.
-- `instrument.js` defines the 9 domains, 36 question IDs and critical controls.
-- `ScoringService` calculates the official domain and overall scores.
-- `AssessmentFinalizationService` is the only badge-issuance path.
+- Account and company authority comes exclusively from the verified JWT.
+- The browser captures answers and renders backend results.
+- `ScoringService` calculates the real score, band and analytics without caps.
+- Backend-only red-flag configuration evaluates nine controls for the stored
+  adoption stage.
+- `EligibilityService` uses the stored result and persisted flags to determine
+  available certificate products.
+- Dossier and issuance services never recalculate the source assessment.
+- Public verification never reads or exposes dossier evidence.
 
-## Persistence sequence
+## Persistence
 
-The assessment has `draft` and `finalized` states. A partial unique SQLite
-index permits only one draft per user. Each completed domain is PUT as one
-transactional, idempotent batch. The browser removes that domain from its
-local pending cache only after a successful response.
+An account may have one draft assessment. Finalization stores the assessment
+result, domain scores and nine flags in one transaction. Flags are immutable.
 
-Finalization requires all 36 canonical rows. Tier 2 additionally requires a
-named signatory and accepted declaration. Badge issuance is idempotent through
-a unique `assessment_id`; retrying finalization can repair a badge write that
-failed after the assessment was closed.
+A remediation assessment copies the source AI system, scores and available
+references into a new draft without modifying historical data. Saving a
+remediation domain also replaces its confirmation transactionally.
 
-## Operational records
+Each finalized eligible assessment has at most one evidence dossier. A dossier
+contains exactly nine evidence items and may issue one badge/certificate.
 
-The backend writes dated newline-delimited JSON files to `backend/logs/`:
+Attachments are authenticated, limited to 10 MB, assigned UUID filenames and
+stored with MIME metadata and a SHA-256 digest. Replacement persists the new
+metadata before removing the previous file.
 
-- `application-YYYY-MM-DD.log` for server activity and errors;
-- `audit-YYYY-MM-DD.log` for account, assessment, domain and badge events;
-- `metrics-YYYY-MM-DD.log` for HTTP duration/status and important workflow timings.
+## Deliberate MVP limits
 
-Passwords, answer content and evidence text are not written to these logs.
-
-## MVP choices
-
-One company equals one account/email. Evidence is currently a text reference
-or attestation, not a binary upload. SQLite and a single Node process are
-appropriate for the local final-course MVP; repositories keep a later database
-replacement contained.
+- Adoption stage is provisionally fixed to stage 2.
+- One company equals one account.
+- SQLite and local private file storage are disposable development data.
+- Payments, multi-user companies and automated evidence review are outside the
+  current release.

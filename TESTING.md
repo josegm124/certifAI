@@ -1,28 +1,43 @@
 # Testing
 
+Run the complete automated checks from the project root:
+
 ```bash
 npm test
 npm run build
+git diff --check
 ```
 
-The backend tests cover server-side scoring, critical gating, the Tier 1 badge
-restriction, salted password verification and five-hour JWT validation. The
-frontend tests cover the scoring presentation helpers and 4A ladder.
+The current suites cover:
 
-API integration checks should cover:
+- weighted scoring without certificate caps;
+- the four readiness result bands;
+- exactly nine Stage 2 red-flag controls;
+- all 36 control/stage threshold combinations;
+- the zero threshold for Q8 at Stage 2;
+- certificate eligibility with and without failed flags;
+- selection of a lower eligible certificate product;
+- canonical question and framework mappings;
+- password hashing and signed session tokens;
+- frontend readiness presentation helpers.
 
-- protected route without cookie returns 401;
-- duplicate company/email returns 409 after normalization;
-- invalid or cross-domain question returns 400;
-- incomplete finalization returns 409;
-- nine valid domain PUTs persist 36 answers;
-- Tier 2 evidence plus signature can issue and publicly verify a badge;
-- repeated finalization returns the same badge;
-- Tier 1 completion returns an official score and no badge.
+## Manual workflow
 
-`npm run dev:all` must expose both `/api/health` on port 3001 and the React routes
-on port 5173.
+1. Register and start a readiness assessment for a named AI system.
+2. Save all nine domains and reload to confirm recovery from SQLite.
+3. Finalize and confirm the score and result band are not capped by red flags.
+4. Confirm only failed controls appear with remediation guidance.
+5. Open certificate options. A failed flag must block every product.
+6. For an eligible result, choose a supported product and open its dossier.
+7. Save all nine evidence references, attach and replace a supported file, then
+   sign and issue.
+8. Retry issuance and confirm no duplicate certificate is created.
+9. Open public verification without a session. Confirm adoption stage appears
+   in JSON/HTML and that no evidence reference, filename, digest or attachment
+   content is exposed.
+10. Log in as another account and confirm assessments, dossiers and downloads
+    cannot be accessed across accounts.
 
-Starting the backend must also create the three dated files in `backend/logs/`.
-Successful registration should add `account.registered` to the audit file and
-every request should add `http.request` with numeric `durationMs` to metrics.
+Uploads accept PDF, PNG, JPEG and DOCX extension/MIME pairs up to 10 MB.
+Automated evidence review is not available and must be labelled “In
+development”.
