@@ -2,6 +2,8 @@ const express = require('express');
 const TokenService = require('../services/TokenService');
 const createAuthMiddleware = require('../middleware/auth');
 const logger = require('../config/logger');
+const multer = require('multer');
+const upload = multer({ storage: multer.memoryStorage(), limits: { fileSize: 10 * 1024 * 1024, files: 1 } });
 
 const cookieOptions = () => ({
   httpOnly: true,
@@ -11,7 +13,7 @@ const cookieOptions = () => ({
   path: '/',
 });
 
-const createRoutes = ({ authService, tokenService, userRepository, assessmentService, assessmentDashboardService, domainAnswerService, finalizationService, badgeService, certificateCatalogService }) => {
+const createRoutes = ({ authService, tokenService, userRepository, assessmentService, assessmentDashboardService, domainAnswerService, finalizationService, badgeService, certificateCatalogService, redFlagRepository, eligibilityService, dossierService, remediationService }) => {
   const router = express.Router();
   const authenticate = createAuthMiddleware(tokenService);
 
@@ -103,6 +105,18 @@ const createRoutes = ({ authService, tokenService, userRepository, assessmentSer
       res.json(await finalizationService.result(assessment, user.companyId));
     } catch (error) { next(error); }
   });
+
+  router.get('/assessments/:id/certificate-options', authenticate, async (req,res,next)=>{try{const a=await assessmentService.requireOwned(req.params.id,req.auth.sub);if(a.status!=='finalized')return res.status(409).json({error:'Assessment is not finalized',code:'ASSESSMENT_NOT_FINALIZED'});const flags=await redFlagRepository.byAssessment(a.id);res.json({adoptionStage:a.adoptionStage,certificateEligibility:eligibilityService.describe(a.resultLevelId,flags),eligibleProducts:eligibilityService.products(a.resultLevelId,flags)});}catch(e){next(e);}});
+  router.post('/assessments/:id/remediation',authenticate,async(req,res,next)=>{try{const user=await userRepository.findById(req.auth.sub);res.status(201).json({assessment:await remediationService.create(user,req.params.id)});}catch(e){next(e);}});
+  router.put('/assessments/:id/remediation/domains/:domainId/confirmation',authenticate,async(req,res,next)=>{try{res.json(await remediationService.confirmDomain(req.auth.sub,req.params.id,req.params.domainId,req.body?.confirmed===true));}catch(e){next(e);}});
+
+  router.post('/assessments/:id/evidence-dossier',authenticate,async(req,res,next)=>{try{const user=await userRepository.findById(req.auth.sub);res.status(201).json(await dossierService.create(user,req.params.id,String(req.body?.productId||'')));}catch(e){next(e);}});
+  router.get('/evidence-dossiers/:id',authenticate,async(req,res,next)=>{try{res.json(await dossierService.detail(req.auth.sub,req.params.id));}catch(e){next(e);}});
+  router.put('/evidence-dossiers/:id/items/:controlId',authenticate,async(req,res,next)=>{try{res.json(await dossierService.saveItem(req.auth.sub,req.params.id,req.params.controlId,req.body?.reference));}catch(e){next(e);}});
+  router.post('/evidence-dossiers/:id/items/:itemId/attachment',authenticate,(req,res,next)=>upload.single('file')(req,res,(err)=>err?next(Object.assign(err,{status:err.code==='LIMIT_FILE_SIZE'?413:400,code:err.code==='LIMIT_FILE_SIZE'?'ATTACHMENT_TOO_LARGE':'INVALID_ATTACHMENT'})):next()),async(req,res,next)=>{try{if(!req.file)return res.status(400).json({error:'Attachment is required',code:'ATTACHMENT_REQUIRED'});res.json(await dossierService.attach(req.auth.sub,req.params.id,req.params.itemId,req.file));}catch(e){next(e);}});
+  router.get('/evidence-dossiers/:id/items/:itemId/attachment',authenticate,async(req,res,next)=>{try{const f=await dossierService.download(req.auth.sub,req.params.id,req.params.itemId);res.type(f.mime).download(f.path,f.name);}catch(e){next(e);}});
+  router.delete('/evidence-dossiers/:id/items/:itemId/attachment',authenticate,async(req,res,next)=>{try{await dossierService.removeAttachment(req.auth.sub,req.params.id,req.params.itemId);res.status(204).end();}catch(e){next(e);}});
+  router.post('/evidence-dossiers/:id/issue',authenticate,async(req,res,next)=>{try{const user=await userRepository.findById(req.auth.sub);res.json(await dossierService.issue(user,req.params.id,req.body||{}));}catch(e){next(e);}});
 
   router.get('/badges/:token/verify', async (req, res, next) => {
     try {

@@ -9,7 +9,7 @@ class BadgeService {
   }
 
   // Crear badge después de assessment completo
-  async issueBadge(assessmentId, companyId, tier, overallScore, frameworks = []) {
+  async issueBadge(assessmentId, companyId, tier, overallScore, frameworks = [], dossierId) {
     const existing = await this.badgeRepository.findByAssessment(assessmentId);
     if (existing) return existing;
     const expiresAt = new Date();
@@ -26,6 +26,7 @@ class BadgeService {
       verificationToken: uuidv4(),
       frameworksIncluded: frameworks
     });
+    badge.dossierId = dossierId;
 
     await this.badgeRepository.create(badge);
     logger.audit.info({ event: 'badge.issued', badgeId: badge.id, assessmentId, companyId, tier, score: overallScore });
@@ -70,6 +71,9 @@ class BadgeService {
       logger.warn({ badgeId: badge.id }, 'Badge verification failed - expired');
       return null;
     }
+
+    const assessment = await this.assessmentRepository.findById(badge.assessmentId);
+    badge.adoptionStage = assessment?.adoptionStage ?? null;
 
     logger.debug({ badgeId: badge.id }, 'Badge verified');
     return badge;

@@ -1,0 +1,14 @@
+const BaseRepository=require('./BaseRepository'); const {v4:uuid}=require('uuid');
+class DossierRepository extends BaseRepository{
+ constructor(db){super(db,'evidence_dossiers');}
+ async findOwned(id,userId){return this.get(`SELECT d.* FROM evidence_dossiers d JOIN assessments a ON a.id=d.assessment_id WHERE d.id=? AND a.user_id=?`,[id,userId]);}
+ async findByAssessment(id){return this.get('SELECT * FROM evidence_dossiers WHERE assessment_id=?',[id]);}
+ async create(d,controls){await this.run('BEGIN IMMEDIATE');try{await this.run('INSERT INTO evidence_dossiers(id,assessment_id,company_id,product_id) VALUES(?,?,?,?)',[d.id,d.assessmentId,d.companyId,d.productId]);for(const c of controls)await this.run('INSERT INTO evidence_items(id,dossier_id,control_id) VALUES(?,?,?)',[uuid(),d.id,c.id]);await this.run('COMMIT');}catch(e){await this.run('ROLLBACK');throw e;}return this.findByAssessment(d.assessmentId);}
+ items(id){return this.all(`SELECT i.*,a.original_name,a.mime_type,a.size,a.sha256 FROM evidence_items i LEFT JOIN evidence_attachments a ON a.id=i.attachment_id WHERE i.dossier_id=? ORDER BY i.control_id`,[id]);}
+ async saveItem(dossierId,controlId,reference){const r=await this.run(`UPDATE evidence_items SET reference=?,updated_at=CURRENT_TIMESTAMP WHERE dossier_id=? AND control_id=?`,[reference,dossierId,controlId]);return r.changes;}
+ item(id,dossierId){return this.get('SELECT i.*,a.stored_name,a.original_name,a.mime_type FROM evidence_items i LEFT JOIN evidence_attachments a ON a.id=i.attachment_id WHERE i.id=? AND i.dossier_id=?',[id,dossierId]);}
+ async attach(item,dossierId,file){await this.run('BEGIN IMMEDIATE');try{const old=await this.get('SELECT * FROM evidence_attachments WHERE item_id=?',[item.id]);if(old)await this.run('DELETE FROM evidence_attachments WHERE id=?',[old.id]);await this.run('INSERT INTO evidence_attachments(id,dossier_id,item_id,original_name,stored_name,mime_type,size,sha256) VALUES(?,?,?,?,?,?,?,?)',[file.id,dossierId,item.id,file.originalName,file.storedName,file.mimeType,file.size,file.sha256]);await this.run('UPDATE evidence_items SET attachment_id=?,updated_at=CURRENT_TIMESTAMP WHERE id=?',[file.id,item.id]);await this.run('COMMIT');return old;}catch(e){await this.run('ROLLBACK');throw e;}}
+ async removeAttachment(item){const old=await this.get('SELECT * FROM evidence_attachments WHERE item_id=?',[item.id]);if(old){await this.run('BEGIN IMMEDIATE');try{await this.run('UPDATE evidence_items SET attachment_id=NULL WHERE id=?',[item.id]);await this.run('DELETE FROM evidence_attachments WHERE id=?',[old.id]);await this.run('COMMIT');}catch(e){await this.run('ROLLBACK');throw e;}}return old;}
+ async issue(id,signatory){await this.run(`UPDATE evidence_dossiers SET status='issued',signatory_name=?,declaration_accepted=1,signed_at=CURRENT_TIMESTAMP,issued_at=CURRENT_TIMESTAMP,updated_at=CURRENT_TIMESTAMP WHERE id=? AND status='draft'`,[signatory,id]);}
+}
+module.exports=DossierRepository;

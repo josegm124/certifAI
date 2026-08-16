@@ -11,7 +11,6 @@ const DOMAINS = [
 ];
 
 const QUESTION_IDS = DOMAINS.flatMap((domain) => domain.questionIds);
-const CRITICAL_IDS = [17, 18, 26];
 const FRAMEWORKS = ['aiact', 'gdpr', 'oecd', 'iso', 'nist'];
 
 // Dashboard labels and mappings are served by the backend together with the
@@ -69,7 +68,6 @@ const QUESTION_METADATA = {
 module.exports = {
   DOMAINS,
   QUESTION_IDS,
-  CRITICAL_IDS,
   FRAMEWORKS,
   DASHBOARD_FRAMEWORKS,
   QUESTION_METADATA,

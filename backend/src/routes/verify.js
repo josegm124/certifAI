@@ -139,6 +139,7 @@ const createVerifyRoutes = ({ badgeService, companyService }) => {
       <div class="grid">
         <div class="kv"><div class="k">Readiness score</div><div class="v">${scorePct}%</div></div>
         <div class="kv"><div class="k">Level</div><div class="v">${escapeHtml(tierLabel)}</div></div>
+        <div class="kv"><div class="k">Adoption stage</div><div class="v">${escapeHtml(badge.adoptionStage)}</div></div>
         <div class="kv"><div class="k">Issued</div><div class="v">${fmtDate(badge.issuedAt)}</div></div>
         <div class="kv"><div class="k">Valid until</div><div class="v">${fmtDate(badge.expiresAt)}</div></div>
       </div>

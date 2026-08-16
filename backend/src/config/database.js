@@ -14,10 +14,8 @@ let db = null;
 const cleanUploads = () => {
   if (!fs.existsSync(uploadsDir)) return;
   try {
-    const files = fs.readdirSync(uploadsDir);
-    files.forEach(file => {
-      fs.unlinkSync(path.join(uploadsDir, file));
-    });
+    fs.rmSync(uploadsDir, { recursive: true, force: true });
+    fs.mkdirSync(path.join(uploadsDir, 'evidence'), { recursive: true });
     logger.info('Uploads directory cleaned');
   } catch (err) {
     logger.warn({ err }, 'Could not clean uploads directory');

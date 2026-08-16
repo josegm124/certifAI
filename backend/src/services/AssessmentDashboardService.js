@@ -1,26 +1,2 @@
-class AssessmentDashboardService {
-  constructor(assessmentService, answerRepository, scoringService, badgeService) {
-    this.assessmentService = assessmentService;
-    this.answers = answerRepository;
-    this.scoring = scoringService;
-    this.badges = badgeService;
-  }
-
-  async get(userId, assessmentId) {
-    const assessment = await this.assessmentService.requireOwned(assessmentId, userId);
-    const [answers, badge, detail] = await Promise.all([
-      this.answers.findByAssessment(assessment.id),
-      this.badges.getActiveBadge(assessment.id),
-      this.assessmentService.detail(assessment),
-    ]);
-    const result = this.scoring.analyze(
-      answers,
-      assessment.tier,
-      Boolean(assessment.signatoryName)
-    );
-
-    return { assessment: detail, result, badge };
-  }
-}
-
-module.exports = AssessmentDashboardService;
+class AssessmentDashboardService { constructor(assessmentService,finalizationService){this.assessmentService=assessmentService;this.finalization=finalizationService;} async get(userId,id){const a=await this.assessmentService.requireOwned(id,userId); if(a.status==='finalized') return this.finalization.result(a,null); return {assessment:await this.assessmentService.detail(a),result:null,failedControls:[],certificateEligibility:{eligible:false,blockedByRedFlags:false,eligibleProducts:[]},eligibleProducts:[]};} }
+module.exports=AssessmentDashboardService;

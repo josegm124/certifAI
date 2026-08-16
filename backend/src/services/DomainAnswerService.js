@@ -34,7 +34,11 @@ class DomainAnswerService {
     if (seen.size !== domain.questionIds.length || domain.questionIds.some((id) => !seen.has(id))) {
       throw httpError(400, `All ${domain.questionIds.length} questions in ${domainId} are required`, 'INCOMPLETE_DOMAIN');
     }
-    await this.answers.upsertMany(rows);
+    if (assessment.remediationOfAssessmentId) {
+      await this.answers.upsertManyWithConfirmation(rows, assessmentId, domainId, payload.confirmed === true);
+    } else {
+      await this.answers.upsertMany(rows);
+    }
     const count = await this.answers.countAnswered(assessmentId);
     assessment.completionPercentage = Math.round((count / QUESTION_IDS.length) * 100);
     await this.assessments.update(assessment);

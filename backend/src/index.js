@@ -14,6 +14,8 @@ const AiSystemRepository = require('./repositories/AiSystemRepository');
 const BadgeRepository = require('./repositories/BadgeRepository');
 const AuditLogRepository = require('./repositories/AuditLogRepository');
 const CertificateCatalogRepository = require('./repositories/CertificateCatalogRepository');
+const RedFlagRepository = require('./repositories/RedFlagRepository');
+const DossierRepository = require('./repositories/DossierRepository');
 
 // Services
 const CompanyService = require('./services/CompanyService');
@@ -27,6 +29,10 @@ const ScoringService = require('./services/ScoringService');
 const AssessmentFinalizationService = require('./services/AssessmentFinalizationService');
 const AssessmentDashboardService = require('./services/AssessmentDashboardService');
 const CertificateCatalogService = require('./services/CertificateCatalogService');
+const RedFlagService = require('./services/RedFlagService');
+const EligibilityService = require('./services/EligibilityService');
+const DossierService = require('./services/DossierService');
+const RemediationService = require('./services/RemediationService');
 
 // Routes
 const { createRoutes } = require('./routes/api');
@@ -73,6 +79,8 @@ const startServer = async () => {
     const badgeRepository = new BadgeRepository(db);
     const auditLogRepository = new AuditLogRepository(db);
     const certificateCatalogRepository = new CertificateCatalogRepository(db);
+    const redFlagRepository = new RedFlagRepository(db);
+    const dossierRepository = new DossierRepository(db);
 
     // Instantiate services
     const companyService = new CompanyService(companyRepository);
@@ -87,12 +95,14 @@ const startServer = async () => {
     const authService = new AuthService(userRepository, companyService, passwordService);
     const domainAnswerService = new DomainAnswerService(assessmentService, answerRepository, assessmentRepository);
     const scoringService = new ScoringService();
-    const assessmentDashboardService = new AssessmentDashboardService(
-      assessmentService, answerRepository, scoringService, badgeService
-    );
+    const redFlagService = new RedFlagService(redFlagRepository);
+    const eligibilityService = new EligibilityService();
     const finalizationService = new AssessmentFinalizationService(
-      assessmentService, assessmentRepository, answerRepository, scoringService, badgeService
+      assessmentService, assessmentRepository, answerRepository, scoringService, redFlagService, redFlagRepository, eligibilityService
     );
+    const assessmentDashboardService = new AssessmentDashboardService(assessmentService, finalizationService);
+    const dossierService = new DossierService(dossierRepository, assessmentRepository, redFlagRepository, eligibilityService, badgeService);
+    const remediationService = new RemediationService(db, assessmentService, assessmentRepository, answerRepository);
     const certificateCatalogService = new CertificateCatalogService(certificateCatalogRepository);
 
     // Create routes with dependency injection
@@ -106,6 +116,7 @@ const startServer = async () => {
       finalizationService,
       badgeService,
       certificateCatalogService,
+      redFlagRepository, eligibilityService, dossierService, remediationService,
     });
 
     app.use('/api', routes);

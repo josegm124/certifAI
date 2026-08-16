@@ -1,104 +1,22 @@
 const BaseRepository = require('./BaseRepository');
-const { Assessment } = require('../domain/entities');
+
+const map = (row) => row && ({
+  id: row.id, userId: row.user_id, aiSystemId: row.ai_system_id,
+  adoptionStage: row.adoption_stage, status: row.status,
+  completionPercentage: row.completion_percentage, overallScore: row.overall_score,
+  resultLevelId: row.result_level_id, remediationOfAssessmentId: row.remediation_of_assessment_id,
+  completedAt: row.completed_at ? new Date(row.completed_at) : null,
+  createdAt: new Date(row.created_at), updatedAt: new Date(row.updated_at),
+});
 
 class AssessmentRepository extends BaseRepository {
-  constructor(db) {
-    super(db, 'assessments');
+  constructor(db) { super(db, 'assessments'); }
+  async create(a) {
+    await this.run(`INSERT INTO assessments (id,user_id,ai_system_id,adoption_stage,status,completion_percentage,overall_score,result_level_id,remediation_of_assessment_id,completed_at,created_at,updated_at) VALUES (?,?,?,?,?,?,?,?,?,?,?,?)`, [a.id,a.userId,a.aiSystemId,a.adoptionStage,a.status,a.completionPercentage,a.overallScore,a.resultLevelId,a.remediationOfAssessmentId,a.completedAt,a.createdAt,a.updatedAt]); return a;
   }
-
-  async create(assessment) {
-    const sql = `
-      INSERT INTO assessments
-      (id, user_id, ai_system_id, tier, status, completion_percentage, overall_score, badge_tier, critical_gating_active, signatory_name, self_certified_at, completed_at, created_at, updated_at)
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-    `;
-    await this.run(sql, [
-      assessment.id,
-      assessment.userId,
-      assessment.aiSystemId,
-      assessment.tier,
-      assessment.status,
-      assessment.completionPercentage,
-      assessment.overallScore,
-      assessment.badgeTier,
-      assessment.criticalGatingActive ? 1 : 0,
-      assessment.signatoryName,
-      assessment.selfCertifiedAt,
-      assessment.completedAt,
-      assessment.createdAt,
-      assessment.updatedAt
-    ]);
-    return assessment;
-  }
-
-  async update(assessment) {
-    const sql = `
-      UPDATE assessments
-      SET status = ?, completion_percentage = ?, overall_score = ?, badge_tier = ?, critical_gating_active = ?, signatory_name = ?, self_certified_at = ?, completed_at = ?, updated_at = ?
-      WHERE id = ?
-    `;
-    await this.run(sql, [
-      assessment.status,
-      assessment.completionPercentage,
-      assessment.overallScore,
-      assessment.badgeTier,
-      assessment.criticalGatingActive ? 1 : 0,
-      assessment.signatoryName,
-      assessment.selfCertifiedAt,
-      assessment.completedAt,
-      new Date(),
-      assessment.id
-    ]);
-    return assessment;
-  }
-
-  async findByUserAndSystem(userId, systemId) {
-    const row = await this.get(
-      'SELECT * FROM assessments WHERE user_id = ? AND ai_system_id = ? ORDER BY created_at DESC LIMIT 1',
-      [userId, systemId]
-    );
-    return row ? this._mapToEntity(row) : null;
-  }
-
-  async findByUser(userId) {
-    const rows = await this.all(
-      'SELECT * FROM assessments WHERE user_id = ? ORDER BY created_at DESC',
-      [userId]
-    );
-    return rows.map(row => this._mapToEntity(row));
-  }
-
-  async findActiveByUser(userId) {
-    const row = await this.get(
-      "SELECT * FROM assessments WHERE user_id = ? AND status = 'draft' LIMIT 1",
-      [userId]
-    );
-    return row ? this._mapToEntity(row) : null;
-  }
-
-  async findById(id) {
-    const row = await super.findById(id);
-    return row ? this._mapToEntity(row) : null;
-  }
-
-  _mapToEntity(row) {
-    return new Assessment({
-      id: row.id,
-      userId: row.user_id,
-      aiSystemId: row.ai_system_id,
-      tier: row.tier,
-      status: row.status,
-      completionPercentage: row.completion_percentage,
-      overallScore: row.overall_score,
-      badgeTier: row.badge_tier,
-      criticalGatingActive: row.critical_gating_active === 1,
-      signatoryName: row.signatory_name,
-      selfCertifiedAt: row.self_certified_at ? new Date(row.self_certified_at) : null,
-      completedAt: row.completed_at ? new Date(row.completed_at) : null,
-      createdAt: new Date(row.created_at),
-      updatedAt: new Date(row.updated_at)
-    });
-  }
+  async update(a) { await this.run(`UPDATE assessments SET status=?,completion_percentage=?,overall_score=?,result_level_id=?,completed_at=?,updated_at=? WHERE id=?`, [a.status,a.completionPercentage,a.overallScore,a.resultLevelId,a.completedAt,new Date(),a.id]); return a; }
+  async findById(id) { return map(await super.findById(id)); }
+  async findByUser(userId) { return (await this.all('SELECT * FROM assessments WHERE user_id=? ORDER BY created_at DESC',[userId])).map(map); }
+  async findActiveByUser(userId) { return map(await this.get("SELECT * FROM assessments WHERE user_id=? AND status='draft' LIMIT 1",[userId])); }
 }
-
 module.exports = AssessmentRepository;
