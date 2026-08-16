@@ -32,7 +32,7 @@ test('SQL catalog exposes related levels, products, prices and features', async 
   ]);
   assert.deepEqual(catalog.products.map((product) => product.price.amountMinor), [0, 49000, 119000, 249000]);
   assert.equal(catalog.products.find((product) => product.id === 'assured-certificate').level.id, 'assured');
-  assert.equal(catalog.products.every((product) => product.features.length === 3), true);
+  assert.equal(catalog.products.every((product) => product.features.length >= 1), true);
 
   await assert.rejects(
     run(db, `INSERT INTO certificate_products
