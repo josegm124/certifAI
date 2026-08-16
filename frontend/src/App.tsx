@@ -14,6 +14,7 @@ import Upgrade from "./pages/Upgrade";
 import Login from "./pages/Login";
 import Register from "./pages/Register";
 import Profile from "./pages/Profile";
+import Evidence from "./pages/Evidence";
 import { getActiveAssessment, getMe } from "./lib/api";
 import { useStore } from "./store/useStore";
 
@@ -44,6 +45,7 @@ export default function App() {
         <Route path="/assess" element={<RequireIntake assessment><Assess /></RequireIntake>} />
         <Route path="/results" element={<RequireIntake assessment><Results /></RequireIntake>} />
         <Route path="/upgrade" element={<RequireIntake><Upgrade /></RequireIntake>} />
+        <Route path="/evidence/:id" element={<RequireIntake><Evidence /></RequireIntake>} />
       </Routes>
       <Footer />
     </div>

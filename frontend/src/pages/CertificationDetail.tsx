@@ -115,7 +115,7 @@ export default function CertificationDetail() {
                 <div key={x.q.id} className="ctrl">
                   <span className="ctrl-chip" style={{ background: barColor((x.score / 5) * 100) }}>{x.score}</span>
                   <div>
-                    <div className="ctrl-t">{x.q.title}{x.q.critical && <span className="gap-crit" style={{ marginLeft: 8 }}>critical</span>}</div>
+                    <div className="ctrl-t">{x.q.title}</div>
                     <div className="ctrl-m">Evidence: {x.q.evidence.slice(0, 2).join(", ")}</div>
                   </div>
                 </div>

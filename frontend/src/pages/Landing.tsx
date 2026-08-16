@@ -75,7 +75,7 @@ export default function Landing() {
         <motion.section {...fadeUp} style={{ marginTop: 34 }}>
           <div className="eyebrow">The 4A ladder</div>
           <h2 className="h2">Four levels of earned trust.</h2>
-          <p className="sec-note">Each level is earned per certificate from your score, evidence and self-certification, with critical controls gating the top.</p>
+          <p className="sec-note">Each certificate combines a stored readiness result with a signed evidence dossier.</p>
           <LadderVis />
         </motion.section>
 

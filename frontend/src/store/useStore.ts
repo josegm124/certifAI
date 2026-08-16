@@ -8,7 +8,6 @@ interface CertState {
   authStatus: "loading" | "authenticated" | "anonymous";
   profile: Profile | null;
   org: string; email: string; role: string;
-  tier: 1 | 2;
   aiSystemName: string;
   answers: Answers;
   dirtyDomains: string[];
@@ -21,7 +20,7 @@ interface CertState {
   setAuth: (profile: Profile | null) => void;
   setAssessment: (assessment: AssessmentRecord | null, preserveDirty?: boolean) => void;
   setOrg: (v: string) => void; setEmail: (v: string) => void; setRole: (v: string) => void;
-  setTier: (v: 1 | 2) => void; setAiSystemName: (v: string) => void;
+  setAiSystemName: (v: string) => void;
   setAnswer: (qid: number, patch: Answer) => void;
   markDomainSynced: (domainId: string) => void;
   setSigned: (v: boolean) => void;
@@ -39,7 +38,7 @@ const fromServer = (record: AssessmentRecord): Answers => Object.fromEntries(
 );
 
 export const useStore = create<CertState>()(persist((set, get) => ({
-  authStatus: "loading", profile: null, org: "", email: "", role: "", tier: 1,
+  authStatus: "loading", profile: null, org: "", email: "", role: "",
   aiSystemName: "", answers: {}, dirtyDomains: [], signed: false, seeded: false,
   userId: null, assessmentId: null, assessment: null, server: null,
   setAuth: (profile) => set({
@@ -53,12 +52,12 @@ export const useStore = create<CertState>()(persist((set, get) => ({
       const domain = QUESTIONS.find((q) => q.id === Number(id))?.domain;
       return domain && local.dirtyDomains.includes(domain);
     })) : {};
-    set({ assessment, assessmentId: assessment?.id || null, tier: assessment?.tier || 1,
+    set({ assessment, assessmentId: assessment?.id || null,
       aiSystemName: assessment?.aiSystem.name || "", answers: assessment ? { ...fromServer(assessment), ...dirtyAnswers } : dirtyAnswers,
-      dirtyDomains: preserveDirty ? local.dirtyDomains : [], signed: Boolean(assessment?.signatoryName), server: null });
+      dirtyDomains: preserveDirty ? local.dirtyDomains : [], signed: false, server: null });
   },
   setOrg: (org) => set({ org }), setEmail: (email) => set({ email }), setRole: (role) => set({ role }),
-  setTier: (tier) => set({ tier }), setAiSystemName: (aiSystemName) => set({ aiSystemName }),
+  setAiSystemName: (aiSystemName) => set({ aiSystemName }),
   setAnswer: (qid, patch) => set((state) => {
     const domain = QUESTIONS.find((q) => q.id === qid)?.domain;
     return { answers: { ...state.answers, [qid]: { ...state.answers[qid], ...patch } },
@@ -69,8 +68,8 @@ export const useStore = create<CertState>()(persist((set, get) => ({
   setSigned: (signed) => set({ signed }),
   setIdentity: (userId, assessmentId) => set({ userId, assessmentId }),
   setServer: (server) => set({ server }),
-  clearAssessment: () => set({ tier: 1, aiSystemName: "", answers: {}, dirtyDomains: [], signed: false, assessmentId: null, assessment: null, server: null }),
-  reset: () => set({ authStatus: "anonymous", profile: null, org: "", email: "", role: "", userId: null, tier: 1, aiSystemName: "", answers: {}, dirtyDomains: [], signed: false, seeded: false, assessmentId: null, assessment: null, server: null }),
+  clearAssessment: () => set({ aiSystemName: "", answers: {}, dirtyDomains: [], signed: false, assessmentId: null, assessment: null, server: null }),
+  reset: () => set({ authStatus: "anonymous", profile: null, org: "", email: "", role: "", userId: null, aiSystemName: "", answers: {}, dirtyDomains: [], signed: false, seeded: false, assessmentId: null, assessment: null, server: null }),
   loadSample: () => undefined,
 }), {
   name: "certifai-v3",

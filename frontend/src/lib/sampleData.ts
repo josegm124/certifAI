@@ -11,10 +11,7 @@ import type { Answers } from "./scoring";
  * dead-ended.
  *
  * Profile: a mid-journey organisation. Strong on strategy, governance and risk;
- * visibly weaker on trust, workforce and the new revenue domain. Critical
- * controls (Q17, Q18, Q26) are kept well above the gate so the badge path can
- * be demonstrated, and evidence is recorded against every control so the
- * server-side evidence check passes.
+ * visibly weaker on trust, workforce and the new revenue domain.
  *
  * Lands at 69/100 → Assured (A3), once signed and submitted.
  */
@@ -44,7 +41,7 @@ export const SAMPLE_ANSWERS: Answers = {
   13: e(4, "Quarterly AI governance report to the board"),
   14: e(3, "Vendor AI due-diligence questionnaire; 6 of 9 vendors assessed"),
 
-  /* Risk & Compliance (Q15-Q19) — Q17 and Q18 are critical controls */
+  /* Risk & Compliance (Q15-Q19) */
   15: e(4, "AI risk taxonomy; risks logged per system in the register"),
   16: e(4, "Pre-deployment risk assessment mandatory; residual risk recorded"),
   17: e(4, "EU AI Act gap analysis Feb 2026; compliance roadmap to Aug 2026"),
@@ -59,7 +56,7 @@ export const SAMPLE_ANSWERS: Answers = {
   24: e(4, "PIA process embedded in the intake gate"),
   25: e(3, "Training data versioned; lineage documented for 4 of 7 models"),
 
-  /* Human Oversight & Accountability (Q26-Q28) — Q26 is a critical control */
+  /* Human Oversight & Accountability (Q26-Q28) */
   26: e(4, "Named accountable owner per system in the RACI"),
   27: e(3, "Output sampling and validation for shortlisting decisions"),
   28: e(4, "Human review mandatory for all rejection decisions"),

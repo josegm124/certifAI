@@ -79,7 +79,6 @@ export interface Question {
   evidence: string[];
   kpi: string;
   frameworks: FrameworkKey[];
-  critical?: boolean;
 }
 
 /* NOTE ON FRAMEWORK MAPPING
@@ -113,8 +112,8 @@ export const QUESTIONS: Question[] = [
   /* ---------- Risk & Compliance (Q15–Q19) ---------- */
   { id: 15, domain: "risk", title: "AI Risk Identification", text: "Does the organisation have a process for systematically identifying risks associated with AI systems?", evidence: ["Risk register", "Risk taxonomy", "Threat assessments"], kpi: "Risks identified per system", frameworks: ["aiact", "nist", "iso"] },
   { id: 16, domain: "risk", title: "AI Risk Assessments", text: "Are formal risk assessments conducted for AI systems before and during deployment?", evidence: ["Risk assessments", "Mitigation plans", "Residual risk records"], kpi: "% systems assessed", frameworks: ["aiact", "nist", "iso"] },
-  { id: 17, domain: "risk", title: "EU AI Act Readiness", critical: true, text: "How prepared is the organisation to comply with the requirements of the EU AI Act?", evidence: ["Gap analysis", "Compliance roadmap", "Annex IV technical file"], kpi: "Compliance maturity score", frameworks: ["aiact"] },
-  { id: 18, domain: "risk", title: "High-Risk AI Identification", critical: true, text: "Has the organisation identified which AI systems fall into high-risk categories under Annex III?", evidence: ["Classification methodology", "High-risk register", "Annex III mapping"], kpi: "% systems classified", frameworks: ["aiact"] },
+  { id: 17, domain: "risk", title: "EU AI Act Readiness", text: "How prepared is the organisation to comply with the requirements of the EU AI Act?", evidence: ["Gap analysis", "Compliance roadmap", "Annex IV technical file"], kpi: "Compliance maturity score", frameworks: ["aiact"] },
+  { id: 18, domain: "risk", title: "High-Risk AI Identification", text: "Has the organisation identified which AI systems fall into high-risk categories under Annex III?", evidence: ["Classification methodology", "High-risk register", "Annex III mapping"], kpi: "% systems classified", frameworks: ["aiact"] },
   { id: 19, domain: "risk", title: "AI Incident Response", text: "Is there a defined process for detecting, reporting, and responding to AI-related incidents?", evidence: ["Incident response plan", "Incident log", "Escalation procedures"], kpi: "Incident response time", frameworks: ["aiact", "nist"] },
 
   /* ---------- Data & Model Governance (Q20–Q25) ---------- */
@@ -126,7 +125,7 @@ export const QUESTIONS: Question[] = [
   { id: 25, domain: "data", title: "Training Data Management", text: "Does the organisation manage the provenance, lineage, and versioning of training data?", evidence: ["Dataset documentation", "Data lineage", "Version control records"], kpi: "Documented datasets", frameworks: ["aiact", "gpai", "iso"] },
 
   /* ---------- Human Oversight & Accountability (Q26–Q28) ---------- */
-  { id: 26, domain: "human", title: "Human Accountability", critical: true, text: "Are named individuals accountable for the decisions and outputs produced by AI systems?", evidence: ["Accountability matrix", "Approval records", "Governance roles"], kpi: "Ownership coverage", frameworks: ["aiact", "oecd", "iso"] },
+  { id: 26, domain: "human", title: "Human Accountability", text: "Are named individuals accountable for the decisions and outputs produced by AI systems?", evidence: ["Accountability matrix", "Approval records", "Governance roles"], kpi: "Ownership coverage", frameworks: ["aiact", "oecd", "iso"] },
   { id: 27, domain: "human", title: "Output Verification", text: "Are processes in place to verify the accuracy and reliability of AI outputs before they are acted upon?", evidence: ["Testing reports", "Validation procedures", "Monitoring logs"], kpi: "Output accuracy", frameworks: ["aiact", "nist"] },
   { id: 28, domain: "human", title: "Human Review Requirements", text: "Are there defined criteria for when human review of AI outputs is required?", evidence: ["Review procedures", "Exception logs", "Escalation workflows"], kpi: "Human review rate", frameworks: ["aiact", "oecd"] },
 
@@ -144,11 +143,6 @@ export const QUESTIONS: Question[] = [
   /* ---------- Continuous Improvement (Q36) ---------- */
   { id: 36, domain: "improve", title: "Continuous Improvement", text: "Does the organisation have a structured process for reviewing and continuously improving its AI governance?", evidence: ["Improvement plans", "Lessons learned", "Corrective action logs"], kpi: "Actions completed", frameworks: ["iso", "nist"] },
 ];
-
-/* Critical controls gate the badge level. Under the June numbering these are
-   Q17 (EU AI Act Readiness), Q18 (High-Risk AI Identification), and
-   Q26 (Human Accountability). Previously 13, 14 and 22 under MVP numbering. */
-export const CRITICAL_IDS: number[] = QUESTIONS.filter((q) => q.critical).map((q) => q.id);
 
 /* Guard rails — cheap invariants so a bad edit fails loudly rather than
    silently skewing every score. */

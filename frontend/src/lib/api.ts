@@ -12,14 +12,12 @@ export interface Profile {
 
 export interface AssessmentRecord {
   id: string;
-  tier: 1 | 2;
+  adoptionStage: number;
   status: "draft" | "finalized";
   completionPercentage: number;
   overallScore: number | null;
-  badgeTier: string | null;
-  criticalGatingActive: boolean;
-  signatoryName: string | null;
-  selfCertifiedAt: string | null;
+  resultLevelId: string | null;
+  remediationOfAssessmentId: string | null;
   completedAt: string | null;
   createdAt: string;
   aiSystem: { id: string; name: string };
@@ -44,15 +42,10 @@ export interface OfficialResult {
   }>;
   gaps: Array<{
     id: number; title: string; domainId: string; domainName: string;
-    score: number; critical: boolean; gapSize: number; priority: number;
+    score: number; gapSize: number; priority: number;
   }>;
   level: ResultLevel;
-  rawLevel: ResultLevel;
-  cappedFrom: "A1" | "A2" | "A3" | "A4" | null;
-  cappedReason: string | null;
   nextLevel: (ResultLevel & { pointsNeeded: number }) | null;
-  hasEvidence: boolean;
-  criticalGating: { capped: boolean; failedIds: number[] };
   completion: { answered: number; total: number; percentage: number };
 }
 
@@ -72,6 +65,10 @@ export interface FinalizationResponse {
   assessment: AssessmentRecord;
   result: OfficialResult;
   badge: IssuedBadge | null;
+  adoptionStage: number;
+  certificateEligibility: { eligible: boolean; blockedByRedFlags: boolean; eligibleProducts: string[] };
+  eligibleProducts: string[];
+  failedControls: Array<{questionId:number;domainId:string;score:number;threshold:number;guidance:string}>;
 }
 
 export type AssessmentDashboardResponse = FinalizationResponse;
@@ -138,7 +135,7 @@ export const logout = () => post<void>("/auth/logout");
 export const getMe = () => request<{ profile: Profile }>("/auth/me");
 export const getCertificateCatalog = () => request<CertificateCatalog>("/catalog/certificates");
 export const updateProfile = (name: string, role: string) => put<{ profile: Profile }>("/profile", { name, role });
-export const createAssessment = (aiSystemName: string, tier: 1 | 2) => post<{ assessment: AssessmentRecord }>("/assessments", { aiSystemName, tier });
+export const createAssessment = (aiSystemName: string) => post<{ assessment: AssessmentRecord }>("/assessments", { aiSystemName });
 export const getActiveAssessment = () => request<{ assessment: AssessmentRecord | null }>("/assessments/active");
 export const getAssessments = () => request<{ assessments: AssessmentRecord[] }>("/assessments");
 export const getAssessment = (id: string) => request<{ assessment: AssessmentRecord }>(`/assessments/${id}`);
@@ -154,8 +151,13 @@ export async function saveDomain(assessmentId: string, domainId: string, answers
   return put<{ completionPercentage: number }>(`/assessments/${assessmentId}/domains/${domainId}/answers`, { answers: body });
 }
 
-export const finalizeAssessment = (id: string, signatoryName?: string) =>
-  post<FinalizationResponse>(`/assessments/${id}/finalize`, signatoryName ? { signatoryName, acceptedDeclaration: true } : {});
+export const finalizeAssessment = (id: string) => post<FinalizationResponse>(`/assessments/${id}/finalize`, {});
+export const getCertificateOptions = (id:string) => request<{certificateEligibility:FinalizationResponse['certificateEligibility'];eligibleProducts:string[]}>(`/assessments/${id}/certificate-options`);
+export const createEvidenceDossier = (assessmentId:string,productId:string) => post<{dossier:{id:string}}>(`/assessments/${assessmentId}/evidence-dossier`,{productId});
+export const getEvidenceDossier = (id:string) => request<EvidenceDossierResponse>(`/evidence-dossiers/${id}`);
+export const saveEvidenceReference = (id:string,controlId:string,reference:string) => put<EvidenceDossierResponse>(`/evidence-dossiers/${id}/items/${controlId}`,{reference});
+export const issueDossier = (id:string,signatoryName:string) => post<EvidenceDossierResponse>(`/evidence-dossiers/${id}/issue`,{signatoryName,acceptedDeclaration:true});
+export interface EvidenceDossierResponse { dossier:{id:string;assessmentId:string;productId:string;status:'draft'|'issued';signatoryName:string|null};items:Array<{id:string;controlId:string;reference:string;attachment:null|{id:string;name:string;mimeType:string;size:number;sha256:string}}> }
 
 export async function verifyBadge(token: string): Promise<unknown | null> {
   try { return await request(`/badges/${token}/verify`); } catch { return null; }

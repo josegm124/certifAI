@@ -10,15 +10,13 @@ export default function Start() {
   const [aiSystemName, setName] = useState("");
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [demoOpen, setDemoOpen] = useState(false);
   const nav = useNavigate();
-  async function start(tier: 1 | 2) {
+  async function start() {
     if (!aiSystemName.trim() || busy) return;
-    if (tier === 2 && !demoOpen) { setDemoOpen(true); return; }
     setBusy(true); setError(null);
-    try { const { assessment: created } = await createAssessment(aiSystemName, tier); setAssessment(created, false); nav("/assess"); }
+    try { const { assessment: created } = await createAssessment(aiSystemName); setAssessment(created, false); nav("/assess"); }
     catch (err) { setError(err instanceof Error ? err.message : "The assessment service is unavailable"); }
-    finally { setBusy(false); setDemoOpen(false); }
+    finally { setBusy(false); }
   }
   if (assessment?.status === "draft") return <main className="wrap"><div className="card" style={{ textAlign: "center", padding: 44 }}>
     <div className="eyebrow">Active assessment</div><h1 className="h2">{assessment.aiSystem.name}</h1>
@@ -27,13 +25,11 @@ export default function Start() {
   </div></main>;
   return <main className="wrap wrap-wide">
     <div className="eyebrow">{profile?.company.name} · {TOTAL_DOMAINS} domains · {TOTAL_QUESTIONS} questions</div>
-    <h1 className="h1">Assess a real AI system.</h1><p className="lead">Your account details are already saved. Name the system and choose the assessment tier.</p>
+    <h1 className="h1">Assess a real AI system.</h1><p className="lead">Name the AI system in scope and complete its readiness assessment.</p>
     <div className="card" style={{ marginBottom: 18 }}><div className="field"><label className="lbl">AI system name</label><input className="input" value={aiSystemName} onChange={(e) => setName(e.target.value)} placeholder="Example: Customer Support Assistant" /></div>{error && <div className="banner banner-cap">{error}</div>}</div>
     <section className="pricing">
-      <Tier name="Readiness Snapshot" tag="Tier 1 · Free" points={["All 36 questions", "Backend score of record", "Eligible badge-level preview", "No public badge or certificate is issued"]} action="Start free assessment" onClick={() => start(1)} disabled={!aiSystemName.trim() || busy} />
-      <Tier name="Evidence & Badge" tag="Tier 2 · Demo" points={["Evidence references per control", "Signed self-certification", "Evidence references are stored without automated review. AI-assisted review is in development.", "Eligible for a public badge"]} action="Start Tier 2" onClick={() => start(2)} disabled={!aiSystemName.trim() || busy} accent />
+      <Tier name="Readiness Assessment" tag="Free" points={["All 36 questions", "Backend score of record", "Certificate eligibility after completion", "Remediation guidance for failed controls"]} action="Start assessment" onClick={start} disabled={!aiSystemName.trim() || busy} />
     </section>
-    {demoOpen && <div style={{ position: "fixed", inset: 0, background: "#0b122099", display: "grid", placeItems: "center", zIndex: 50, padding: 20 }}><div className="card" style={{ maxWidth: 480 }}><h2 className="h2">Tier 2 demo access</h2><p className="lead">Tier 2 is available without payment during this demo. No payment will be processed.</p><div style={{ display: "flex", gap: 10 }}><button className="btn btn-ghost" onClick={() => setDemoOpen(false)}>Cancel</button><button className="btn btn-accent" onClick={() => start(2)}>Continue</button></div></div></div>}
   </main>;
 }
 
