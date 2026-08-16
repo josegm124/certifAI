@@ -56,7 +56,7 @@ export default function CertificateOptions({ assessmentId, levelId }: { assessme
   return <section className="certificate-options">
     <div className="eyebrow">Certificate eligibility · preview only</div>
     <h3 className="h2">Your result supports up to {eligibility.earned.name}.</h3>
-    <p className="sec-note">The free assessment has not issued a badge or certificate. You may choose the highest supported level or a lower available level.</p>
+    <p className="sec-note">The readiness assessment has not issued a badge or certificate. You may choose the highest supported level or a lower available level.</p>
     <div className="certificate-offers">
       {eligibility.products.map((product) => (
         <article className="price price-accent certificate-offer" key={product.id}>

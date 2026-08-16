@@ -15,6 +15,20 @@ const isCurrentSchema = (tableNames, assessmentColumns) =>
   tableNames.has('critical_controls') &&
   tableNames.has('evidence_dossiers');
 
+const syncCertificateCatalog = () => new Promise((resolve, reject) => {
+  db.exec(`
+    BEGIN IMMEDIATE;
+    DELETE FROM certificate_products WHERE id = 'readiness-assessment';
+    UPDATE certificate_products SET display_order = 1 WHERE id = 'aligned-certificate';
+    UPDATE certificate_products SET display_order = 2 WHERE id = 'assured-certificate';
+    UPDATE certificate_products SET display_order = 3 WHERE id = 'advanced-certificate';
+    UPDATE product_prices SET amount_minor = 34900 WHERE id = 'price-aligned-eur-annual';
+    UPDATE product_prices SET amount_minor = 64900 WHERE id = 'price-assured-eur-annual';
+    UPDATE product_prices SET amount_minor = 119000 WHERE id = 'price-advanced-eur-annual';
+    COMMIT;
+  `, (err) => (err ? reject(err) : resolve()));
+});
+
 // Clean up uploads directory
 const cleanUploads = () => {
   if (!fs.existsSync(uploadsDir)) return;
@@ -77,6 +91,7 @@ const runSchema = async () => {
   if (tableNames.has('assessments')) {
     const assessmentColumns = await all('PRAGMA table_info(assessments)');
     if (isCurrentSchema(tableNames, assessmentColumns)) {
+      await syncCertificateCatalog();
       logger.info('Database schema already initialized');
       return;
     }
@@ -100,6 +115,7 @@ const runSchema = async () => {
   await new Promise((resolve, reject) => {
     db.exec(schema, (err) => (err ? reject(err) : resolve()));
   });
+  await syncCertificateCatalog();
   logger.info('Database schema initialized');
 };
 

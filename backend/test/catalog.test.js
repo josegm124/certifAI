@@ -25,12 +25,11 @@ test('SQL catalog exposes related levels, products, prices and features', async 
 
   assert.deepEqual(catalog.levels.map((level) => level.code), ['A1', 'A2', 'A3', 'A4']);
   assert.deepEqual(catalog.products.map((product) => product.name), [
-    'Readiness Assessment',
     'Aligned Certificate',
     'Assured Certificate',
     'Advanced Certificate',
   ]);
-  assert.deepEqual(catalog.products.map((product) => product.price.amountMinor), [0, 49000, 119000, 249000]);
+  assert.deepEqual(catalog.products.map((product) => product.price.amountMinor), [34900, 64900, 119000]);
   assert.equal(catalog.products.find((product) => product.id === 'assured-certificate').level.id, 'assured');
   assert.equal(catalog.products.every((product) => product.features.length >= 1), true);
 

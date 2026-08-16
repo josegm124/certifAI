@@ -36,10 +36,9 @@ readiness score or result band. The provisional adoption stage is currently 2.
 
 The backend owns product and pricing data:
 
-- Readiness Assessment: free
-- Aligned Certificate: EUR 490/year
-- Assured Certificate: EUR 1,190/year
-- Advanced Certificate: EUR 2,490/year
+- Aligned Certificate: EUR 349/year
+- Assured Certificate: EUR 649/year
+- Advanced Certificate: EUR 1,190/year
 
 Payment processing and automated evidence review are not implemented. Any
 automated review shown in product copy is marked “In development”.

@@ -56,7 +56,7 @@ export default function Landing() {
               level you can show.
             </p>
             <div className="hero-cta">
-              <Link to="/start" className="btn btn-primary btn-lg">Start free assessment <Arrow color="#fff" /></Link>
+              <Link to="/start" className="btn btn-primary btn-lg">Start readiness assessment <Arrow color="#fff" /></Link>
               <button className="btn btn-ghost btn-lg" onClick={() => { loadSample(); nav("/dashboard"); }}>
                 See a live dashboard
               </button>
@@ -124,7 +124,7 @@ export default function Landing() {
         {/* pricing */}
         <motion.section {...fadeUp} style={{ marginTop: 40 }}>
           <h2 className="h2">Start free. Earn your certificate when you're ready.</h2>
-          <p className="sec-note">Complete the free assessment first. Your result sets the highest certificate level available to you; paying more never raises your assessed level. No payment is processed in this demo.</p>
+          <p className="sec-note">Complete the readiness assessment first. Your result sets the highest certificate level available to you; paying more never raises your assessed level. No payment is processed in this demo.</p>
           <div className="pricing">
             {!catalog && !catalogError && <div className="price"><div className="price-name">Loading certificate catalog…</div></div>}
             {catalogError && <div className="price"><div className="price-name">Certificate catalog unavailable</div><p className="sec-note">The backend catalog must be available before prices can be shown.</p></div>}
@@ -135,7 +135,7 @@ export default function Landing() {
               const period = product.price?.billingPeriod === "year" ? "per certificate, per year" : "one time";
               return (
                 <div className={`price ${product.productType === "certificate" ? "price-accent" : ""}`} key={product.id}>
-                  <div className="price-tag">{product.level ? `${product.level.code} · ${product.level.name}` : "Free assessment"}</div>
+                  <div className="price-tag">{product.level ? `${product.level.code} · ${product.level.name}` : "Readiness assessment"}</div>
                   <div className="price-name">{product.name}</div>
                   <div className="price-cost"><b>{amount}</b> · {period}</div>
                   <p className="sec-note">{product.description}</p>
