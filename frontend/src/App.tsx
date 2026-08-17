@@ -43,7 +43,10 @@ export default function App() {
         <Route path="/certifications/:certId" element={<RequireIntake assessment><CertificationDetail /></RequireIntake>} />
         <Route path="/start" element={<RequireIntake><Start /></RequireIntake>} />
         <Route path="/assess" element={<RequireIntake assessment><Assess /></RequireIntake>} />
-        <Route path="/results" element={<RequireIntake assessment><Results /></RequireIntake>} />
+        {/* No `assessment` guard: finalizing leaves no draft, so requiring one
+            sent every reload of a finished result to /start. Results reloads
+            its own data. */}
+        <Route path="/results" element={<RequireIntake><Results /></RequireIntake>} />
         <Route path="/upgrade" element={<RequireIntake><Upgrade /></RequireIntake>} />
         <Route path="/evidence/:id" element={<RequireIntake><Evidence /></RequireIntake>} />
       </Routes>

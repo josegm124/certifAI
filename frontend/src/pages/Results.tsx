@@ -1,10 +1,14 @@
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { useStore } from "../store/useStore";
 import { completion, levelById } from "../lib/scoring";
 import {
   createRemediationAssessment,
   finalizeAssessment,
+  getActiveAssessment,
+  getAssessment,
+  getAssessments,
+  getResult,
   publicVerificationUrl,
 } from "../lib/api";
 import { barColor } from "../theme";
@@ -17,8 +21,52 @@ export default function Results() {
   const { org, answers, assessmentId, aiSystemName, server, setServer, setAssessment } = useStore();
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
+  const [hydrating, setHydrating] = useState(!server);
+  const started = useRef(false);
   const navigate = useNavigate();
   const comp = completion(answers);
+
+  // Reaching this page from the dashboard fills the store, but a reload or a
+  // direct link empties it and `server` is not persisted, so the finished
+  // result has to be fetched again. A draft is left alone: the submit screen
+  // below still handles it.
+  useEffect(() => {
+    if (server || started.current) return;
+    started.current = true;
+    // No abort flag: StrictMode mounts twice in development, and cancelling on
+    // the first unmount leaves the fetch half-done while the ref blocks a retry.
+    (async () => {
+      try {
+        let id = assessmentId;
+        if (!id) {
+          // Ask the server rather than racing the bootstrap in App.tsx: if a
+          // draft is open, this page belongs to the submit screen below and
+          // must not show the previous result instead.
+          const { assessment: active } = await getActiveAssessment();
+          if (active) return;
+          const { assessments } = await getAssessments();
+          const finalized = assessments
+            .filter((candidate) => candidate.status === "finalized")
+            .sort((a, b) => String(b.completedAt || "").localeCompare(String(a.completedAt || "")));
+          if (!finalized.length) return;
+          id = finalized[0].id;
+        }
+        const { assessment } = await getAssessment(id);
+        if (assessment.status !== "finalized") return;
+        // Both requests finish before the store is written: setAssessment
+        // clears `server`, so writing early flashes the submit screen.
+        const result = await getResult(id);
+        setAssessment(assessment, false);
+        setServer(result);
+      } catch {
+        /* falls through to the submit screen */
+      } finally {
+        setHydrating(false);
+      }
+    })();
+  }, [server, assessmentId, setAssessment, setServer]);
+
+  if (hydrating) return <main className="wrap"><div className="card">Loading your result…</div></main>;
 
   async function finalize() {
     if (!assessmentId || comp.pct < 100 || busy) return;
