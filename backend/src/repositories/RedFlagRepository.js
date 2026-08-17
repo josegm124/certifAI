@@ -1,18 +1,88 @@
 const BaseRepository = require('./BaseRepository');
 const { v4: uuid } = require('uuid');
+
 class RedFlagRepository extends BaseRepository {
-  constructor(db) { super(db, 'assessment_red_flags'); }
-  controls(stage) { return this.all(`SELECT c.id,c.question_id,c.domain_id,c.guidance,t.minimum_score FROM critical_controls c JOIN critical_control_thresholds t ON t.control_id=c.id AND t.adoption_stage=? ORDER BY c.question_id`,[stage]); }
-  byAssessment(id, failedOnly=false) { return this.all(`SELECT f.*,c.domain_id,c.guidance FROM assessment_red_flags f JOIN critical_controls c ON c.id=f.control_id WHERE f.assessment_id=?${failedOnly?' AND f.failed=1':''} ORDER BY f.question_id`,[id]); }
-  async replaceInTransaction(assessment, result, domainScores, flags) {
+  constructor(db) {
+    super(db, 'assessment_critical_flags');
+  }
+
+  controls(adoptionStage) {
+    return this.all(`
+      SELECT
+        control.question_id,
+        control.domain_id,
+        control.guidance_text,
+        threshold.threshold_required
+      FROM critical_controls control
+      JOIN critical_control_thresholds threshold
+        ON threshold.question_id = control.question_id
+       AND threshold.adoption_stage = ?
+      WHERE control.active = 1
+      ORDER BY control.question_id
+    `, [adoptionStage]);
+  }
+
+  byAssessment(assessmentId, failedOnly = false) {
+    return this.all(`
+      SELECT
+        flag.assessment_id,
+        flag.question_id,
+        flag.score_given,
+        flag.threshold_required,
+        flag.status,
+        flag.created_at,
+        control.domain_id,
+        control.guidance_text
+      FROM assessment_critical_flags flag
+      JOIN critical_controls control ON control.question_id = flag.question_id
+      WHERE flag.assessment_id = ?
+      ${failedOnly ? "AND flag.status = 'failed'" : ''}
+      ORDER BY flag.question_id
+    `, [assessmentId]);
+  }
+
+  async finalizeInTransaction(assessment, result, flags) {
     await this.run('BEGIN IMMEDIATE');
     try {
-      await this.run(`UPDATE assessments SET status='finalized',completion_percentage=100,overall_score=?,result_level_id=?,completed_at=CURRENT_TIMESTAMP,updated_at=CURRENT_TIMESTAMP WHERE id=? AND status='draft'`,[result.overallScore,result.level.tier,assessment.id]);
-      await this.run('DELETE FROM domain_scores WHERE assessment_id=?',[assessment.id]);
-      for (const d of domainScores) await this.run('INSERT INTO domain_scores(id,assessment_id,domain_name,score) VALUES(?,?,?,?)',[uuid(),assessment.id,d.id,d.pct]);
-      for (const f of flags) await this.run('INSERT INTO assessment_red_flags(id,assessment_id,control_id,question_id,actual_score,threshold,failed) VALUES(?,?,?,?,?,?,?)',[uuid(),assessment.id,f.id,f.question_id,f.actualScore,f.minimum_score,f.failed?1:0]);
+      const updated = await this.run(`
+        UPDATE assessments
+        SET status = 'finalized',
+            completion_percentage = 100,
+            overall_score = ?,
+            result_level_id = ?,
+            completed_at = CURRENT_TIMESTAMP,
+            updated_at = CURRENT_TIMESTAMP
+        WHERE id = ? AND status = 'draft'
+      `, [result.overallScore, result.level.tier, assessment.id]);
+      if (updated.changes !== 1) throw new Error('ASSESSMENT_FINALIZATION_CONFLICT');
+
+      for (const domain of result.domainScores) {
+        await this.run(`
+          INSERT INTO domain_scores
+            (id, assessment_id, domain_name, score, created_at, updated_at)
+          VALUES (?, ?, ?, ?, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
+        `, [uuid(), assessment.id, domain.id, domain.pct]);
+      }
+
+      for (const flag of flags) {
+        await this.run(`
+          INSERT INTO assessment_critical_flags
+            (assessment_id, question_id, score_given, threshold_required, status)
+          VALUES (?, ?, ?, ?, ?)
+        `, [
+          assessment.id,
+          flag.questionId,
+          flag.scoreGiven,
+          flag.thresholdRequired,
+          flag.status,
+        ]);
+      }
       await this.run('COMMIT');
-    } catch(e) { await this.run('ROLLBACK'); throw e; }
+    } catch (error) {
+      await this.run('ROLLBACK');
+      throw error;
+    }
   }
 }
-module.exports=RedFlagRepository;
+
+module.exports = RedFlagRepository;

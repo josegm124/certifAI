@@ -153,6 +153,8 @@ class AssessmentAnswer {
 class Badge {
   constructor({
     id = uuidv4(),
+    dossierId,
+    productId,
     assessmentId,
     companyId,
     tier = BADGE_TIERS.AWARE,
@@ -163,6 +165,8 @@ class Badge {
     frameworksIncluded = []
   } = {}) {
     this.id = id;
+    this.dossierId = dossierId;
+    this.productId = productId;
     this.assessmentId = assessmentId;
     this.companyId = companyId;
     this.tier = tier;

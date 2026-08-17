@@ -108,9 +108,9 @@ export default function Landing() {
           <div className="how">
             {[
               { t: "Assess", d: `Answer ${TOTAL_QUESTIONS} questions on a 0 to ${MAX_SCORE} maturity scale across all ${numberWord(TOTAL_DOMAINS)} domains.` },
-              { t: "Add evidence", d: "Record an attestation and a written evidence reference for each control to build a traceable assessment record." },
+              { t: "Add evidence", d: "For an eligible result, record one written reference for each of the nine certificate controls and optionally attach private supporting files." },
               { t: "AI review, in development", d: "Automated review of your evidence against each control, with drafted remediation. Not available in this build." },
-              { t: "Earn your level", d: "Sign your self-certification and earn Aligned, Assured or Advanced, a badge you can share." },
+              { t: "Earn your level", d: "Select an eligible certificate, sign its dossier and issue an Aligned, Assured or Advanced badge you can share." },
             ].map((s, i) => (
               <div key={s.t} className="how-step">
                 <div className="how-num">{i + 1}</div>

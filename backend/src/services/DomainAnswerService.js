@@ -28,13 +28,14 @@ class DomainAnswerService {
       seen.add(questionId);
       return new AssessmentAnswer({
         id: uuidv4(), assessmentId, questionId, score,
-        evidence: String(input.evidence || '').trim(), attestation: String(input.attestation || '').trim(),
+        evidence: assessment.remediationSourceAssessmentId ? String(input.evidence || '').trim() : '',
+        attestation: assessment.remediationSourceAssessmentId ? String(input.attestation || '').trim() : '',
       });
     });
     if (seen.size !== domain.questionIds.length || domain.questionIds.some((id) => !seen.has(id))) {
       throw httpError(400, `All ${domain.questionIds.length} questions in ${domainId} are required`, 'INCOMPLETE_DOMAIN');
     }
-    if (assessment.remediationOfAssessmentId) {
+    if (assessment.remediationSourceAssessmentId) {
       await this.answers.upsertManyWithConfirmation(rows, assessmentId, domainId, payload.confirmed === true);
     } else {
       await this.answers.upsertMany(rows);

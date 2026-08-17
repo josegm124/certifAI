@@ -184,7 +184,6 @@ a{color:inherit;text-decoration:none}
 .gap-score-mid{background:var(--gold-soft);color:var(--gold)}
 .gap-score-hi{background:var(--pine-soft);color:var(--pine)}
 .gap-title{font-size:13.5px;font-weight:600;color:var(--ink);display:flex;align-items:center;gap:8px;transition:color .15s}
-.gap-crit{font-size:9.5px;font-weight:700;letter-spacing:.05em;text-transform:uppercase;color:var(--red);background:var(--red-soft);padding:2px 7px;border-radius:99px}
 .gap-meta{font-size:12px;color:var(--mute);margin-top:2px}
 
 /* ---------- badge glyph panel ---------- */
@@ -236,12 +235,10 @@ a{color:inherit;text-decoration:none}
 .dot-btn{width:13px;height:13px;border-radius:4px;border:1.5px solid var(--line);background:var(--panel);cursor:pointer;padding:0;transition:all .15s}
 .dot-btn:hover{border-color:var(--pine)}
 .dot-ans{background:var(--pine);border-color:var(--pine)}
-.dot-crit{border-radius:50%}
 .dot-cur{box-shadow:0 0 0 3px var(--pine-soft);border-color:var(--pine)}
 .q-head{display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:14px}
 .q-num{font-family:'Lora',serif;font-size:15px;font-weight:700;color:var(--pine)}
 .q-of{color:var(--mute);font-weight:400}
-.q-crit{font-size:10.5px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--red);background:var(--red-soft);padding:3px 9px;border-radius:99px}
 .q-frameworks{font-size:11.5px;color:var(--mute);margin-left:auto}
 .q-title{font-family:'Lora',serif;font-size:25px;font-weight:600;color:var(--ink);margin:0 0 10px;letter-spacing:-.01em}
 .q-text{font-size:15.5px;line-height:1.55;color:var(--ink-soft);margin:0 0 24px;max-width:60ch}
@@ -266,6 +263,14 @@ a{color:inherit;text-decoration:none}
 .nav{display:flex;justify-content:space-between;align-items:center;gap:12px;margin-top:8px}
 .nav-right{display:flex;gap:10px}
 .finish-link{display:block;margin:18px auto 0;background:none;border:0;color:var(--mute);font-size:13px;cursor:pointer;text-decoration:underline;text-underline-offset:3px;font-family:inherit}
+.remediation-reference{border:1.5px solid #BDD8E1;background:var(--ocean-soft);border-radius:12px;padding:16px 18px;margin:-8px 0 16px}
+.remediation-reference p{font-size:14px;line-height:1.55;color:var(--ink);white-space:pre-wrap;margin:8px 0}
+.remediation-reference>span:last-child{display:block;font-size:11.5px;color:var(--mute)}
+.domain-confirmation{display:flex;align-items:flex-start;gap:12px;border:1.5px solid var(--line);border-radius:12px;padding:15px 17px;margin-bottom:20px;background:var(--panel);cursor:pointer}
+.domain-confirmation:has(input:checked){border-color:var(--pine);background:var(--pine-soft)}
+.domain-confirmation input{width:18px;height:18px;accent-color:var(--pine);margin-top:2px;flex-shrink:0}
+.domain-confirmation span{display:flex;flex-direction:column;gap:4px;font-size:13.5px}
+.domain-confirmation small{font-size:12px;color:var(--mute);line-height:1.45}
 
 /* results */
 .res-hero{display:grid;grid-template-columns:auto 1fr;gap:34px;align-items:center;padding:26px;border:1.5px solid var(--line);border-radius:16px;background:var(--panel);margin:18px 0}
@@ -278,6 +283,27 @@ a{color:inherit;text-decoration:none}
 .input{width:100%;padding:12px 14px;font-size:15px;border:1.5px solid var(--line);border-radius:10px;background:var(--panel);color:var(--ink);outline:none;font-family:inherit}
 .input:disabled{background:var(--mist);color:var(--mute);cursor:not-allowed}
 .input:focus{border-color:var(--pine);box-shadow:0 0 0 3px var(--pine-soft)}
+
+/* red-flag remediation and evidence dossier */
+.red-flag-list{display:grid;gap:14px;margin:14px 0 18px}
+.red-flag-card{border:1.5px solid #E5C3BD;border-radius:14px;background:var(--red-soft);padding:18px}
+.red-flag-card h3{font-family:'Lora',serif;font-size:17px;margin:0 0 5px}
+.red-flag-card .case-meta{color:#7A2B22;margin-bottom:10px}
+.remediation-copy{font-size:13.5px;line-height:1.65;color:#5E2A25;margin:0;white-space:pre-wrap}
+.evidence-progress{height:9px;background:var(--mist);border-radius:99px;overflow:hidden;margin:10px 0 5px}
+.evidence-progress>span{display:block;height:100%;background:var(--pine);border-radius:inherit;transition:width .2s}
+.evidence-item{margin-bottom:16px}
+.evidence-item-head{display:flex;justify-content:space-between;gap:18px;align-items:flex-start;margin-bottom:12px}
+.evidence-attachment{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-top:10px;padding:11px 12px;border-radius:10px;background:var(--mist);font-size:12.5px;color:var(--ink-soft)}
+.evidence-attachment .btn{padding:7px 11px;font-size:12px}
+.file-action{position:relative;overflow:hidden}
+.file-action input{position:absolute;inset:0;opacity:0;cursor:pointer}
+.print-certificate-heading{display:none}
+.print-certificate{border:0}
+.certificate-record{display:grid;grid-template-columns:repeat(4,1fr);gap:1px;background:var(--line);border:1px solid var(--line);border-radius:12px;overflow:hidden}
+.certificate-record>div{background:var(--panel);padding:13px;display:flex;flex-direction:column;gap:4px;min-width:0}
+.certificate-record span{font-size:10px;letter-spacing:.07em;text-transform:uppercase;color:var(--mute)}
+.certificate-record strong{font-size:12px;overflow-wrap:anywhere}
 
 /* ---------- responsive ---------- */
 @media(max-width:900px){
@@ -293,6 +319,7 @@ a{color:inherit;text-decoration:none}
   .mrow-label{font-size:11px}
   .hdr-nav .hdr-link{display:none}
   .hdr-nav .hdr-cta{display:inline-flex}
+  .certificate-record{grid-template-columns:1fr 1fr}
 }
 @media(prefers-reduced-motion:reduce){
   *{animation-duration:.001ms!important;transition-duration:.001ms!important}
@@ -318,6 +345,11 @@ select.input{appearance:none;cursor:pointer;background-image:linear-gradient(45d
   body{background:#fff!important}
   .wrap{max-width:none!important;padding:0!important}
   .card,.res-hero,.banner{break-inside:avoid;box-shadow:none!important}
+  .print-certificate-heading{display:block;text-align:center;border:3px double var(--gold);padding:28px;margin-bottom:24px}
+  .print-certificate-heading h1{font-family:'Lora',serif;font-size:36px;margin:8px 0}
+  .print-certificate-heading p{font-size:15px;color:var(--ink-soft);margin:0}
+  .print-certificate .red-flag-list,.print-certificate .certificate-options,.print-certificate~*{display:none!important}
+  .print-certificate .res-hero{border:3px double var(--gold);padding:28px}
 }
 @media(max-width:600px){
   .assessment-tab{min-width:210px}

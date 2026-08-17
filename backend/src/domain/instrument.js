@@ -12,6 +12,9 @@ const DOMAINS = [
 
 const QUESTION_IDS = DOMAINS.flatMap((domain) => domain.questionIds);
 const FRAMEWORKS = ['aiact', 'gdpr', 'oecd', 'iso', 'nist'];
+// Provisional adoption stage pending Marika's future decision. Historical
+// assessments persist this value, so a later change never rewrites results.
+const PROVISIONAL_ADOPTION_STAGE = 2;
 
 // Dashboard labels and mappings are served by the backend together with the
 // calculated values. FRAMEWORKS above remains the smaller badge claim set;
@@ -27,48 +30,49 @@ const DASHBOARD_FRAMEWORKS = [
 ];
 
 const QUESTION_METADATA = {
-  1: { domainId: 'strategy', title: 'AI Strategy', frameworks: ['oecd', 'iso'] },
+  1: { domainId: 'strategy', title: 'AI Strategy', text: 'Does your organisation have a documented AI strategy that defines its vision, objectives, and roadmap for AI adoption?', frameworks: ['oecd', 'iso'] },
   2: { domainId: 'strategy', title: 'Leadership Commitment', frameworks: ['iso', 'g7'] },
   3: { domainId: 'strategy', title: 'AI Governance Ownership', frameworks: ['iso', 'nist'] },
   4: { domainId: 'strategy', title: 'AI Investment Planning', frameworks: ['iso'] },
   5: { domainId: 'strategy', title: 'AI Business Objectives', frameworks: ['oecd'] },
   6: { domainId: 'revenue', title: 'AI Revenue Contribution', frameworks: ['iso'] },
   7: { domainId: 'revenue', title: 'AI Monetisation Strategy', frameworks: ['iso'] },
-  8: { domainId: 'revenue', title: 'AI ROI & Value Realisation', frameworks: ['iso'] },
+  8: { domainId: 'revenue', title: 'AI ROI & Value Realisation', text: 'Does the organisation measure the financial return on its AI investments, including cost savings, efficiency gains, and incremental revenue?', frameworks: ['iso'] },
   9: { domainId: 'revenue', title: 'AI-Driven Customer Growth', frameworks: ['oecd', 'iso'] },
   10: { domainId: 'governance', title: 'AI System Inventory', frameworks: ['aiact', 'iso', 'nist'] },
-  11: { domainId: 'governance', title: 'AI Governance Policies', frameworks: ['aiact', 'iso', 'oecd'] },
+  11: { domainId: 'governance', title: 'AI Governance Policies', text: 'Are formal AI governance policies in place that define standards, responsibilities, and acceptable use?', frameworks: ['aiact', 'iso', 'oecd'] },
   12: { domainId: 'governance', title: 'Use-Case Approval', frameworks: ['aiact', 'iso'] },
   13: { domainId: 'governance', title: 'Governance Reporting', frameworks: ['iso', 'nist'] },
   14: { domainId: 'governance', title: 'Third-Party AI Oversight', frameworks: ['aiact', 'iso', 'gpai'] },
   15: { domainId: 'risk', title: 'AI Risk Identification', frameworks: ['aiact', 'nist', 'iso'] },
-  16: { domainId: 'risk', title: 'AI Risk Assessments', frameworks: ['aiact', 'nist', 'iso'] },
+  16: { domainId: 'risk', title: 'AI Risk Assessments', text: 'Are formal risk assessments conducted for AI systems before and during deployment?', frameworks: ['aiact', 'nist', 'iso'] },
   17: { domainId: 'risk', title: 'EU AI Act Readiness', frameworks: ['aiact'] },
   18: { domainId: 'risk', title: 'High-Risk AI Identification', frameworks: ['aiact'] },
   19: { domainId: 'risk', title: 'AI Incident Response', frameworks: ['aiact', 'nist'] },
   20: { domainId: 'data', title: 'AI Audit Readiness', frameworks: ['aiact', 'iso'] },
   21: { domainId: 'data', title: 'Data Suitability', frameworks: ['aiact', 'iso'] },
   22: { domainId: 'data', title: 'Data Quality Controls', frameworks: ['aiact', 'iso'] },
-  23: { domainId: 'data', title: 'Personal Data Protection', frameworks: ['gdpr', 'aiact'] },
+  23: { domainId: 'data', title: 'Personal Data Protection in AI', text: 'Are appropriate safeguards in place to protect personal data when used by AI systems?', frameworks: ['gdpr', 'aiact'] },
   24: { domainId: 'data', title: 'Privacy Impact Assessments', frameworks: ['gdpr'] },
   25: { domainId: 'data', title: 'Training Data Management', frameworks: ['aiact', 'gpai', 'iso'] },
-  26: { domainId: 'human', title: 'Human Accountability', frameworks: ['aiact', 'oecd', 'iso'] },
+  26: { domainId: 'human', title: 'Human Accountability for AI Outputs', text: 'Are named individuals accountable for the decisions and outputs produced by AI systems?', frameworks: ['aiact', 'oecd', 'iso'] },
   27: { domainId: 'human', title: 'Output Verification', frameworks: ['aiact', 'nist'] },
   28: { domainId: 'human', title: 'Human Review Requirements', frameworks: ['aiact', 'oecd'] },
-  29: { domainId: 'trust', title: 'AI Bias Assessments', frameworks: ['aiact', 'oecd', 'nist'] },
+  29: { domainId: 'trust', title: 'AI Bias Assessments', text: 'Does the organisation conduct assessments to identify and mitigate bias in AI systems?', frameworks: ['aiact', 'oecd', 'nist'] },
   30: { domainId: 'trust', title: 'Transparency of AI Use', frameworks: ['aiact', 'oecd'] },
   31: { domainId: 'trust', title: 'Explainability', frameworks: ['aiact', 'oecd', 'nist'] },
   32: { domainId: 'workforce', title: 'Autonomous Agent Oversight', frameworks: ['aiact', 'g7', 'gpai'] },
   33: { domainId: 'workforce', title: 'AI Literacy', frameworks: ['aiact', 'oecd'] },
-  34: { domainId: 'workforce', title: 'AI Governance Training', frameworks: ['iso', 'aiact'] },
+  34: { domainId: 'workforce', title: 'AI Governance Training', text: 'Are employees with governance, risk, or oversight responsibilities trained on AI governance?', frameworks: ['iso', 'aiact'] },
   35: { domainId: 'workforce', title: 'Workforce Readiness', frameworks: ['oecd', 'g7'] },
-  36: { domainId: 'improve', title: 'Continuous Improvement', frameworks: ['iso', 'nist'] },
+  36: { domainId: 'improve', title: 'Continuous AI Improvement', text: 'Does the organisation have a structured process for reviewing and continuously improving its AI governance?', frameworks: ['iso', 'nist'] },
 };
 
 module.exports = {
   DOMAINS,
   QUESTION_IDS,
   FRAMEWORKS,
+  PROVISIONAL_ADOPTION_STAGE,
   DASHBOARD_FRAMEWORKS,
   QUESTION_METADATA,
 };

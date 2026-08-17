@@ -17,41 +17,27 @@ export interface AssessmentRecord {
   completionPercentage: number;
   overallScore: number | null;
   resultLevelId: string | null;
-  remediationOfAssessmentId: string | null;
+  remediationSourceAssessmentId: string | null;
   completedAt: string | null;
   createdAt: string;
   aiSystem: { id: string; name: string };
+  domainConfirmations: Array<{ domainId: string; confirmedAt: string }>;
   answers: Record<string, { score: number; evidence: string; attestation: string }>;
 }
 
 export interface IssuedBadge {
-  id: string; tier: string; score: number; verificationToken: string;
-  issuedAt: string; expiresAt: string;
-}
-
-export interface OfficialResult {
-  overallScore: number;
-  domainScores: Array<{
-    id: string; name: string; short: string; weight: number; pct: number; rawAvg: number;
-    maturityLevel: number; answeredCount: number; totalCount: number;
-    weakestQuestionId: number | null; weakestQuestionTitle: string | null; weakestScore: number | null;
-  }>;
-  frameworkCoverage: Array<{
-    id: string; name: string; short: string; type: string; pct: number;
-    answeredCount: number; totalCount: number;
-  }>;
-  gaps: Array<{
-    id: number; title: string; domainId: string; domainName: string;
-    score: number; gapSize: number; priority: number;
-  }>;
-  level: ResultLevel;
-  nextLevel: (ResultLevel & { pointsNeeded: number }) | null;
-  completion: { answered: number; total: number; percentage: number };
+  id: string;
+  productId: string;
+  tier: string;
+  score: number;
+  verificationToken: string;
+  issuedAt: string;
+  expiresAt: string;
 }
 
 export interface ResultLevel {
   id: "A1" | "A2" | "A3" | "A4";
-  tier: string;
+  tier: "aware" | "aligned" | "assured" | "advanced";
   name: string;
   min: number;
   max: number;
@@ -61,17 +47,76 @@ export interface ResultLevel {
   blurb: string;
 }
 
+export interface OfficialResult {
+  overallScore: number;
+  domainScores: Array<{
+    id: string;
+    name: string;
+    short: string;
+    weight: number;
+    pct: number;
+    rawAvg: number;
+    maturityLevel: number;
+    answeredCount: number;
+    totalCount: number;
+    weakestQuestionId: number | null;
+    weakestQuestionTitle: string | null;
+    weakestScore: number | null;
+  }>;
+  frameworkCoverage: Array<{
+    id: string;
+    name: string;
+    short: string;
+    type: string;
+    pct: number;
+    answeredCount: number;
+    totalCount: number;
+  }>;
+  gaps: Array<{
+    id: number;
+    title: string;
+    domainId: string;
+    domainName: string;
+    score: number;
+    gapSize: number;
+    priority: number;
+  }>;
+  level: ResultLevel;
+  nextLevel: (ResultLevel & { pointsNeeded: number }) | null;
+  completion: { answered: number; total: number; percentage: number };
+}
+
+export interface CertificateEligibility {
+  allowed: boolean;
+  earnedLevel: string | null;
+  failedCriticalCount: number;
+  eligibleProductIds: string[];
+}
+
+export interface FailedControl {
+  questionId: number;
+  questionTitle: string;
+  questionText: string;
+  domainId: string;
+  domainName: string;
+  scoreGiven: number;
+  thresholdRequired: number;
+  guidance: string;
+}
+
 export interface FinalizationResponse {
   assessment: AssessmentRecord;
   result: OfficialResult;
   badge: IssuedBadge | null;
   adoptionStage: number;
-  certificateEligibility: { eligible: boolean; blockedByRedFlags: boolean; eligibleProducts: string[] };
+  certificateEligibility: CertificateEligibility;
   eligibleProducts: string[];
-  failedControls: Array<{questionId:number;domainId:string;score:number;threshold:number;guidance:string}>;
+  failedControls: FailedControl[];
 }
 
-export type AssessmentDashboardResponse = FinalizationResponse;
+export interface AssessmentDashboardResponse extends Omit<FinalizationResponse, "result"> {
+  result: OfficialResult | null;
+}
 
 export interface CertificateCatalogLevel {
   id: "aware" | "aligned" | "assured" | "advanced";
@@ -107,15 +152,59 @@ export interface CertificateCatalog {
   products: CertificateCatalogProduct[];
 }
 
+export interface CertificateOptionsResponse {
+  adoptionStage: number;
+  certificateEligibility: CertificateEligibility;
+  eligibleProducts: CertificateCatalogProduct[];
+}
+
+export interface EvidenceDossierResponse {
+  dossier: {
+    id: string;
+    assessmentId: string;
+    selectedProductId: string;
+    status: "draft" | "issued";
+    signatoryName: string | null;
+    acceptedDeclaration: boolean;
+    signedAt: string | null;
+    issuedAt: string | null;
+  };
+  selectedProduct: CertificateCatalogProduct | null;
+  items: Array<{
+    id: string;
+    questionId: number;
+    questionTitle: string;
+    questionText: string;
+    domainId: string;
+    domainName: string;
+    writtenReference: string;
+    attachment: null | {
+      id: string;
+      originalName: string;
+      mimeType: string;
+      sizeBytes: number;
+      sha256: string;
+    };
+  }>;
+  completion: { completedItems: number; totalItems: number; complete: boolean };
+  badge: IssuedBadge | null;
+}
+
 export class ApiError extends Error {
-  constructor(public status: number, message: string, public code?: string) { super(message); }
+  constructor(public status: number, message: string, public code?: string) {
+    super(message);
+  }
 }
 
 async function request<T>(path: string, init: RequestInit = {}): Promise<T> {
+  const isFormData = typeof FormData !== "undefined" && init.body instanceof FormData;
   const response = await fetch(`${BASE}${path}`, {
     ...init,
     credentials: "include",
-    headers: { ...(init.body ? { "Content-Type": "application/json" } : {}), ...init.headers },
+    headers: {
+      ...(!isFormData && init.body ? { "Content-Type": "application/json" } : {}),
+      ...init.headers,
+    },
   });
   if (!response.ok) {
     const data = await response.json().catch(() => ({}));
@@ -125,8 +214,14 @@ async function request<T>(path: string, init: RequestInit = {}): Promise<T> {
   return response.json() as Promise<T>;
 }
 
-const post = <T>(path: string, body?: unknown) => request<T>(path, { method: "POST", body: body === undefined ? undefined : JSON.stringify(body) });
-const put = <T>(path: string, body: unknown) => request<T>(path, { method: "PUT", body: JSON.stringify(body) });
+const post = <T>(path: string, body?: unknown) => request<T>(path, {
+  method: "POST",
+  body: body === undefined ? undefined : JSON.stringify(body),
+});
+const put = <T>(path: string, body: unknown) => request<T>(path, {
+  method: "PUT",
+  body: JSON.stringify(body),
+});
 
 export const register = (input: { companyName: string; email: string; password: string; name: string; role: string }) =>
   post<{ profile: Profile }>("/auth/register", input);
@@ -142,22 +237,58 @@ export const getAssessment = (id: string) => request<{ assessment: AssessmentRec
 export const getAssessmentDashboard = (id: string) => request<AssessmentDashboardResponse>(`/assessments/${id}/dashboard`);
 export const getResult = (id: string) => request<FinalizationResponse>(`/assessments/${id}/result`);
 
-export async function saveDomain(assessmentId: string, domainId: string, answers: Answers) {
+export async function saveDomain(
+  assessmentId: string,
+  domainId: string,
+  answers: Answers,
+  options: { remediation?: boolean; confirmed?: boolean } = {},
+) {
   const body = Object.entries(answers).map(([questionId, answer]) => ({
-    questionId: Number(questionId), score: answer.score,
-    evidence: answer.detail?.trim() || answer.note?.trim() || "",
-    attestation: answer.attested ? "confirmed" : "",
+    questionId: Number(questionId),
+    score: answer.score,
+    ...(options.remediation ? {
+      evidence: answer.detail?.trim() || answer.note?.trim() || "",
+      attestation: answer.attested ? "confirmed" : "",
+    } : {}),
   }));
-  return put<{ completionPercentage: number }>(`/assessments/${assessmentId}/domains/${domainId}/answers`, { answers: body });
+  return put<{ completionPercentage: number }>(
+    `/assessments/${assessmentId}/domains/${domainId}/answers`,
+    { answers: body, confirmed: options.confirmed === true },
+  );
 }
 
 export const finalizeAssessment = (id: string) => post<FinalizationResponse>(`/assessments/${id}/finalize`, {});
-export const getCertificateOptions = (id:string) => request<{certificateEligibility:FinalizationResponse['certificateEligibility'];eligibleProducts:string[]}>(`/assessments/${id}/certificate-options`);
-export const createEvidenceDossier = (assessmentId:string,productId:string) => post<{dossier:{id:string}}>(`/assessments/${assessmentId}/evidence-dossier`,{productId});
-export const getEvidenceDossier = (id:string) => request<EvidenceDossierResponse>(`/evidence-dossiers/${id}`);
-export const saveEvidenceReference = (id:string,controlId:string,reference:string) => put<EvidenceDossierResponse>(`/evidence-dossiers/${id}/items/${controlId}`,{reference});
-export const issueDossier = (id:string,signatoryName:string) => post<EvidenceDossierResponse>(`/evidence-dossiers/${id}/issue`,{signatoryName,acceptedDeclaration:true});
-export interface EvidenceDossierResponse { dossier:{id:string;assessmentId:string;productId:string;status:'draft'|'issued';signatoryName:string|null};items:Array<{id:string;controlId:string;reference:string;attachment:null|{id:string;name:string;mimeType:string;size:number;sha256:string}}> }
+export const createRemediationAssessment = (id: string) => post<{ assessment: AssessmentRecord }>(`/assessments/${id}/remediation`, {});
+export const getCertificateOptions = (id: string) => request<CertificateOptionsResponse>(`/assessments/${id}/certificate-options`);
+export const createEvidenceDossier = (assessmentId: string, selectedProductId: string) =>
+  post<EvidenceDossierResponse>(`/assessments/${assessmentId}/evidence-dossier`, { selectedProductId });
+export const getEvidenceDossier = (id: string) => request<EvidenceDossierResponse>(`/evidence-dossiers/${id}`);
+export const saveEvidenceReference = (id: string, questionId: number, writtenReference: string) =>
+  put<EvidenceDossierResponse>(`/evidence-dossiers/${id}/items/${questionId}`, { writtenReference });
+export const finalizeEvidenceDossier = (id: string, signatoryName: string, acceptedDeclaration: boolean) =>
+  post<EvidenceDossierResponse>(`/evidence-dossiers/${id}/finalize`, { signatoryName, acceptedDeclaration });
+export const uploadEvidenceAttachment = (id: string, questionId: number, file: File) => {
+  const form = new FormData();
+  form.append("file", file);
+  return request<EvidenceDossierResponse>(`/evidence-dossiers/${id}/items/${questionId}/attachment`, { method: "POST", body: form });
+};
+export const removeEvidenceAttachment = (id: string, questionId: number) =>
+  request<EvidenceDossierResponse>(`/evidence-dossiers/${id}/items/${questionId}/attachment`, { method: "DELETE" });
+export async function downloadEvidenceAttachment(id: string, questionId: number, originalName: string) {
+  const response = await fetch(`${BASE}/evidence-dossiers/${id}/items/${questionId}/attachment`, { credentials: "include" });
+  if (!response.ok) {
+    const data = await response.json().catch(() => ({}));
+    throw new ApiError(response.status, data.error || response.statusText, data.code);
+  }
+  const url = URL.createObjectURL(await response.blob());
+  const link = document.createElement("a");
+  link.href = url;
+  link.download = originalName;
+  link.click();
+  URL.revokeObjectURL(url);
+}
+
+export const publicVerificationUrl = (token: string) => `${BASE.replace(/\/api\/?$/, "")}/verify/${encodeURIComponent(token)}`;
 
 export async function verifyBadge(token: string): Promise<unknown | null> {
   try { return await request(`/badges/${token}/verify`); } catch { return null; }

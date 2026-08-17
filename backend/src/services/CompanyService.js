@@ -26,8 +26,6 @@ class CompanyService {
     const company = await this.companyRepository.findById(companyId);
 
     if (data.name) company.name = data.name;
-    if (data.tier) company.tier = data.tier;
-
     company.updatedAt = new Date();
     await this.companyRepository.update(company);
 

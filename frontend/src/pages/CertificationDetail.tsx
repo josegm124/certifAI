@@ -147,7 +147,7 @@ export default function CertificationDetail() {
               </ul>
             )}
             <p className="sec-note" style={{ margin: "12px 0 0", color: C.inkSoft }}>
-              In the paid tier, the evidence references you add are stored with the mapped controls and support your self-assessment. Automated evidence review is in development.
+              After an eligible final result, the certificate dossier stores written references for its nine required controls and optional private files. Automated evidence review is in development.
             </p>
           </div>
 

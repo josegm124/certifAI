@@ -12,7 +12,7 @@ const isValidTier = (tier) => {
 };
 
 const isValidBadgeTier = (tier) => {
-  return ['aware', 'aligned', 'assured'].includes(tier);
+  return ['aware', 'aligned', 'assured', 'advanced'].includes(tier);
 };
 
 module.exports = {

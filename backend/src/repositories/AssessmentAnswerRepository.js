@@ -46,8 +46,8 @@ class AssessmentAnswerRepository extends BaseRepository {
     await this.run('BEGIN IMMEDIATE');
     try {
       for (const answer of answers) await this.create(answer);
-      await this.run('DELETE FROM remediation_confirmations WHERE assessment_id=? AND domain_id=?', [assessmentId, domainId]);
-      if (confirmed) await this.run(`INSERT INTO remediation_confirmations(assessment_id,domain_id,confirmed,confirmed_at) VALUES(?,?,1,CURRENT_TIMESTAMP)`, [assessmentId, domainId]);
+      await this.run('DELETE FROM assessment_domain_confirmations WHERE assessment_id=? AND domain_id=?', [assessmentId, domainId]);
+      if (confirmed) await this.run(`INSERT INTO assessment_domain_confirmations(assessment_id,domain_id,confirmed_at) VALUES(?,?,CURRENT_TIMESTAMP)`, [assessmentId, domainId]);
       await this.run('COMMIT');
     } catch (error) { await this.run('ROLLBACK'); throw error; }
     return answers;

@@ -17,9 +17,13 @@ The current suites cover:
 - the zero threshold for Q8 at Stage 2;
 - certificate eligibility with and without failed flags;
 - selection of a lower eligible certificate product;
+- atomic dossier/badge issuance and idempotent retries;
+- remediation copy-forward and all nine domain confirmations;
+- attachment type, size and filename validation;
+- persistence of the full end-to-end finalisation and remediation workflow;
 - canonical question and framework mappings;
 - password hashing and signed session tokens;
-- frontend readiness presentation helpers.
+- frontend readiness presentation and dossier submission helpers.
 
 ## Manual workflow
 

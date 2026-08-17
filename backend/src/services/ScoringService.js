@@ -7,7 +7,7 @@ const {
 
 const LEVELS = [
   { id: 'A1', tier: 'aware', name: 'Aware', min: 0, max: 40, badge: false, needsEvidence: false, needsSignature: false, blurb: 'Assessment progress and gaps are understood. This is an internal readiness signal; no badge is issued.' },
-  { id: 'A2', tier: 'aligned', name: 'Aligned', min: 41, max: 65, badge: true, needsEvidence: true, needsSignature: false, blurb: 'The readiness score is in the Aligned band. An Aligned certificate is available after its issuance requirements are completed.' },
+  { id: 'A2', tier: 'aligned', name: 'Aligned', min: 41, max: 65, badge: true, needsEvidence: true, needsSignature: true, blurb: 'The readiness score is in the Aligned band. An Aligned certificate is available after its issuance requirements are completed.' },
   { id: 'A3', tier: 'assured', name: 'Assured', min: 66, max: 85, badge: true, needsEvidence: true, needsSignature: true, blurb: 'The readiness score is in the Assured band. Assured or Aligned may be selected for the certificate workflow.' },
   { id: 'A4', tier: 'advanced', name: 'Advanced', min: 86, max: 100, badge: true, needsEvidence: true, needsSignature: true, blurb: 'The readiness score is in the Advanced band. Advanced or a lower available level may be selected for the certificate workflow.' },
 ];
@@ -90,6 +90,11 @@ class ScoringService {
   calculate(answers) {
     return this.analyze(answers);
   }
+
+  levelForTier(tier) {
+    return LEVELS.find((level) => level.tier === tier) || LEVELS[0];
+  }
 }
 
 module.exports = ScoringService;
+module.exports.LEVELS = LEVELS;

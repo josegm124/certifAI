@@ -97,13 +97,18 @@ const startServer = async () => {
     const scoringService = new ScoringService();
     const redFlagService = new RedFlagService(redFlagRepository);
     const eligibilityService = new EligibilityService();
-    const finalizationService = new AssessmentFinalizationService(
-      assessmentService, assessmentRepository, answerRepository, scoringService, redFlagService, redFlagRepository, eligibilityService
-    );
-    const assessmentDashboardService = new AssessmentDashboardService(assessmentService, finalizationService);
-    const dossierService = new DossierService(dossierRepository, assessmentRepository, redFlagRepository, eligibilityService, badgeService);
-    const remediationService = new RemediationService(db, assessmentService, assessmentRepository, answerRepository);
     const certificateCatalogService = new CertificateCatalogService(certificateCatalogRepository);
+    const finalizationService = new AssessmentFinalizationService(
+      assessmentService, assessmentRepository, answerRepository, scoringService, redFlagService, redFlagRepository, eligibilityService, badgeService, certificateCatalogService
+    );
+    const assessmentDashboardService = new AssessmentDashboardService(
+      assessmentService, answerRepository, scoringService, finalizationService
+    );
+    const dossierService = new DossierService(
+      dossierRepository, assessmentRepository, answerRepository, redFlagRepository,
+      eligibilityService, badgeService, certificateCatalogService
+    );
+    const remediationService = new RemediationService(db, assessmentService, assessmentRepository);
 
     // Create routes with dependency injection
     const routes = createRoutes({

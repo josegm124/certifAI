@@ -18,7 +18,7 @@ See `SETUP.md` for configuration and `TESTING.md` for verification.
 ## Current workflow
 
 1. Register or log in.
-2. Name the AI system in scope and start a readiness assessment.
+2. Name the AI systems in scope and start a readiness assessment.
 3. Save all nine domains. Answers are persisted in SQLite.
 4. Finalize the assessment. The backend stores the real score, result band,
    domain analytics and exactly nine immutable red-flag evaluations.

@@ -10,24 +10,16 @@ const resetOnStart = process.env.RESET_DB_ON_START === 'true'; // Explicit opt-i
 
 let db = null;
 
-const isCurrentSchema = (tableNames, assessmentColumns) =>
-  assessmentColumns.some((column) => column.name === 'adoption_stage') &&
-  tableNames.has('critical_controls') &&
-  tableNames.has('evidence_dossiers');
-
-const syncCertificateCatalog = () => new Promise((resolve, reject) => {
-  db.exec(`
-    BEGIN IMMEDIATE;
-    DELETE FROM certificate_products WHERE id = 'readiness-assessment';
-    UPDATE certificate_products SET display_order = 1 WHERE id = 'aligned-certificate';
-    UPDATE certificate_products SET display_order = 2 WHERE id = 'assured-certificate';
-    UPDATE certificate_products SET display_order = 3 WHERE id = 'advanced-certificate';
-    UPDATE product_prices SET amount_minor = 34900 WHERE id = 'price-aligned-eur-annual';
-    UPDATE product_prices SET amount_minor = 64900 WHERE id = 'price-assured-eur-annual';
-    UPDATE product_prices SET amount_minor = 119000 WHERE id = 'price-advanced-eur-annual';
-    COMMIT;
-  `, (err) => (err ? reject(err) : resolve()));
-});
+const isCurrentSchema = (tableNames, assessmentColumns) => {
+  const assessmentColumnNames = new Set(assessmentColumns.map((column) => column.name));
+  return assessmentColumnNames.has('adoption_stage') &&
+    assessmentColumnNames.has('remediation_source_assessment_id') &&
+    !assessmentColumnNames.has('tier') &&
+    tableNames.has('assessment_critical_flags') &&
+    tableNames.has('evidence_dossiers') &&
+    tableNames.has('evidence_items') &&
+    tableNames.has('assessment_domain_confirmations');
+};
 
 // Clean up uploads directory
 const cleanUploads = () => {
@@ -91,7 +83,6 @@ const runSchema = async () => {
   if (tableNames.has('assessments')) {
     const assessmentColumns = await all('PRAGMA table_info(assessments)');
     if (isCurrentSchema(tableNames, assessmentColumns)) {
-      await syncCertificateCatalog();
       logger.info('Database schema already initialized');
       return;
     }
@@ -115,7 +106,6 @@ const runSchema = async () => {
   await new Promise((resolve, reject) => {
     db.exec(schema, (err) => (err ? reject(err) : resolve()));
   });
-  await syncCertificateCatalog();
   logger.info('Database schema initialized');
 };
 

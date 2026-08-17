@@ -9,7 +9,7 @@ class BadgeService {
   }
 
   // Crear badge después de assessment completo
-  async issueBadge(assessmentId, companyId, tier, overallScore, frameworks = [], dossierId) {
+  async issueBadge(assessmentId, companyId, tier, overallScore, frameworks = [], dossierId, productId) {
     const existing = await this.badgeRepository.findByAssessment(assessmentId);
     if (existing) return existing;
     const expiresAt = new Date();
@@ -17,6 +17,8 @@ class BadgeService {
 
     const badge = new Badge({
       id: uuidv4(),
+      dossierId,
+      productId,
       assessmentId,
       companyId,
       tier,
@@ -26,8 +28,6 @@ class BadgeService {
       verificationToken: uuidv4(),
       frameworksIncluded: frameworks
     });
-    badge.dossierId = dossierId;
-
     await this.badgeRepository.create(badge);
     logger.audit.info({ event: 'badge.issued', badgeId: badge.id, assessmentId, companyId, tier, score: overallScore });
     logger.info(
@@ -125,7 +125,7 @@ class BadgeService {
       [BADGE_TIERS.ADVANCED]: {
         label: 'Advanced',
         icon: '🏆',
-        description: 'Signed self-certification, no failed critical controls, renewed annually',
+        description: 'Signed self-certification, no failed critical controls, valid for one year',
         color: '#B8893B'
       }
     };

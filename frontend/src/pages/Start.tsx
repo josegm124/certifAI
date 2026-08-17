@@ -25,8 +25,8 @@ export default function Start() {
   </div></main>;
   return <main className="wrap wrap-wide">
     <div className="eyebrow">{profile?.company.name} · {TOTAL_DOMAINS} domains · {TOTAL_QUESTIONS} questions</div>
-    <h1 className="h1">Assess a real AI system.</h1><p className="lead">Name the AI system in scope and complete its readiness assessment.</p>
-    <div className="card" style={{ marginBottom: 18 }}><div className="field"><label className="lbl">AI system name</label><input className="input" value={aiSystemName} onChange={(e) => setName(e.target.value)} placeholder="Example: Customer Support Assistant" /></div>{error && <div className="banner banner-cap">{error}</div>}</div>
+    <h1 className="h1">Assess the AI systems in scope.</h1><p className="lead">Name the AI systems in scope and complete the organisational readiness assessment.</p>
+    <div className="card" style={{ marginBottom: 18 }}><div className="field"><label className="lbl">AI systems in scope</label><input className="input" value={aiSystemName} onChange={(e) => setName(e.target.value)} placeholder="Example: Customer Support Assistant" /></div>{error && <div className="banner banner-cap">{error}</div>}</div>
     <section className="pricing">
       <Tier name="Readiness Assessment" tag="Free" points={["All 36 questions", "Backend score of record", "Certificate eligibility after completion", "Remediation guidance for failed controls"]} action="Start assessment" onClick={start} disabled={!aiSystemName.trim() || busy} />
     </section>
